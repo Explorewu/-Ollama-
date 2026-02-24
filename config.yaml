@@ -1,0 +1,39 @@
+# RAG 检索系统配置文件
+# 修改后需重启服务生效
+
+# API 密钥配置（支持多个密钥，用逗号分隔）
+# 示例: api_key: "my-secret-key-123,another-key-456"
+api_key: ""
+
+rag:
+  # 目录配置
+  data_dir: "./data/premium_classics"
+  index_dir: "./data/rag_index"
+
+  # 分块配置
+  chunk_size: 512        # 每个分块的最大字符数
+  chunk_overlap: 50      # 分块重叠字符数
+
+  # 检索配置
+  top_k: 8              # 返回结果数量（给重排序留空间）
+  score_threshold: 0.25 # 相似度阈值（适当放宽）
+
+  # 权重配置（语义+关键词=1.0）
+  semantic_weight: 0.0  # 暂时关闭（网络不通）
+  keyword_weight: 1.0   # 暂时只用关键词检索
+
+  # 缓存配置
+  cache_size: 1000      # 最大缓存条目数
+  cache_ttl: 7200      # 缓存过期时间（秒）- 延长到2小时
+
+  # 模型配置
+  embedding_model: "paraphrase-multilingual-MiniLM-L12-v2"
+  reranker_model: "cross-encoder/ms-marco-MiniLM-L6-v2"  # 重排序模型
+
+  # 检索模式
+  use_fusion: true     # 是否使用分数融合
+  use_cache: true      # 是否启用缓存
+  use_rerank: false   # 暂时关闭（网络不通）
+
+  # 加载模式
+  eager_load: false    # 是否立即加载索引

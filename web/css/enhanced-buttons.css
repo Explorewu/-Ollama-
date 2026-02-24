@@ -1,0 +1,382 @@
+/* ============================================
+   增强版按钮样式与SVG图标设计
+   ============================================ */
+
+/* 主要按钮 - 渐变背景与动态效果 */
+.btn-enhanced {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    background: linear-gradient(135deg, #7e95a6, #5a7b8c);
+    color: white;
+    box-shadow: 
+        0 4px 15px rgba(94, 129, 138, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    z-index: 1;
+}
+
+.btn-enhanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    transition: left 0.6s;
+    z-index: -1;
+}
+
+.btn-enhanced:hover::before {
+    left: 100%;
+}
+
+.btn-enhanced:hover {
+    transform: translateY(-3px);
+    box-shadow: 
+        0 8px 25px rgba(94, 129, 138, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.btn-enhanced:active {
+    transform: translateY(-1px);
+    box-shadow: 
+        0 4px 15px rgba(94, 129, 138, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* 主要按钮 - 主色调 */
+.btn-enhanced.primary {
+    background: linear-gradient(135deg, #50c878, #3aa15e);
+}
+
+.btn-enhanced.primary:hover {
+    background: linear-gradient(135deg, #5ad082, #43b56a);
+}
+
+/* 主要按钮 - 危险色 */
+.btn-enhanced.danger {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+}
+
+.btn-enhanced.danger:hover {
+    background: linear-gradient(135deg, #ff7b7b, #f0655a);
+}
+
+/* 主要按钮 - 成功色 */
+.btn-enhanced.success {
+    background: linear-gradient(135deg, #4ecdc4, #44a08d);
+}
+
+.btn-enhanced.success:hover {
+    background: linear-gradient(135deg, #5dd6ce, #4fb39d);
+}
+
+/* 主要按钮 - 警告色 */
+.btn-enhanced.warning {
+    background: linear-gradient(135deg, #ffd166, #ffb347);
+}
+
+.btn-enhanced.warning:hover {
+    background: linear-gradient(135deg, #ffe08c, #ffc267);
+}
+
+/* 次要按钮 - 透明边框风格 */
+.btn-enhanced.secondary {
+    background: transparent;
+    border: 2px solid #7e95a6;
+    color: #7e95a6;
+    box-shadow: none;
+}
+
+.btn-enhanced.secondary:hover {
+    background: rgba(126, 149, 166, 0.1);
+    border-color: #5a7b8c;
+    color: #5a7b8c;
+}
+
+/* 图标按钮 - 圆形设计 */
+.btn-enhanced.icon-btn {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 50%;
+    min-width: 48px;
+}
+
+.btn-enhanced.icon-btn.medium {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+}
+
+.btn-enhanced.icon-btn.small {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+}
+
+/* SVG图标统一样式 */
+.btn-enhanced svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    color: inherit;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    z-index: 2;
+}
+
+.btn-enhanced.icon-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+.btn-enhanced.icon-btn.medium svg {
+    width: 18px;
+    height: 18px;
+}
+
+.btn-enhanced.icon-btn.small svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* 悬停时SVG动画效果 */
+.btn-enhanced:hover svg {
+    transform: scale(1.15) rotate(5deg);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.btn-enhanced.primary:hover svg {
+    filter: drop-shadow(0 2px 4px rgba(0, 100, 0, 0.3));
+}
+
+.btn-enhanced.danger:hover svg {
+    filter: drop-shadow(0 2px 4px rgba(200, 0, 0, 0.3));
+}
+
+.btn-enhanced.success:hover svg {
+    filter: drop-shadow(0 2px 4px rgba(0, 120, 100, 0.3));
+}
+
+.btn-enhanced.warning:hover svg {
+    filter: drop-shadow(0 2px 4px rgba(200, 120, 0, 0.3));
+}
+
+/* 禁用状态 */
+.btn-enhanced:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.btn-enhanced:disabled:hover {
+    transform: none;
+}
+
+.btn-enhanced:disabled:hover::before {
+    left: -100%;
+}
+
+/* 加载状态 */
+.btn-enhanced.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.btn-enhanced.loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.btn-enhanced.loading span {
+    visibility: hidden;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 特殊效果按钮 */
+.btn-enhanced.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(78, 205, 196, 0.4); }
+    70% { box-shadow: 0 0 0 12px rgba(78, 205, 196, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(78, 205, 196, 0); }
+}
+
+.btn-enhanced.glow {
+    box-shadow: 
+        0 4px 15px rgba(94, 129, 138, 0.3),
+        0 0 20px rgba(94, 129, 138, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-enhanced.glow:hover {
+    box-shadow: 
+        0 8px 25px rgba(94, 129, 138, 0.4),
+        0 0 30px rgba(94, 129, 138, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* 创意SVG图标定义 */
+.svg-icon-send {
+    width: 100%;
+    height: 100%;
+}
+
+.svg-icon-send .arrow {
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
+    animation: draw-arrow 0.6s ease-in-out forwards;
+}
+
+@keyframes draw-arrow {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.svg-icon-settings {
+    width: 100%;
+    height: 100%;
+    animation: rotate-settings 4s linear infinite;
+}
+
+@keyframes rotate-settings {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.svg-icon-heart {
+    width: 100%;
+    height: 100%;
+}
+
+.svg-icon-heart:hover {
+    animation: heartbeat 1.2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+    0% { transform: scale(1); }
+    5% { transform: scale(1.1); }
+    10% { transform: scale(1); }
+    15% { transform: scale(1.15); }
+    50% { transform: scale(1); }
+    100% { transform: scale(1); }
+}
+
+.svg-icon-star {
+    width: 100%;
+    height: 100%;
+}
+
+.svg-icon-star:hover {
+    animation: twinkle 1s ease-in-out;
+}
+
+@keyframes twinkle {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    50% { transform: scale(1.2) rotate(10deg); opacity: 0.9; }
+}
+
+/* 按钮组样式 */
+.btn-group {
+    display: inline-flex;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-group .btn-enhanced {
+    border-radius: 0;
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-group .btn-enhanced:first-child {
+    border-radius: 12px 0 0 12px;
+}
+
+.btn-group .btn-enhanced:last-child {
+    border-radius: 0 12px 12px 0;
+}
+
+.btn-group .btn-enhanced:not(:first-child) {
+    border-left: none;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .btn-enhanced {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+    
+    .btn-enhanced.icon-btn {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+    }
+    
+    .btn-enhanced.icon-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* 深色主题适配 */
+[data-theme="dark"] .btn-enhanced {
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .btn-enhanced:hover {
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .btn-enhanced.secondary {
+    border: 2px solid #64748b;
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .btn-enhanced.secondary:hover {
+    background: rgba(100, 116, 139, 0.2);
+    border-color: #94a3b8;
+    color: #e2e8f0;
+}

@@ -1,0 +1,30 @@
+/* ============================================
+   Ollama Hub - CSS 模块化入口
+   
+   所有样式已拆分到独立模块文件：
+   - variables.css - CSS变量系统
+   - base.css - 基础重置
+   - layout.css - 布局样式
+   - header.css - 头部导航
+   - theme-toggle.css - 主题切换
+   - welcome.css - 欢迎页面
+   - components.css - 通用组件
+   - models.css - 模型管理
+   - chat.css - 智能对话
+   - chat-image.css - 对话图片
+   - group-chat.css - 群组对话
+   - hybrid_group_chat.css - 混合群聊
+   - vision.css - 视觉理解
+   - image-gen.css - 图片生成
+   - settings.css - 设置页面
+   - modal.css - 模态框
+   - toast.css - 通知提示
+   - upload.css - 文件上传
+   - share.css - 协作分享
+   - folder.css - 文件夹管理
+   - summary-panel.css - 摘要面板
+   - scrollbar.css - 滚动条
+   - responsive.css - 响应式
+   
+   此文件仅作为文档参考，实际样式在模块文件中
+   ============================================ */

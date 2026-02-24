@@ -1,0 +1,62 @@
+/* ============================================
+   主题切换按钮
+   ============================================ */
+.theme-toggle {
+    position: fixed;
+    top: 16px;
+    right: 24px;
+    z-index: 1000;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    background-color: var(--bg-secondary);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-base);
+    border: 2px solid var(--border-color);
+}
+
+.theme-toggle:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-lg);
+}
+
+.theme-toggle .icon-sun,
+.theme-toggle .icon-moon {
+    width: 22px;
+    height: 22px;
+    position: absolute;
+    transition: all var(--transition-base);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2));
+}
+
+.theme-toggle .icon-moon {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+}
+
+[data-theme="dark"] .theme-toggle .icon-sun {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.5);
+}
+
+[data-theme="dark"] .theme-toggle .icon-moon {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+    filter: drop-shadow(0 0 8px rgba(245, 230, 211, 0.6));
+    animation: moonGlow 3s ease-in-out infinite;
+}
+
+@keyframes moonGlow {
+    0%, 100% {
+        filter: drop-shadow(0 0 8px rgba(245, 230, 211, 0.5));
+    }
+    50% {
+        filter: drop-shadow(0 0 14px rgba(245, 230, 211, 0.8));
+    }
+}

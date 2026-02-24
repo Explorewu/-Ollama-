@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap');
+/* ============================================
+   基础样式重置
+   ============================================ */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: var(--font-size-base);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-body);
+    background-image: var(--app-bg);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
+    color: var(--text-primary);
+    line-height: var(--line-height-base);
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background-color var(--duration-slow) var(--ease-smooth), 
+                color var(--duration-slow) var(--ease-smooth);
+}
+
+/* 性能优化：减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* GPU加速优化 */
+.gpu-accelerate {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: transform;
+}
+
+/* 主题切换过渡 */
+.theme-transitioning,
+.theme-transitioning * {
+    transition: background-color var(--duration-slow) var(--ease-smooth),
+                color var(--duration-slow) var(--ease-smooth),
+                border-color var(--duration-slow) var(--ease-smooth),
+                box-shadow var(--duration-slow) var(--ease-smooth) !important;
+}
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color var(--duration-fast) var(--ease-smooth);
+}
+
+a:hover {
+    color: var(--primary-hover);
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-size: inherit;
+    touch-action: manipulation;
+}
+
+input, textarea, select {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    content-visibility: auto;
+}
+
+/* 焦点可见性优化 */
+:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+    outline: none;
+}

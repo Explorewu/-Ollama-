@@ -1,0 +1,423 @@
+/* ============================================
+   艺术风格全屏欢迎页面 - 万马奔腾主题
+   ============================================ */
+.artistic-welcome {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: linear-gradient(180deg, #2d1810 0%, #1a0f08 100%);
+}
+
+.artistic-welcome.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+
+/* 背景SVG */
+.welcome-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.horses-svg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Canvas 马群动画 */
+.horse-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+/* 欢迎内容 */
+.welcome-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 40px 50px;
+    background: rgba(26, 15, 8, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid rgba(212, 165, 116, 0.3);
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    max-width: 520px;
+    animation: welcomeFadeIn 1s ease-out;
+}
+
+@keyframes welcomeFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* 标题 */
+.welcome-title h1 {
+    font-size: 42px;
+    font-weight: 700;
+    color: #e8c9a0;
+    margin: 0 0 10px 0;
+    letter-spacing: 3px;
+    text-shadow: 0 3px 15px rgba(0, 0, 0, 0.5);
+    background: linear-gradient(135deg, #e8c9a0 0%, #d4a574 50%, #c9956b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.welcome-title .subtitle {
+    font-size: 14px;
+    color: rgba(232, 201, 160, 0.8);
+    margin: 0 0 30px 0;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+}
+
+/* 功能特性 */
+.welcome-features {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 14px;
+    background: rgba(212, 165, 116, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(212, 165, 116, 0.2);
+    transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+    background: rgba(212, 165, 116, 0.2);
+    transform: translateY(-2px);
+}
+
+.feature-icon {
+    font-size: 16px;
+}
+
+.feature-text {
+    font-size: 12px;
+    color: rgba(232, 201, 160, 0.9);
+    font-weight: 500;
+}
+
+/* 进入按钮 - 圆润胶囊风格 */
+.enter-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 40px;
+    background: linear-gradient(135deg, #e8c9a0 0%, #d4a574 50%, #c9956b 100%);
+    border: none;
+    border-radius: 40px;
+    color: #1a0f08;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+        0 6px 24px rgba(212, 165, 116, 0.35),
+        0 3px 12px rgba(0, 0, 0, 0.2),
+        inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+/* 按钮光泽效果 */
+.enter-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+    );
+    transition: left 0.6s ease;
+}
+
+.enter-btn:hover::before {
+    left: 100%;
+}
+
+.enter-btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 
+        0 12px 32px rgba(212, 165, 116, 0.45),
+        0 6px 16px rgba(0, 0, 0, 0.2),
+        0 0 20px rgba(232, 201, 160, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.4);
+    background: linear-gradient(135deg, #f0d4a8 0%, #e8c9a0 50%, #d4a574 100%);
+}
+
+.enter-btn:active {
+    transform: translateY(-1px) scale(0.98);
+    box-shadow: 
+        0 3px 12px rgba(212, 165, 116, 0.25),
+        0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.enter-btn svg {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.3s ease;
+}
+
+.enter-btn:hover svg {
+    transform: translateX(4px);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .welcome-content {
+        padding: 30px 24px;
+        margin: 16px;
+    }
+    
+    .welcome-title h1 {
+        font-size: 32px;
+    }
+    
+    .welcome-title .subtitle {
+        font-size: 12px;
+        letter-spacing: 4px;
+    }
+    
+    .welcome-features {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+}
+
+/* CSS 变量定义 - 主题色 */
+:root {
+    /* 浅色主题颜色 */
+    --bg-primary: #f8fafa;
+    --bg-primary-rgb: 248, 250, 250;
+    --bg-secondary: #ffffff;
+    --bg-secondary-rgb: 255, 255, 255;
+    --bg-tertiary: #f0f4f3;
+    --bg-tertiary-rgb: 240, 244, 243;
+    --bg-hover: #e2e8e7;
+    --bg-hover-rgb: 226, 232, 231;
+    
+    --text-primary: #1a3636;
+    --text-secondary: #4a5e5e;
+    --text-muted: #8a9e9e;
+    --text-inverse: #ffffff;
+    
+    --border-color: #d4e0df;
+    --border-hover: #b8ccc9;
+    
+    /* 莫兰迪青绿色系 - 主题色 */
+    --primary-color: #7eb5a6;
+    --primary-hover: #6aa392;
+    --primary-light: #c8ddd6;
+    --primary-subtle: #e8f2ef;
+    
+    /* 用户消息 - 柔和青绿渐变 */
+    --user-message-bg: #a8c8ba;
+    --user-message-bg-hover: #7eb5a6;
+    --user-message-gradient-1: #c8ddd6;
+    --user-message-gradient-2: #a8c8ba;
+    --user-message-gradient-3: #8eb8a8;
+    
+    /* AI消息 - 温暖米白渐变 */
+    --ai-message-bg: #f5f7f6;
+    --ai-message-bg-hover: #eef1ef;
+    --ai-message-border: #dce2e0;
+    --ai-message-gradient-1: #ffffff;
+    --ai-message-gradient-2: #f8fafa;
+    
+    /* 辅助色 - 莫兰迪色系 */
+    --success-color: #7eb5a6;
+    --warning-color: #d4c5a3;
+    --error-color: #c9a8a8;
+    --info-color: #a8b8c9;
+    
+    /* 语义化颜色 */
+    --accent-color: #6b9e92;
+    --accent-hover: #5a8a80;
+    
+    /* 阴影 - 柔和有机感 */
+    --shadow-sm: 0 1px 3px 0 rgb(126 181 166 / 0.08);
+    --shadow-md: 0 4px 12px -2px rgb(126 181 166 / 0.12), 0 2px 6px -2px rgb(126 181 166 / 0.08);
+    --shadow-lg: 0 8px 24px -4px rgb(126 181 166 / 0.16), 0 4px 8px -4px rgb(126 181 166 / 0.10);
+    --shadow-xl: 0 16px 48px -8px rgb(126 181 166 / 0.20), 0 8px 16px -8px rgb(126 181 166 / 0.12);
+    --shadow-glow: 0 0 32px 4px rgb(126 181 166 / 0.15);
+    
+    /* 圆角 - 更圆润的有机形态 */
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+    --radius-full: 9999px;
+    
+    /* 过渡 - 自然流畅 */
+    --transition-fast: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 450ms cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* 字体 - 优雅衬线与有机自然风格 */
+    --font-display: 'Playfair Display', 'Cormorant Garamond', 'Georgia', serif;
+    --font-sans: 'Comfortaa', 'Nunito', 'Quicksand', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Monaco, Consolas, monospace;
+    --font-size-base: 16px;
+    --line-height-base: 1.7;
+
+    /* 银河Logo智能对比度系统 - 浅色主题 */
+    --galaxy-bg-brightness: 0.95;
+    --galaxy-contrast-enhance: 1.3;
+    --galaxy-saturation: 1.4;
+    --galaxy-blend-mode: multiply;
+    
+    /* 银河Logo颜色 - 浅色主题（莫兰迪金色系） */
+    --galaxy-core-gradient-1: #F5E6D3;
+    --galaxy-core-gradient-2: #E8D5B7;
+    --galaxy-core-gradient-3: #DBC4AB;
+    --galaxy-core-gradient-4: #CEB39F;
+    --galaxy-core-gradient-5: #C1A293;
+    --galaxy-core-gradient-6: #B49087;
+    --galaxy-core-gradient-7: #A77E7B;
+    --galaxy-core-gradient-8: #FFF8E7;
+    
+    --galaxy-glow-color-1: rgba(245, 230, 211, 0.95);
+    --galaxy-glow-color-2: rgba(245, 230, 211, 0.85);
+    --galaxy-glow-color-3: rgba(219, 196, 171, 0.75);
+    --galaxy-glow-color-4: rgba(219, 196, 171, 0.65);
+    --galaxy-glow-color-5: rgba(193, 162, 147, 0.55);
+    --galaxy-glow-color-6: rgba(180, 144, 135, 0.45);
+    --galaxy-glow-color-7: rgba(167, 126, 119, 0.35);
+    
+    --galaxy-ring-color-1: rgba(245, 230, 211, 0.95);
+    --galaxy-ring-color-2: rgba(219, 196, 171, 0.8);
+    --galaxy-ring-color-3: rgba(193, 162, 147, 0.6);
+    --galaxy-ring-color-4: rgba(180, 144, 135, 0.4);
+    
+    --galaxy-star-color-1: rgba(245, 230, 211, 1);
+    --galaxy-star-color-2: rgba(255, 250, 205, 0.9);
+    --galaxy-star-color-3: rgba(219, 196, 171, 0.8);
+    --galaxy-star-color-4: rgba(193, 162, 147, 0.6);
+    
+    --galaxy-shadow-color: rgba(167, 126, 119, 0.4);
+}
+
+/* 深色主题颜色 - 莫兰迪青绿 */
+[data-theme="dark"] {
+    --bg-primary: #0d1f1d;
+    --bg-primary-rgb: 13, 31, 29;
+    --bg-secondary: #152a28;
+    --bg-secondary-rgb: 21, 42, 40;
+    --bg-tertiary: #1d3634;
+    --bg-tertiary-rgb: 29, 54, 52;
+    --bg-hover: #2a4543;
+    --bg-hover-rgb: 42, 69, 67;
+    
+    --text-primary: #e8f0ef;
+    --text-secondary: #b8ccc9;
+    --text-muted: #6a8e8a;
+    --text-inverse: #152a28;
+    
+    --border-color: #2a4543;
+    --border-hover: #3a5e5b;
+    
+    /* 莫兰迪青绿色 - 深色主题 */
+    --primary-color: #7eb5a6;
+    --primary-hover: #8fc4b6;
+    --primary-light: #1d3634;
+    --primary-subtle: #0d1f1d;
+    
+    /* 用户消息 - 深色主题青绿渐变 */
+    --user-message-bg: #3a5e5b;
+    --user-message-bg-hover: #4a7570;
+    --user-message-gradient-1: #3a5e5b;
+    --user-message-gradient-2: #2a4a47;
+    --user-message-gradient-3: #1d3a37;
+    
+    /* AI消息 - 深色主题米白 */
+    --ai-message-bg: #1d3634;
+    --ai-message-bg-hover: #254442;
+    --ai-message-border: #3a5e5b;
+    --ai-message-gradient-1: #1d3634;
+    --ai-message-gradient-2: #1a3230;
+    
+    /* 阴影 - 深色主题 */
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.5), 0 2px 6px -2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 8px 24px -4px rgb(0 0 0 / 0.6), 0 4px 8px -4px rgb(0 0 0 / 0.5);
+    --shadow-xl: 0 16px 48px -8px rgb(0 0 0 / 0.7), 0 8px 16px -8px rgb(0 0 0 / 0.6);
+    --shadow-glow: 0 0 32px 4px rgb(126 181 166 / 0.20);
+
+    /* 银河Logo智能对比度系统 - 深色主题 */
+    --galaxy-bg-brightness: 1.05;
+    --galaxy-contrast-enhance: 1.1;
+    --galaxy-saturation: 1.2;
+    --galaxy-blend-mode: screen;
+    
+    /* 银河Logo颜色 - 深色主题（莫兰迪金色系） */
+    --galaxy-core-gradient-1: #F5E6D3;
+    --galaxy-core-gradient-2: #E8D5B7;
+    --galaxy-core-gradient-3: #DBC4AB;
+    --galaxy-core-gradient-4: #CEB39F;
+    --galaxy-core-gradient-5: #C1A293;
+    --galaxy-core-gradient-6: #B49087;
+    --galaxy-core-gradient-7: #A77E7B;
+    --galaxy-core-gradient-8: #FFF8E7;
+    
+    --galaxy-glow-color-1: rgba(245, 230, 211, 1);
+    --galaxy-glow-color-2: rgba(245, 230, 211, 0.9);
+    --galaxy-glow-color-3: rgba(219, 196, 171, 0.95);
+    --galaxy-glow-color-4: rgba(219, 196, 171, 0.85);
+    --galaxy-glow-color-5: rgba(193, 162, 147, 0.7);
+    --galaxy-glow-color-6: rgba(180, 144, 135, 0.5);
+    --galaxy-glow-color-7: rgba(167, 126, 119, 0.3);
+    
+    --galaxy-ring-color-1: rgba(245, 230, 211, 0.95);
+    --galaxy-ring-color-2: rgba(219, 196, 171, 0.7);
+    --galaxy-ring-color-3: rgba(193, 162, 147, 0.5);
+    --galaxy-ring-color-4: rgba(180, 144, 135, 0.3);
+    
+    --galaxy-star-color-1: rgba(245, 230, 211, 1);
+    --galaxy-star-color-2: rgba(255, 250, 205, 0.8);
+    --galaxy-star-color-3: rgba(219, 196, 171, 0.6);
+    --galaxy-star-color-4: rgba(193, 162, 147, 0.4);
+    
+    --galaxy-shadow-color: rgba(167, 126, 119, 0.3);
+}

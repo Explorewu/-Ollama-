@@ -1,0 +1,58 @@
+# 大模型文件 - 本地下载，不推送
+models/
+fine_tuned_models/
+trained_model/
+prebuilt/
+ollama.exe
+.ollama/
+.ollama_cache/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+.cache/
+
+# 日志文件
+*.log
+rag_system.log
+
+# 临时文件
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# 环境配置
+.env
+.env.local
+.env.*
+
+# 构建产物
+*.egg-info/
+dist/
+build/
+
+# IDE 配置
+.idea/
+.vscode/
+*.iml
+
+# 压缩包
+*.zip
+*.rar
+*.7z
+
+# 图片缓存
+cache/
+generated_landscape.png
+
+# 大型第三方库 - 不推送
+llama.cpp/
+lib/
+ollama/
+scripts/
+server/
+web/node_modules/
+web/dist/
+web/build/

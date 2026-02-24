@@ -1,0 +1,48 @@
+{
+  "743ca7e5ac01": {
+    "id": "743ca7e5ac01",
+    "title": "测试会话",
+    "messages": [
+      {
+        "role": "user",
+        "content": "你好",
+        "timestamp": 1771925481.378329
+      }
+    ],
+    "summaries": [],
+    "created_at": 1771925458.5681286,
+    "updated_at": 1771925481.378331,
+    "message_count": 1,
+    "is_archived": false
+  },
+  "5f05fc65f4a9": {
+    "id": "5f05fc65f4a9",
+    "title": "测试会话",
+    "messages": [],
+    "summaries": [],
+    "created_at": 1771926091.8975015,
+    "updated_at": 1771926091.8975015,
+    "message_count": 0,
+    "is_archived": false
+  },
+  "5a813a36b75a": {
+    "id": "5a813a36b75a",
+    "title": "测试",
+    "messages": [],
+    "summaries": [],
+    "created_at": 1771926362.749057,
+    "updated_at": 1771926362.749057,
+    "message_count": 0,
+    "is_archived": false
+  },
+  "755d6ca24965": {
+    "id": "755d6ca24965",
+    "title": "测试",
+    "messages": [],
+    "summaries": [],
+    "created_at": 1771926541.2111714,
+    "updated_at": 1771926541.2111714,
+    "message_count": 0,
+    "is_archived": false
+  }
+}

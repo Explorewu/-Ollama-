@@ -1,0 +1,36 @@
+/* Enhanced chat aesthetic: glass surfaces, soft glow for a premium chat experience */
+.chat-overlay .chat-history {
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 14px 28px rgba(0,0,0,0.08);
+}
+
+.chat-overlay #chatOverlayHistory .message-content {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 12px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.chat-overlay .chat-input-area {
+    padding: 14px 18px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(0,0,0,0.08);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.chat-overlay textarea#overlayChatInput {
+    background: transparent;
+}
+
+/* Hover polish for readability */
+.chat-overlay .chat-history .message-content:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+}

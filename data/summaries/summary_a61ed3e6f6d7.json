@@ -1,0 +1,48 @@
+{
+  "id": "summary_a61ed3e6f6d7",
+  "conversation_id": "test123",
+  "created_at": 1771925902742,
+  "updated_at": 1771925902742,
+  "overview": "你好 你好，有什么可以帮你的。",
+  "key_points": [
+    "你好 你好，有什么可以帮你的"
+  ],
+  "topics": [],
+  "viewpoints": [
+    {
+      "participant": "",
+      "message_count": 1,
+      "sentiment": {
+        "label": "positive",
+        "score": 1.0
+      },
+      "key_points": [],
+      "keywords": [],
+      "stance": "supportive"
+    }
+  ],
+  "timeline": [
+    {
+      "start_time": 1234567890,
+      "end_time": 1234567891,
+      "duration_minutes": 1.6666666666666667e-05,
+      "message_count": 2,
+      "participants": [
+        ""
+      ],
+      "keywords": [],
+      "type": "discussing",
+      "summary": "从\"你好...\"到\"你好，有什么可以帮你的...\""
+    }
+  ],
+  "conclusions": [
+    "参与者普遍达成共识，观点较为一致。"
+  ],
+  "message_count": 2,
+  "participant_count": 1,
+  "duration_minutes": 0,
+  "confidence_score": 0.25,
+  "version": 1,
+  "is_edited": false,
+  "edited_by": ""
+}

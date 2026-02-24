@@ -1,0 +1,624 @@
+/* ============================================
+   视觉理解页面样式 - 油画 + 液态玻璃风格
+   ============================================ */
+
+/* 页面容器 */
+#vision-page {
+    min-height: 100vh;
+    padding: 24px;
+    box-sizing: border-box;
+    background: 
+        var(--oil-noise-url),
+        linear-gradient(180deg, var(--oil-bg-primary) 0%, var(--oil-bg-secondary) 100%);
+    background-blend-mode: soft-light, normal;
+}
+
+/* 页面头部 */
+#vision-page .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--oil-border-light);
+}
+
+#vision-page .page-header-title h2 {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--oil-text-primary);
+    margin: 0 0 8px 0;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+#vision-page .page-header-title .subtitle {
+    font-size: 14px;
+    color: var(--oil-text-muted);
+    margin: 0;
+}
+
+/* 状态指示器 - 液态玻璃风格 */
+.vision-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    border-radius: 24px;
+    background: var(--liquid-glass-bg);
+    backdrop-filter: var(--liquid-glass-blur);
+    -webkit-backdrop-filter: var(--liquid-glass-blur);
+    border: 1px solid var(--liquid-glass-border);
+    font-size: 13px;
+    color: var(--oil-text-secondary);
+    box-shadow: var(--liquid-glass-shadow);
+}
+
+.vision-status .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--oil-text-muted);
+    animation: pulse-glow 2s ease-in-out infinite;
+    box-shadow: 0 0 8px currentColor;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { 
+        opacity: 1; 
+        transform: scale(1);
+        box-shadow: 0 0 8px currentColor;
+    }
+    50% { 
+        opacity: 0.6; 
+        transform: scale(0.9);
+        box-shadow: 0 0 4px currentColor;
+    }
+}
+
+.vision-status.online {
+    border-color: rgba(76, 175, 80, 0.4);
+}
+
+.vision-status.online .status-dot {
+    background: #4caf50;
+    color: #4caf50;
+}
+
+.vision-status.offline .status-dot {
+    background: #f44336;
+    color: #f44336;
+    animation: none;
+}
+
+.vision-status.loading .status-dot {
+    background: #ff9800;
+    color: #ff9800;
+}
+
+/* 主容器 - 双栏布局 */
+.vision-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* 液态玻璃卡片 */
+.vision-card {
+    background: var(--liquid-glass-bg);
+    backdrop-filter: var(--liquid-glass-blur);
+    -webkit-backdrop-filter: var(--liquid-glass-blur);
+    border: 1px solid var(--liquid-glass-border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--liquid-glass-shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+/* 卡片光泽边框效果 */
+.vision-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(212, 175, 125, 0.1),
+        transparent
+    );
+    transition: left 0.6s ease;
+    pointer-events: none;
+}
+
+.vision-card:hover::before {
+    left: 100%;
+}
+
+.vision-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--oil-border-medium),
+        transparent
+    );
+}
+
+/* 上传区域 */
+.vision-upload-section .vision-card {
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.upload-area {
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
+    border: 2px dashed var(--oil-border-medium);
+    border-radius: 16px;
+    padding: 48px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+/* 上传区域悬停光泽 */
+.upload-area::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(212, 175, 125, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.5s ease;
+}
+
+.upload-area:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.upload-area:hover {
+    border-color: var(--oil-accent-gold);
+    background: rgba(212, 175, 125, 0.05);
+}
+
+.upload-area.dragover {
+    border-color: var(--oil-accent-amber);
+    background: rgba(255, 191, 0, 0.1);
+    transform: scale(1.02);
+}
+
+.upload-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    color: var(--oil-accent-gold);
+    opacity: 0.8;
+    transition: all 0.4s ease;
+    filter: drop-shadow(0 2px 8px rgba(212, 175, 125, 0.3));
+}
+
+.upload-area:hover .upload-icon {
+    transform: translateY(-4px);
+    opacity: 1;
+}
+
+.upload-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.upload-text {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--oil-text-primary);
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.upload-hint {
+    font-size: 13px;
+    color: var(--oil-text-muted);
+}
+
+/* 图片预览 - 油画边框 */
+.image-preview {
+    position: relative;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.4),
+        inset 0 0 0 2px var(--oil-border-light);
+}
+
+.image-preview img {
+    width: 100%;
+    max-height: 350px;
+    object-fit: contain;
+    display: block;
+    background: #000;
+}
+
+/* 移除图片按钮 - 油画风格 */
+.remove-image-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--oil-border-medium);
+    background: rgba(26, 21, 16, 0.8);
+    backdrop-filter: blur(8px);
+    color: var(--oil-text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.remove-image-btn:hover {
+    background: rgba(244, 67, 54, 0.9);
+    border-color: #f44336;
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(244, 67, 54, 0.4);
+}
+
+.remove-image-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* 操作区域 */
+.vision-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 提示词输入 - 液态玻璃 */
+.prompt-input-wrapper {
+    position: relative;
+}
+
+.prompt-input-wrapper textarea {
+    width: 100%;
+    padding: 16px 20px;
+    border: 1px solid var(--liquid-glass-border);
+    border-radius: 16px;
+    background: var(--liquid-glass-bg);
+    backdrop-filter: var(--liquid-glass-blur);
+    -webkit-backdrop-filter: var(--liquid-glass-blur);
+    color: var(--oil-text-primary);
+    font-size: 15px;
+    font-family: var(--font-sans);
+    resize: vertical;
+    min-height: 80px;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.prompt-input-wrapper textarea::placeholder {
+    color: var(--oil-text-muted);
+}
+
+.prompt-input-wrapper textarea:focus {
+    outline: none;
+    border-color: var(--oil-accent-gold);
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.2),
+        0 0 0 3px rgba(212, 175, 125, 0.2);
+}
+
+/* 操作按钮组 */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.action-buttons .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.action-buttons .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.1),
+        transparent
+    );
+    transition: left 0.5s ease;
+}
+
+.action-buttons .btn:hover::before {
+    left: 100%;
+}
+
+.action-buttons .btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* 次要按钮 - 液态玻璃 */
+.action-buttons .btn-secondary {
+    background: var(--liquid-glass-bg);
+    backdrop-filter: var(--liquid-glass-blur);
+    -webkit-backdrop-filter: var(--liquid-glass-blur);
+    border: 1px solid var(--liquid-glass-border);
+    color: var(--oil-text-secondary);
+}
+
+.action-buttons .btn-secondary:hover {
+    border-color: var(--oil-accent-gold);
+    color: var(--oil-accent-gold);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212, 175, 125, 0.2);
+}
+
+/* 主要按钮 - 油画金铜渐变 */
+.action-buttons .btn-primary {
+    background: linear-gradient(135deg, var(--oil-accent-copper), var(--oil-accent-gold));
+    border: none;
+    color: #1a1510;
+    font-weight: 600;
+    box-shadow: 
+        0 4px 16px rgba(212, 175, 125, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.action-buttons .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 24px rgba(212, 175, 125, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, var(--oil-accent-gold), #e5c190);
+}
+
+.action-buttons .btn-primary:disabled {
+    background: var(--oil-text-muted);
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 结果展示区 - 油画框 */
+.vision-result {
+    background: var(--liquid-glass-bg);
+    backdrop-filter: var(--liquid-glass-blur);
+    -webkit-backdrop-filter: var(--liquid-glass-blur);
+    border: 1px solid var(--liquid-glass-border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--liquid-glass-shadow);
+    position: relative;
+}
+
+/* 油画边框效果 */
+.vision-result::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 2px;
+    background: linear-gradient(
+        135deg,
+        var(--oil-border-light),
+        transparent 50%,
+        var(--oil-border-light)
+    );
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--oil-border-light);
+}
+
+.result-header h3 {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--oil-accent-gold);
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.result-time {
+    font-size: 12px;
+    color: var(--oil-text-muted);
+}
+
+.result-content {
+    font-size: 15px;
+    line-height: 1.9;
+    color: var(--oil-text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+/* 结果操作按钮 */
+.result-actions {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--oil-border-light);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.result-actions .btn-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--oil-border-light);
+    border-radius: 8px;
+    color: var(--oil-text-secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.result-actions .btn-sm:hover {
+    background: var(--oil-accent-gold);
+    border-color: var(--oil-accent-gold);
+    color: #1a1510;
+}
+
+.result-actions .btn-sm svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* 加载动画 */
+.vision-loading {
+    text-align: center;
+    padding: 48px;
+    color: var(--oil-text-secondary);
+}
+
+.loading-spinner {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 16px;
+}
+
+.loading-spinner span {
+    width: 8px;
+    height: 8px;
+    background: var(--oil-accent-gold);
+    border-radius: 50%;
+    animation: dot-bounce 1.4s ease-in-out infinite;
+}
+
+.loading-spinner span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.loading-spinner span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes dot-bounce {
+    0%, 80%, 100% {
+        transform: scale(0.6);
+        opacity: 0.4;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* 滚动条样式 */
+.vision-result .result-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.vision-result .result-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.vision-result .result-content::-webkit-scrollbar-thumb {
+    background: var(--oil-border-medium);
+    border-radius: 3px;
+}
+
+.vision-result .result-content::-webkit-scrollbar-thumb:hover {
+    background: var(--oil-accent-gold);
+}
+
+/* 响应式布局 */
+@media (max-width: 1024px) {
+    .vision-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    #vision-page {
+        padding: 16px;
+    }
+    
+    #vision-page .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    #vision-page .page-header-title h2 {
+        font-size: 22px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

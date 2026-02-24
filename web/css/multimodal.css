@@ -1,0 +1,347 @@
+/* ============================================
+   多模态功能样式 - 图片生成与视觉分析
+   ============================================ */
+
+/* 图片生成进度动画 */
+.image-gen-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+    gap: 16px;
+}
+
+.progress-animation {
+    display: flex;
+    gap: 4px;
+    height: 40px;
+    align-items: center;
+}
+
+.wave-bar {
+    width: 6px;
+    height: 20px;
+    background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+    border-radius: 3px;
+    animation: waveAnimation 1.2s ease-in-out infinite;
+}
+
+.wave-bar:nth-child(1) { animation-delay: 0s; }
+.wave-bar:nth-child(2) { animation-delay: 0.1s; }
+.wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.wave-bar:nth-child(4) { animation-delay: 0.3s; }
+.wave-bar:nth-child(5) { animation-delay: 0.4s; }
+
+@keyframes waveAnimation {
+    0%, 100% {
+        height: 20px;
+        opacity: 0.6;
+    }
+    50% {
+        height: 40px;
+        opacity: 1;
+    }
+}
+
+.progress-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.progress-prompt {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin: 0;
+    max-width: 300px;
+    text-align: center;
+    word-break: break-word;
+}
+
+/* 生成的图片容器 */
+.generated-image-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 520px;
+}
+
+.generated-image {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-out);
+    cursor: pointer;
+    animation: imageReveal 0.5s var(--ease-spring) forwards;
+}
+
+.generated-image:hover {
+    transform: scale(1.02);
+    box-shadow: var(--shadow-lg);
+}
+
+@keyframes imageReveal {
+    0% {
+        opacity: 0;
+        transform: scale(0.9);
+        filter: blur(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+    }
+}
+
+.image-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.meta-item {
+    background: var(--bg-tertiary);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.image-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.image-actions .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s var(--ease-smooth);
+}
+
+.image-actions .btn-secondary:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--primary-color);
+}
+
+.image-actions .btn-secondary:active {
+    transform: scale(0.97);
+}
+
+/* 图片预览覆盖层 */
+.image-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    animation: fadeIn 0.2s var(--ease-out);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.image-preview-container {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    animation: zoomIn 0.3s var(--ease-spring);
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.image-preview-container img {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.close-preview-btn {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s var(--ease-smooth);
+}
+
+.close-preview-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+/* 视觉分析加载状态 */
+.vision-analyzing {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.vision-analyzing .spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.vision-analyzing .text {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* 图片上传预览优化 */
+.chat-image-preview {
+    position: relative;
+    max-width: 200px;
+    margin: 8px 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.chat-image-preview img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.chat-image-preview .remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s var(--ease-smooth);
+}
+
+.chat-image-preview:hover .remove-btn {
+    opacity: 1;
+}
+
+/* 消息中的图片 */
+.message-image {
+    max-width: 300px;
+    border-radius: var(--radius-md);
+    margin-top: 8px;
+    cursor: pointer;
+    transition: transform 0.2s var(--ease-spring);
+}
+
+.message-image:hover {
+    transform: scale(1.02);
+}
+
+/* 错误消息样式 */
+.error-message {
+    padding: 16px;
+    background: rgba(var(--error-rgb, 239, 68, 68), 0.1);
+    border: 1px solid rgba(var(--error-rgb, 239, 68, 68), 0.3);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+}
+
+.error-message p {
+    margin: 0 0 8px 0;
+}
+
+.error-message ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--text-secondary);
+}
+
+.error-message li {
+    margin: 4px 0;
+}
+
+/* 性能优化：GPU加速 */
+.generated-image,
+.image-preview-container,
+.wave-bar,
+.vision-analyzing .spinner {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: transform;
+}
+
+/* 减少动画偏好支持 */
+@media (prefers-reduced-motion: reduce) {
+    .wave-bar,
+    .generated-image,
+    .image-preview-container,
+    .vision-analyzing .spinner {
+        animation: none;
+    }
+    
+    .generated-image {
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .generated-image-container {
+        max-width: 100%;
+    }
+    
+    .image-actions {
+        justify-content: center;
+    }
+    
+    .image-preview-overlay {
+        padding: 20px;
+    }
+}

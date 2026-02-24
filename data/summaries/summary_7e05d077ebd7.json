@@ -1,0 +1,46 @@
+{
+  "id": "summary_7e05d077ebd7",
+  "conversation_id": "test_verify",
+  "created_at": 1771927511017,
+  "updated_at": 1771927511017,
+  "overview": "本次讨论涉及多个话题，参与者积极交流观点。",
+  "key_points": [],
+  "topics": [],
+  "viewpoints": [
+    {
+      "participant": "",
+      "message_count": 1,
+      "sentiment": {
+        "label": "positive",
+        "score": 1.0
+      },
+      "key_points": [],
+      "keywords": [],
+      "stance": "supportive"
+    }
+  ],
+  "timeline": [
+    {
+      "start_time": 1234567890,
+      "end_time": 1234567891,
+      "duration_minutes": 1.6666666666666667e-05,
+      "message_count": 2,
+      "participants": [
+        ""
+      ],
+      "keywords": [],
+      "type": "discussing",
+      "summary": "从\"你好...\"到\"你好啊...\""
+    }
+  ],
+  "conclusions": [
+    "参与者普遍达成共识，观点较为一致。"
+  ],
+  "message_count": 2,
+  "participant_count": 1,
+  "duration_minutes": 0,
+  "confidence_score": 0.25,
+  "version": 1,
+  "is_edited": false,
+  "edited_by": ""
+}

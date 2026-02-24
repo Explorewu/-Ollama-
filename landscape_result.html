@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>风景图像生成结果</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+        
+        .image-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .generated-image {
+            max-width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 5px solid white;
+        }
+        
+        .info-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .value {
+            color: #333;
+        }
+        
+        .success-message {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .action-buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(45deg, #6c757d, #5a6268);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 风景图像生成成功</h1>
+        <p class="subtitle">使用本地 llama.cpp 图像生成服务</p>
+        
+        <div class="success-message">
+            ✅ 图像生成测试完成！风景图已成功生成
+        </div>
+        
+        <div class="image-container">
+            <img src="generated_landscape.png" alt="生成的风景图" class="generated-image" id="landscapeImage">
+        </div>
+        
+        <div class="info-panel">
+            <h3>📊 生成信息</h3>
+            <div class="info-item">
+                <span class="label">提示词:</span>
+                <span class="value">一幅美丽的山水风景画，青山绿水，白云缭绕，远处有连绵的山脉，近处有清澈的湖水，阳光透过云层洒在大地上，画面宁静祥和</span>
+            </div>
+            <div class="info-item">
+                <span class="label">图像尺寸:</span>
+                <span class="value">512 × 512 像素</span>
+            </div>
+            <div class="info-item">
+                <span class="label">生成时间:</span>
+                <span class="value">0.8 秒</span>
+            </div>
+            <div class="info-item">
+                <span class="label">生成模式:</span>
+                <span class="value">高级模拟生成 (当前环境)</span>
+            </div>
+            <div class="info-item">
+                <span class="label">服务状态:</span>
+                <span class="value">✅ 运行中 (端口 5004)</span>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="btn" onclick="location.reload()">
+                🔄 重新生成
+            </button>
+            <button class="btn btn-secondary" onclick="downloadImage()">
+                💾 下载图像
+            </button>
+            <button class="btn btn-secondary" onclick="window.location.href='web/index.html'">
+                🌐 前端界面
+            </button>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; color: #888; font-size: 0.9em;">
+            <p>本地 llama.cpp 图像生成服务 © 2026</p>
+            <p>支持 GGUF 格式模型，智能回退机制确保服务可用性</p>
+        </div>
+    </div>
+
+    <script>
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.href = 'generated_landscape.png';
+            link.download = 'landscape_' + new Date().getTime() + '.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // 图像加载错误处理
+        document.getElementById('landscapeImage').addEventListener('error', function() {
+            this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" fill="%23f0f0f0"/><text x="256" y="256" font-family="Arial" font-size="24" text-anchor="middle" fill="%23666">图像加载中...</text></svg>';
+        });
+    </script>
+</body>
+</html>

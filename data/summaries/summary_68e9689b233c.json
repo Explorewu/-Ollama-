@@ -1,0 +1,32 @@
+{
+  "id": "summary_68e9689b233c",
+  "conversation_id": "test",
+  "created_at": 1771926390041,
+  "updated_at": 1771926390041,
+  "overview": "本次讨论涉及多个话题，参与者积极交流观点。",
+  "key_points": [],
+  "topics": [],
+  "viewpoints": [],
+  "timeline": [
+    {
+      "start_time": 1234567890,
+      "end_time": 1234567890,
+      "duration_minutes": 0.0,
+      "message_count": 1,
+      "participants": [
+        ""
+      ],
+      "keywords": [],
+      "type": "discussing",
+      "summary": "你好..."
+    }
+  ],
+  "conclusions": [],
+  "message_count": 1,
+  "participant_count": 0,
+  "duration_minutes": 0,
+  "confidence_score": 0.15000000000000002,
+  "version": 1,
+  "is_edited": false,
+  "edited_by": ""
+}

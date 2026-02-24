@@ -1,0 +1,143 @@
+/* ============================================
+   响应式设计
+   ============================================ */
+@media (max-width: 1024px) {
+    .conversations-sidebar {
+        display: none;
+    }
+    
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-content {
+        padding: 0 16px;
+    }
+    
+    .nav-tabs {
+        display: none;
+    }
+    
+    .logo h1 {
+        font-size: 18px;
+    }
+    
+    .main-content {
+        padding-top: 80px;
+        padding-bottom: 20px;
+    }
+    
+    .tab-content {
+        padding: 0 16px;
+    }
+    
+    .page-header h2 {
+        font-size: 24px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .models-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+    
+    .theme-options {
+        flex-direction: column;
+    }
+    
+    .modal {
+        margin: 16px;
+        max-height: calc(100vh - 32px);
+    }
+    
+    .toast-container {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+    }
+    
+    .toast {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .theme-toggle {
+        top: 16px;
+        right: 16px;
+        width: 40px;
+        height: 40px;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+}
+
+/* ============================================
+   全屏聊天与气泡宽度修复（最终覆盖）
+   ============================================ */
+.chat-overlay #chatOverlayHistory .message {
+    max-width: 100%;
+    min-width: 0;
+    padding: 4px 8px;
+}
+
+.chat-overlay #chatOverlayHistory .message .message-content,
+#chatHistory .message .message-content {
+    max-width: min(78ch, calc(100vw - 180px));
+    min-width: 0;
+    width: fit-content;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.chat-overlay #chatOverlayHistory .message.user .message-content {
+    margin-left: auto;
+}
+
+.chat-overlay #chatOverlayHistory .message.assistant .message-content {
+    margin-right: auto;
+}
+
+#groupChatOverlayHistory .message-bubble {
+    max-width: min(78ch, calc(100vw - 180px));
+    min-width: 0;
+}
+
+@media (max-width: 1024px) {
+    .chat-overlay #chatOverlayHistory .message .message-content,
+    #chatHistory .message .message-content,
+    #groupChatOverlayHistory .message-bubble {
+        max-width: calc(100vw - 120px);
+    }
+}
+
+@media (max-width: 768px) {
+    .chat-overlay #chatOverlayHistory .message .message-content,
+    #chatHistory .message .message-content,
+    #groupChatOverlayHistory .message-bubble {
+        max-width: calc(100vw - 72px);
+    }
+}
+
+#computerAssistControlToggleBtn.active {
+    color: var(--primary-color);
+    background-color: var(--primary-subtle);
+}

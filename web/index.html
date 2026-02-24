@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama Hub - 本地大模型管理平台</title>
+    <!-- 预加载关键资源 -->
+    <link rel="preload" href="js/core/app.js" as="script">
+    <link rel="preload" href="css/variables.css" as="style">
+    <link rel="preload" href="css/chat.css" as="style">
+    <link rel="preload" href="css/settings.css" as="style">
+    <!-- 基础CSS-->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/theme-toggle.css">
+    <link rel="stylesheet" href="css/welcome.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/models.css">
+    <link rel="stylesheet" href="css/chat.css">
+    <link rel="stylesheet" href="css/chat-enhanced.css">
+    <link rel="stylesheet" href="css/chat-image.css">
+    <link rel="stylesheet" href="css/group-chat.css">
+    <link rel="stylesheet" href="css/hybrid_group_chat.css">
+    <link rel="stylesheet" href="css/settings.css">
+    <link rel="stylesheet" href="css/modal.css">
+    <link rel="stylesheet" href="css/toast.css">
+    <link rel="stylesheet" href="css/upload.css">
+    <link rel="stylesheet" href="css/share.css">
+    <link rel="stylesheet" href="css/folder.css">
+    <link rel="stylesheet" href="css/summary-panel.css">
+    <link rel="stylesheet" href="css/scrollbar.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/enhanced-buttons.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+</head>
+<body>
+    <!-- 艺术风格全屏欢迎页面 -->
+    <div id="artisticWelcome" class="artistic-welcome">
+        <canvas id="horseCanvas" class="horse-canvas"></canvas>
+        <div class="welcome-background">
+                <defs>
+                    <!-- 油画风格渐变 -->
+                    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#2d1810;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#4a2c17;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#6b4423;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="groundGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#3d2817;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#1a0f08;stop-opacity:1" />
+                    </linearGradient>
+                    <!-- 马的剪影渐变 -->
+                    <linearGradient id="horseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#1a0f08;stop-opacity:0.9" />
+                        <stop offset="100%" style="stop-color:#0d0704;stop-opacity:0.95" />
+                    </linearGradient>
+                </defs>
+                
+                <!-- 背景 -->
+                <rect width="1920" height="1080" fill="url(#skyGradient)"/>
+                
+                <!-- 远山轮廓 -->
+                <path d="M0,600 Q200,500 400,550 T800,500 T1200,520 T1600,480 T1920,500 L1920,1080 L0,1080 Z" 
+                      fill="#2d1810" opacity="0.6"/>
+                <path d="M0,650 Q300,580 600,620 T1200,590 T1920,610 L1920,1080 L0,1080 Z" 
+                      fill="#1a0f08" opacity="0.8"/>
+                
+                <!-- 地面 -->
+                <rect y="700" width="1920" height="380" fill="url(#groundGradient)"/>
+                
+                <!-- 万马奔腾 - 马群剪影 -->
+                <!-- 马1 - 领头马 -->
+                <g transform="translate(200, 620) scale(1.2)">
+                    <path d="M50,80 Q60,60 80,55 Q100,50 120,60 Q140,70 150,90 Q160,110 155,130 
+                             Q150,150 140,160 L130,155 Q135,145 138,135 Q140,125 135,115 
+                             L125,120 Q130,130 128,140 Q126,150 120,155 L110,150 
+                             Q115,140 118,130 Q120,120 115,110 L100,115 
+                             Q95,125 90,135 Q85,145 80,140 L70,145 
+                             Q75,135 78,125 Q80,115 75,105 L60,110 
+                             Q55,120 50,130 Q45,140 40,135 L30,140 
+                             Q35,130 38,120 Q40,110 35,100 L25,105 
+                             Q20,115 15,125 Q10,135 5,130 L0,125 
+                             Q10,110 20,95 Q30,80 40,75 Q45,78 50,80 Z" 
+                          fill="url(#horseGradient)"/>
+                    <ellipse cx="85" cy="65" rx="15" ry="12" fill="#1a0f08"/>
+                    <path d="M75,55 Q85,45 95,50" stroke="#1a0f08" stroke-width="3" fill="none"/>
+                </g>
+                
+                <!-- 马2 -->
+                <g transform="translate(450, 650) scale(1.0)">
+                    <path d="M40,70 Q50,55 70,50 Q90,48 110,58 Q130,68 140,85 Q150,105 145,125 
+                             Q140,140 130,150 L120,145 Q125,135 128,125 Q130,115 125,105 
+                             L115,110 Q120,120 118,130 Q116,140 110,145 L100,140 
+                             Q105,130 108,120 Q110,110 105,100 L90,105 
+                             Q85,115 80,125 Q75,135 70,130 L60,135 
+                             Q65,125 68,115 Q70,105 65,95 L50,100 
+                             Q45,110 40,120 Q35,130 30,125 L20,130 
+                             Q25,120 28,110 Q30,100 25,90 L15,95 
+                             Q10,105 5,115 Q0,125 -5,120 L-10,115 
+                             Q0,100 10,85 Q20,72 30,68 Q35,70 40,70 Z" 
+                          fill="#0d0704" opacity="0.85"/>
+                </g>
+                
+                <!-- 马3 -->
+                <g transform="translate(700, 630) scale(0.9)">
+                    <path d="M45,75 Q55,58 75,53 Q95,50 115,60 Q135,70 145,88 Q155,108 150,128 
+                             Q145,145 135,155 L125,150 Q130,140 133,128 Q135,118 130,108 
+                             L120,113 Q125,123 123,133 Q121,143 115,148 L105,143 
+                             Q110,133 113,123 Q115,113 110,103 L95,108 
+                             Q90,118 85,128 Q80,138 75,133 L65,138 
+                             Q70,128 73,118 Q75,108 70,98 L55,103 
+                             Q50,113 45,123 Q40,133 35,128 L25,133 
+                             Q30,123 33,113 Q35,103 30,93 L20,98 
+                             Q15,108 10,118 Q5,128 0,123 L-5,118 
+                             Q5,103 15,88 Q25,75 35,70 Q40,73 45,75 Z" 
+                          fill="#1a0f08" opacity="0.8"/>
+                </g>
+                
+                <!-- 马4 - 远景小马 -->
+                <g transform="translate(1000, 680) scale(0.6)">
+                    <path d="M35,65 Q45,50 65,45 Q85,43 105,53 Q125,63 135,80 Q145,100 140,120 
+                             Q135,135 125,145 L115,140 Q120,130 123,120 Q125,110 120,100 
+                             L110,105 Q115,115 113,125 Q111,135 105,140 L95,135 
+                             Q100,125 103,115 Q105,105 100,95 L85,100 
+                             Q80,110 75,120 Q70,130 65,125 L55,130 
+                             Q60,120 63,110 Q65,100 60,90 L45,95 
+                             Q40,105 35,115 Q30,125 25,120 L15,125 
+                             Q20,115 23,105 Q25,95 20,85 L10,90 
+                             Q5,100 0,110 Q-5,120 -10,115 L-15,110 
+                             Q-5,95 5,80 Q15,67 25,62 Q30,64 35,65 Z" 
+                          fill="#0d0704" opacity="0.6"/>
+                </g>
+                
+                <!-- 马5 -->
+                <g transform="translate(1200, 640) scale(1.1)">
+                    <path d="M48,78 Q58,62 78,57 Q98,54 118,64 Q138,74 148,92 Q158,112 153,132 
+                             Q148,148 138,158 L128,153 Q133,143 136,132 Q138,122 133,112 
+                             L123,117 Q128,127 126,137 Q124,147 118,152 L108,147 
+                             Q113,137 116,127 Q118,117 113,107 L98,112 
+                             Q93,122 88,132 Q83,142 78,137 L68,142 
+                             Q73,132 76,122 Q78,112 73,102 L58,107 
+                             Q53,117 48,127 Q43,137 38,132 L28,137 
+                             Q33,127 36,117 Q38,107 33,97 L23,102 
+                             Q18,112 13,122 Q8,132 3,127 L-2,122 
+                             Q8,107 18,92 Q28,78 38,73 Q43,76 48,78 Z" 
+                          fill="#1a0f08" opacity="0.9"/>
+                </g>
+                
+                <!-- 马6 -->
+                <g transform="translate(1450, 660) scale(0.95)">
+                    <path d="M42,72 Q52,56 72,51 Q92,49 112,59 Q132,69 142,87 Q152,107 147,127 
+                             Q142,143 132,153 L122,148 Q127,138 130,127 Q132,117 127,107 
+                             L117,112 Q122,122 120,132 Q118,142 112,147 L102,142 
+                             Q107,132 110,122 Q112,112 107,102 L92,107 
+                             Q87,117 82,127 Q77,137 72,132 L62,137 
+                             Q67,127 70,117 Q72,107 67,97 L52,102 
+                             Q47,112 42,122 Q37,132 32,127 L22,132 
+                             Q27,122 30,112 Q32,102 27,92 L17,97 
+                             Q12,107 7,117 Q2,127 -3,122 L-8,117 
+                             Q2,102 12,87 Q22,73 32,68 Q37,71 42,72 Z" 
+                          fill="#0d0704" opacity="0.85"/>
+                </g>
+                
+                <!-- 飞扬的鬃毛和尾巴效果 -->
+                <g opacity="0.4">
+                    <path d="M180,580 Q220,560 260,570 Q300,580 320,600" stroke="#3d2817" stroke-width="2" fill="none"/>
+                    <path d="M420,610 Q460,590 500,600 Q540,610 560,630" stroke="#3d2817" stroke-width="2" fill="none"/>
+                    <path d="M670,590 Q710,570 750,580 Q790,590 810,610" stroke="#3d2817" stroke-width="2" fill="none"/>
+                    <path d="M1170,600 Q1210,580 1250,590 Q1290,600 1310,620" stroke="#3d2817" stroke-width="2" fill="none"/>
+                    <path d="M1420,620 Q1460,600 1500,610 Q1540,620 1560,640" stroke="#3d2817" stroke-width="2" fill="none"/>
+                </g>
+                
+                <!-- 尘土飞扬效果 -->
+                <g opacity="0.3">
+                    <ellipse cx="300" cy="750" rx="80" ry="20" fill="#6b4423"/>
+                    <ellipse cx="550" cy="780" rx="60" ry="15" fill="#6b4423"/>
+                    <ellipse cx="800" cy="760" rx="70" ry="18" fill="#6b4423"/>
+                    <ellipse cx="1050" cy="790" rx="50" ry="12" fill="#6b4423"/>
+                    <ellipse cx="1300" cy="770" rx="65" ry="16" fill="#6b4423"/>
+                    <ellipse cx="1550" cy="800" rx="55" ry="14" fill="#6b4423"/>
+                </g>
+                
+                <!-- 太阳/月亮 -->
+                <circle cx="1600" cy="200" r="80" fill="#d4a574" opacity="0.3"/>
+                <circle cx="1600" cy="200" r="60" fill="#e8c9a0" opacity="0.4"/>
+            </svg>
+        </div> -->
+        
+        <!-- 欢迎内容 -->
+        <div class="welcome-content">
+            <div class="welcome-title">
+                <h1>Ollama Hub</h1>
+                <p class="subtitle">本地大模型管理平台</p>
+            </div>
+            <div class="welcome-features">
+                <div class="feature-item">
+                    <span class="feature-icon"></span>
+                    <span class="feature-text">油画艺术风格</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon"></span>
+                    <span class="feature-text">智能搜索</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon"></span>
+                    <span class="feature-text">记忆功能</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon"></span>
+                    <span class="feature-text">全屏体验</span>
+                </div>
+            </div>
+            <button class="enter-btn" id="enterAppBtn">
+                <span>进入系统</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- 主题切换按钮 -->
+    <button class="theme-toggle" id="themeToggle" title="切换主题">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+    </button>
+
+    <!-- 主布局容器 -->
+    <div class="app-layout">
+        <!-- 左侧边栏 -->
+        <aside class="sidebar" id="mainSidebar">
+            <!-- Logo -->
+            <div class="sidebar-logo">
+                <h1>Ollama Hub</h1>
+                <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="收起侧边栏">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- 导航菜单 -->
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-page="chat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>智能对话</span>
+                </button>
+                <button class="nav-item" data-page="group-chat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>群组对话</span>
+                </button>
+                <button class="nav-item" data-page="models">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <span>模型管理</span>
+                </button>
+
+                <button class="nav-item" data-page="settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    <span>设置</span>
+                </button>
+            </nav>
+
+            <!-- 对话历史列表 -->
+            <div class="conversations-section">
+                <div class="section-header">
+                    <h3>对话历史</h3>
+                    <button class="btn-icon" id="newConversationBtn" title="新建对话">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="conversations-list" id="conversationsList">
+                    <!-- 对话历史列表 -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- 右侧主内容区 -->
+        <main class="main-content">
+            <button class="sidebar-expand-float" id="mainSidebarExpandBtn" title="展开侧边栏">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M13 5l7 7-7 7M6 5l7 7-7 7"/>
+                </svg>
+            </button>
+            <!-- 智能对话页面 -->
+            <div class="page-content active" id="chat-page">
+                <div class="chat-container">
+                    <div class="chat-history" id="chatHistory">
+                        <div class="welcome-message">
+                            <h3>欢迎使用智能对话</h3>
+                            <p>选择一个模型开始与本地大模型进行对话</p>
+                            <div class="suggestions">
+                                <p class="suggestions-title">✨ 试试这样问</p>
+                                <div class="suggestion-chips">
+                                    <button class="suggestion-btn" data-prompt="你好，请介绍一下你自己">
+                                        <span class="suggestion-text">自我介绍</span>
+                                    </button>
+                                    <button class="suggestion-btn" data-prompt="帮我写一段Python代码，实现一个简单的计算器">
+                                        <span class="suggestion-text">Python代码</span>
+                                    </button>
+                                    <button class="suggestion-btn" data-prompt="用简单的话解释一下什么是机器学习">
+                                        <span class="suggestion-text">机器学习</span>
+                                    </button>
+                                    <button class="suggestion-btn" data-prompt="帮我写一封工作邮件，主题是请假申请">
+                                        <span class="suggestion-text">写邮件</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <div class="chat-input-wrapper">
+                            <button class="clear-chat-btn" id="clearChatBtn" title="清空对话">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                            <button class="image-upload-btn" id="imageUploadBtn" title="上传图片">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                            </button>
+                            <input type="file" id="chatImageInput" accept="image/*" hidden>
+                            <div class="chat-image-preview" id="chatImagePreview" style="display: none;">
+                                <img id="chatPreviewImg" src="" alt="预览">
+                                <button class="remove-chat-image" id="removeChatImageBtn" title="移除图片">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <textarea 
+                                id="chatInput" 
+                                placeholder="输入您的问题，按 Enter 发送，Shift+Enter 换行..."
+                                rows="1"
+                            ></textarea>
+                            <button class="send-btn" id="sendBtn" disabled>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"/>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="chat-actions">
+                            <button class="action-link" id="enterFullscreenBtn" title="进入全屏模式">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                                </svg>
+                                全屏
+                            </button>
+                            <button class="action-link" id="computerAssistBtn" title="本地双模型电脑协助（仅建议，不执行）">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="12" rx="2"/>
+                                    <path d="M8 20h8M12 16v4"/>
+                                </svg>
+                                电脑协助
+                            </button>
+                            <button class="action-link" id="computerAssistControlToggleBtn" title="开启后，电脑协助默认生成可控执行操作单（单步确认）" aria-pressed="false">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="10" rx="2"/>
+                                    <circle cx="8" cy="16" r="2"/>
+                                    <path d="M8 11V7a4 4 0 0 1 8 0"/>
+                                </svg>
+                                可控执行: 关
+                            </button>
+                            <button class="action-link" id="computerAssistRunBtn" title="执行智能操作单下一步（白名单动作，需确认）">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M5 3l14 9-14 9V3z"/>
+                                </svg>
+                                执行一步
+                            </button>
+                            <button class="action-link" id="clearChatBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                                清空对话
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 群组对话页面 -->
+            <div class="page-content" id="group-chat-page">
+                <!-- 模型选择器容器 -->
+                <div id="modelSelectorContainer" class="model-selector-container" style="display: none;"></div>
+                <div class="chat-container">
+                    <div class="chat-history" id="groupChatArea">
+                        <div class="welcome-message">
+                            <h3>欢迎使用群组对话</h3>
+                            <p>选择一个群组，让多个智能体一起讨论您的问题</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <div class="chat-input-wrapper">
+                            <button class="clear-chat-btn" id="clearGroupChatBtn" title="清空对话">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                            <textarea 
+                                id="groupChatInput" 
+                                placeholder="输入您的问题，按 Enter 发送，Shift+Enter 换行..."
+                                rows="1"
+                            ></textarea>
+                            <button class="send-btn" id="groupSendBtn" disabled>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"/>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="chat-actions">
+                            <button class="action-link" id="selectModelsBtn" title="选择参与对话的模型">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                </svg>
+                                选择模型
+                            </button>
+                            <button class="action-link" id="newGroupBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                                新建群组
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 模型管理页面 -->
+            <div class="page-content" id="models-page">
+                <div class="page-header">
+                    <div class="page-header-title">
+                        <h2>模型管理</h2>
+                        <p class="subtitle">浏览、安装和管理您的本地大模型</p>
+                    </div>
+                    <button class="btn-enhanced primary" id="pullModelBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        下载新模型
+                    </button>
+                </div>
+
+                <div class="page-scrollable-content">
+                    <div class="models-toolbar">
+                        <div class="search-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="M21 21l-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="modelSearch" placeholder="搜索已安装的模型...">
+                        </div>
+                        <div class="filter-buttons">
+                            <button class="filter-btn active" data-filter="all">全部</button>
+                            <button class="filter-btn" data-filter="downloaded">已下载</button>
+                        </div>
+                    </div>
+
+                    <div class="models-grid" id="modelsGrid"></div>
+                </div>
+            </div>
+
+            <!-- 设置页面 -->
+            <div class="page-content" id="settings-page">
+                <div class="page-header">
+                    <div class="page-header-title">
+                        <h2>设置</h2>
+                        <p class="subtitle">配置您的使用偏好</p>
+                    </div>
+                </div>
+                <div class="page-scrollable-content">
+                    <div class="settings-container">
+                        <div class="setting-group">
+                            <h3>主题设置</h3>
+                            <div class="setting-item">
+                                <label>界面主题</label>
+                                <select id="themeSelect">
+                                    <option value="light">浅色</option>
+                                    <option value="dark">深色</option>
+                                    <option value="auto">跟随系统</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="setting-group">
+                            <h3>对话设置</h3>
+                            <div class="setting-item">
+                                <label>最大历史记录数</label>
+                                <input type="number" id="maxHistory" value="50" min="10" max="200">
+                            </div>
+                            <div class="setting-item">
+                                <label>自动保存对话</label>
+                                <input type="checkbox" id="autoSave" checked>
+                            </div>
+                            <div class="setting-item">
+                                <label>发送时自动进入全屏</label>
+                                <input type="checkbox" id="autoEnterFullscreen">
+                            </div>
+                        </div>
+                        <div class="setting-group">
+                            <h3>模型管理</h3>
+                            <p class="setting-desc">启用或禁用特定模型，禁用的模型将不会出现在选择列表中</p>
+                            <div id="modelToggleList" class="model-toggle-list">
+                                <!-- 模型开关列表将在这里动态生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 智能对话全屏覆盖层 -->
+    <div class="chat-overlay" id="chatOverlay">
+        <div class="chat-header">
+            <div class="chat-header-title">
+                <h3>智能对话</h3>
+                <span class="model-badge" id="overlayModelBadge">literary-assistant</span>
+            </div>
+            <div class="chat-header-actions">
+                <button class="exit-fullscreen-btn" id="exitChatOverlayBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                    退出全屏
+                </button>
+            </div>
+        </div>
+        <div class="chat-container">
+            <div class="chat-history" id="chatOverlayHistory">
+                <div class="chat-messages">
+                </div>
+            </div>
+            <div class="worldview-input-area">
+                <div class="worldview-header">
+                    <span class="worldview-label">🎭 世界观设定</span>
+                    <button class="worldview-template-btn" id="worldviewTemplateBtn" title="选择世界观模板">📋 模板</button>
+                </div>
+                <input 
+                    type="text" 
+                    id="overlayWorldviewInput" 
+                    placeholder="输入世界观设定，如：魔法大陆、赛博朋克、现代都市...（可选）"
+                >
+            </div>
+            <div class="chat-input-area">
+                <div class="chat-input-wrapper">
+                    <button class="clear-chat-btn" id="overlayClearChatBtn" title="清空对话">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                    <textarea 
+                        id="overlayChatInput" 
+                        placeholder="输入您的问题，按 Enter 发送，Shift+Enter 换行..."
+                        rows="1"
+                    ></textarea>
+                    <button class="send-btn" id="overlaySendBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 群组对话全屏覆盖层 -->
+    <div class="chat-overlay" id="groupChatOverlay">
+        <div class="chat-header">
+            <div class="chat-header-title">
+                <h3>群组对话</h3>
+                <span class="model-badge" id="overlayGroupName">--</span>
+            </div>
+            <div class="chat-header-actions">
+                <button class="exit-fullscreen-btn" id="exitGroupChatOverlayBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                    退出全屏
+                </button>
+            </div>
+        </div>
+        <div class="chat-container">
+            <div class="chat-history" id="groupChatOverlayHistory">
+                <div class="chat-messages">
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="chat-input-wrapper">
+                    <button class="clear-chat-btn" id="overlayGroupClearBtn" title="清空对话">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                    <textarea 
+                        id="overlayGroupChatInput" 
+                        placeholder="输入您的问题，按 Enter 发送，Shift+Enter 换行..."
+                        rows="1"
+                    ></textarea>
+                    <button class="send-btn" id="overlayGroupSendBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS脚本（defer异步加载，不阻塞页面渲染）-->
+    <!-- 工具类 -->
+    <script defer src="js/utils/apiHelper.js"></script>
+    <script defer src="js/utils/requestManager.js"></script>
+    
+    <!-- 服务层 -->
+    <script defer src="js/services/storage.js"></script>
+    <script defer src="js/services/theme.js"></script>
+    <script defer src="js/services/markdown.js"></script>
+    <script defer src="js/services/token_stats.js"></script>
+    <script defer src="js/services/module_manager.js"></script>
+    <script defer src="js/services/audio_noise_reduction.js"></script>
+    
+    <!-- 功能模块 -->
+    <script defer src="js/features/semantic_segmenter.js"></script>
+    <script defer src="js/features/worldview.js"></script>
+    <script defer src="js/features/text_segmenter.js"></script>
+    <script defer src="js/features/persona_memory.js"></script>
+    <script defer src="js/features/conversation_mode.js"></script>
+    <script defer src="js/features/image-upload.js"></script>
+    
+    <!-- API 层 -->
+    <script defer src="js/api/api.js"></script>
+    <script defer src="js/api/image_api.js"></script>
+
+    <script defer src="js/api/api_chat.js"></script>
+    <script defer src="js/api/api_key_manager.js"></script>
+    
+    <!-- 缓存 -->
+    <script defer src="js/cache/messageCache.js"></script>
+    
+    <!-- 核心模块 -->
+    <script defer src="js/features/horse-canvas.js"></script>
+    <script defer src="js/core/app.js"></script>
+    <script defer src="js/core/app.events.js"></script>
+    <script defer src="js/core/app.search.js"></script>
+    <script defer src="js/core/app.group.js"></script>
+    <script defer src="js/core/app.persona.js"></script>
+    <script defer src="js/core/app.chat.js"></script>
+    <script defer src="js/core/app.models.js"></script>
+    <script defer src="js/core/app.settings.js"></script>
+    
+    <!-- 高级功能 -->
+    <script defer src="js/features/function_manager.js"></script>
+    <script defer src="js/features/group_chat_enhanced.js"></script>
+    <script defer src="js/features/hybrid_group_chat.js"></script>
+    <script defer src="js/features/intelligent.js"></script>
+    <script defer src="js/features/share.js"></script>
+
+    <!-- 世界观选择弹窗 -->
+    <div class="modal-overlay" id="worldviewModalOverlay">
+        <div class="modal" id="worldviewModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>🎭 选择世界观</h3>
+                    <button class="modal-close" id="worldviewModalClose">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="worldview-list" id="worldviewList"></div>
+                    <div class="worldview-add">
+                        <input type="text" id="newWorldviewName" placeholder="新世界观名称...">
+                        <textarea id="newWorldviewContent" placeholder="输入世界观设定内容..."></textarea>
+                        <button id="addWorldviewBtn">➕ 添加</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast通知容器 -->
+    <div id="toastContainer"></div>
+    
+    <!-- 服务连接优化模块 -->
+    <script src="js/api/unified_client.js"></script>
+    <script src="js/services/health_monitor.js"></script>
+</body>
+</html>

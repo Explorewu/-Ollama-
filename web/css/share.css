@@ -1,0 +1,164 @@
+/* ============================================
+   协作分享样式
+   ============================================ */
+
+.share-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.share-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.share-option:hover {
+    border-color: var(--primary-color);
+    background-color: var(--primary-subtle);
+}
+
+.share-option-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background-color: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+}
+
+.share-option-content {
+    flex: 1;
+}
+
+.share-option-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.share-option-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.share-link-container {
+    margin-top: 20px;
+    padding: 16px;
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.share-link-input-group {
+    display: flex;
+    gap: 8px;
+}
+
+.share-link-input {
+    flex: 1;
+    padding: 10px 14px;
+    font-size: 13px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.share-link-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.share-copy-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1c1917;
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+    white-space: nowrap;
+}
+
+.share-copy-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.share-copy-btn.copied {
+    background-color: var(--success-color);
+}
+
+.export-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.export-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.export-option:hover {
+    border-color: var(--primary-color);
+    background-color: var(--primary-subtle);
+}
+
+.export-option svg {
+    width: 32px;
+    height: 32px;
+    color: var(--primary-color);
+}
+
+.export-option span {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.share-modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* QR码容器 */
+.qrcode-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-top: 16px;
+}
+
+.qrcode-container canvas,
+.qrcode-container img {
+    border-radius: var(--radius-md);
+}
+
+.qrcode-hint {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: center;
+}

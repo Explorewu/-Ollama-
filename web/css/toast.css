@@ -1,0 +1,202 @@
+/* ============================================
+   Toast 通知 - 优化版
+   ============================================ */
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    border-left: 4px solid var(--primary-color);
+    min-width: 300px;
+    max-width: 450px;
+    pointer-events: auto;
+    
+    /* GPU加速 */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    
+    /* 入场动画 */
+    animation: toastSlideIn 0.35s var(--ease-spring) forwards;
+}
+
+/* 退出动画类 */
+.toast.toast-exit {
+    animation: toastSlideOut 0.25s var(--ease-in) forwards;
+}
+
+@keyframes toastSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(120%) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes toastSlideOut {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(30%) scale(0.95);
+    }
+}
+
+/* 进度条动画 */
+.toast::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: currentColor;
+    opacity: 0.3;
+    animation: toastProgress 3s linear forwards;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+@keyframes toastProgress {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+
+.toast {
+    position: relative;
+    overflow: hidden;
+}
+
+.toast.success {
+    border-left-color: var(--success-500);
+}
+
+.toast.success::after {
+    background: var(--success-500);
+}
+
+.toast.error {
+    border-left-color: var(--error-500);
+}
+
+.toast.error::after {
+    background: var(--error-500);
+}
+
+.toast.warning {
+    border-left-color: var(--warning-500);
+}
+
+.toast.warning::after {
+    background: var(--warning-500);
+}
+
+.toast-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    animation: toastIconPop 0.4s var(--ease-bounce) 0.1s both;
+}
+
+@keyframes toastIconPop {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.toast.success .toast-icon {
+    color: var(--success-500);
+}
+
+.toast.error .toast-icon {
+    color: var(--error-500);
+}
+
+.toast.warning .toast-icon {
+    color: var(--warning-500);
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-primary);
+    animation: toastTextFade 0.3s var(--ease-out) 0.15s both;
+}
+
+@keyframes toastTextFade {
+    from {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.toast-close {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: all var(--duration-fast) var(--ease-smooth);
+    opacity: 0.6;
+}
+
+.toast-close:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.toast-close:active {
+    transform: scale(0.95);
+}
+
+.toast-close svg {
+    width: 16px;
+    height: 16px;
+    color: inherit;
+}
+
+/* 堆叠效果 */
+.toast-container .toast:nth-last-child(2) {
+    transform: scale(0.95);
+    opacity: 0.8;
+}
+
+.toast-container .toast:nth-last-child(3) {
+    transform: scale(0.9);
+    opacity: 0.6;
+}
+
+/* 悬停时展开 */
+.toast-container:hover .toast {
+    transform: scale(1);
+    opacity: 1;
+}

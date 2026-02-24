@@ -1,0 +1,495 @@
+/* ============================================
+   模态框 - 优化版
+   ============================================ */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    padding: 20px;
+    
+    /* GPU加速 */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    
+    /* 优化过渡 */
+    transition: opacity var(--duration-normal) var(--ease-smooth),
+                visibility var(--duration-normal) var(--ease-smooth),
+                background-color var(--duration-normal) var(--ease-smooth);
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal {
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+    
+    /* GPU加速 */
+    transform: translateZ(0) scale(0.92) translateY(30px);
+    backface-visibility: hidden;
+    will-change: transform, opacity;
+    opacity: 0;
+    
+    /* 优化过渡 */
+    transition: transform var(--duration-slow) var(--ease-spring),
+                opacity var(--duration-normal) var(--ease-out);
+}
+
+.modal-overlay.active .modal {
+    transform: translateZ(0) scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* 退出动画 */
+.modal-overlay.closing {
+    opacity: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.modal-overlay.closing .modal {
+    transform: translateZ(0) scale(0.95) translateY(20px);
+    opacity: 0;
+}
+
+.modal-large {
+    max-width: 600px;
+}
+
+.modal-xlarge {
+    max-width: 800px;
+    width: 95%;
+}
+
+.header-with-badge {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.param-guide {
+    padding: 0 !important;
+}
+
+.guide-intro {
+    background: var(--bg-secondary);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.guide-intro p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.guide-section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.guide-section:last-child {
+    border-bottom: none;
+}
+
+.guide-section h4 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    color: var(--primary-color);
+}
+
+.guide-item {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.guide-item:last-child {
+    margin-bottom: 0;
+}
+
+.guide-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.guide-param-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.guide-range {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.guide-item-body {
+    padding: 16px;
+}
+
+.guide-item-body > p {
+    margin: 0 0 12px 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.guide-effects {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.guide-effects > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+}
+
+.setting-control {
+    margin-bottom: 16px;
+}
+
+.setting-select {
+    width: 100%;
+    max-width: 280px;
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.setting-select:hover {
+    border-color: var(--primary-color);
+}
+
+.setting-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.effect-label {
+    font-weight: 600;
+    font-size: 13px;
+    min-width: 140px;
+}
+
+.effect-desc {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.guide-tips {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+    padding: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.guide-tips h4 {
+    margin: 0 0 12px 0;
+    color: var(--primary-color);
+}
+
+.guide-tips ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.guide-tips li {
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.guide-tips li:last-child {
+    margin-bottom: 0;
+}
+
+.modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.modal-close:hover {
+    background-color: var(--bg-hover);
+    color: var(--error-color);
+}
+
+.modal-close svg {
+    width: 22px;
+    height: 22px;
+    color: inherit;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+    transition: all var(--transition-base);
+}
+
+.modal-close:hover svg {
+    transform: scale(1.15) rotate(90deg);
+    filter: drop-shadow(0 2px 4px rgba(201, 168, 168, 0.5));
+}
+
+.modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    max-height: calc(90vh - 140px);
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* 流行模型标签 */
+.popular-models {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.model-chip {
+    padding: 8px 16px;
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+}
+
+.model-chip:hover {
+    background-color: var(--primary-subtle);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    position: relative;
+}
+
+/* 模型悬浮提示框 */
+.popular-models {
+    position: relative;
+}
+
+.model-tooltip {
+    position: fixed;
+    left: 0;
+    top: 0;
+    min-width: 320px;
+    max-width: 400px;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    z-index: 10000;
+    animation: tooltipFadeIn 0.3s ease-out;
+    pointer-events: none;
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(90deg, var(--primary-subtle) 0%, transparent 100%);
+}
+
+.tooltip-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tooltip-size {
+    padding: 4px 12px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.tooltip-body {
+    padding: 16px;
+}
+
+.tooltip-section {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 14px;
+}
+
+.tooltip-section:last-of-type {
+    margin-bottom: 0;
+}
+
+.tooltip-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 14px;
+}
+
+.tooltip-row-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.tooltip-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.tooltip-value {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.tooltip-time {
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.tooltip-reasoning {
+    font-weight: 600;
+}
+
+.tooltip-reasoning[data-value="专门推理"] {
+    color: #FF6B6B;
+}
+
+.tooltip-reasoning[data-value="支持"] {
+    color: #4ECDC4;
+}
+
+.tooltip-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.tooltip-note-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.tooltip-note-text {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    line-height: 1.4;
+}
+
+/* 下载进度 */
+.progress-container {
+    margin-top: 20px;
+    padding: 16px;
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.progress-info span:first-child {
+    color: var(--text-secondary);
+}
+
+.progress-info span:last-child {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.progress-bar {
+    height: 8px;
+    background-color: var(--bg-primary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    border-radius: var(--radius-full);
+    transition: width var(--transition-base);
+    width: 0%;
+}

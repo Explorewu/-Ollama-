@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>智能服务测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .connected { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .disconnected { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .checking { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>智能服务连接测试</h1>
+    
+    <div id="status" class="status checking">正在检查服务状态...</div>
+    
+    <div>
+        <button onclick="testConnection()">测试连接</button>
+        <button onclick="testHealth()">测试健康检查</button>
+        <button onclick="clearLog()">清空日志</button>
+    </div>
+    
+    <div id="log" style="margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius: 5px; height: 300px; overflow-y: auto;">
+        <h3>日志输出:</h3>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(status, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${status}`;
+            statusDiv.textContent = message;
+        }
+        
+        async function testConnection() {
+            log('开始测试基本连接...');
+            updateStatus('checking', '正在测试连接...');
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/health');
+                log(`连接响应: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`响应数据: ${JSON.stringify(data, null, 2)}`);
+                    updateStatus('connected', '服务连接成功');
+                } else {
+                    log(`连接失败: ${response.status}`);
+                    updateStatus('disconnected', '服务连接失败');
+                }
+            } catch (error) {
+                log(`连接错误: ${error.message}`);
+                updateStatus('disconnected', '连接异常: ' + error.message);
+            }
+        }
+        
+        async function testHealth() {
+            log('开始测试健康检查...');
+            updateStatus('checking', '正在检查健康状态...');
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/health', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`健康检查响应: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`健康状态: ${data.success ? '正常' : '异常'}`);
+                    log(`服务详情: ${JSON.stringify(data.data.services, null, 2)}`);
+                    
+                    if (data.success && data.data.status === 'ok') {
+                        updateStatus('connected', '健康检查通过 - 服务正常运行');
+                    } else {
+                        updateStatus('disconnected', '健康检查失败');
+                    }
+                } else {
+                    log(`健康检查失败: ${response.status}`);
+                    updateStatus('disconnected', '健康检查响应异常');
+                }
+            } catch (error) {
+                log(`健康检查错误: ${error.message}`);
+                updateStatus('disconnected', '健康检查异常: ' + error.message);
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '<h3>日志输出:</h3>';
+        }
+        
+        // 页面加载时自动测试
+        window.addEventListener('load', () => {
+            log('页面加载完成，开始自动测试...');
+            setTimeout(testConnection, 1000);
+        });
+    </script>
+</body>
+</html>

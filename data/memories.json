@@ -1,0 +1,49 @@
+{
+  "92cc06d17539": {
+    "id": "92cc06d17539",
+    "content": "Python是一种高级编程语言",
+    "category": "learning",
+    "tags": [
+      "编程",
+      "Python"
+    ],
+    "importance": 8,
+    "created_at": 1771925500.2906413,
+    "updated_at": 1771925500.2906413,
+    "usage_count": 0,
+    "last_used_at": 0
+  },
+  "1cc5262ea23f": {
+    "id": "1cc5262ea23f",
+    "content": "测试记忆",
+    "category": "general",
+    "tags": [],
+    "importance": 5,
+    "created_at": 1771926083.6445262,
+    "updated_at": 1771926083.6445262,
+    "usage_count": 0,
+    "last_used_at": 0
+  },
+  "6ac32f7bc415": {
+    "id": "6ac32f7bc415",
+    "content": "测试",
+    "category": "general",
+    "tags": [],
+    "importance": 5,
+    "created_at": 1771926354.5060601,
+    "updated_at": 1771926354.5060601,
+    "usage_count": 0,
+    "last_used_at": 0
+  },
+  "76a664307887": {
+    "id": "76a664307887",
+    "content": "测试",
+    "category": "general",
+    "tags": [],
+    "importance": 5,
+    "created_at": 1771926530.9664896,
+    "updated_at": 1771926530.9664896,
+    "usage_count": 0,
+    "last_used_at": 0
+  }
+}

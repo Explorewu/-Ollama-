@@ -1,0 +1,775 @@
+/**
+ * 讨论总结面板样式 - Summary Panel Styles
+ * 
+ * 包含总结面板的所有样式定义
+ * 
+ * 作者：AI Assistant
+ * 日期：2026-02-03
+ * 版本：v1.0
+ */
+
+/* ==================== 面板容器 ==================== */
+.summary-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ==================== 头部 ==================== */
+.summary-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.summary-panel-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.summary-panel-title .icon {
+    font-size: 20px;
+}
+
+.summary-panel-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* ==================== 按钮样式 ==================== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+    color: inherit;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background: #10b981;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #059669;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-icon {
+    padding: 8px;
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* ==================== 内容区域 ==================== */
+.summary-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* ==================== 空状态 ==================== */
+.summary-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.summary-empty-state .empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.summary-empty-state h4 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    color: #374151;
+}
+
+.summary-empty-state p {
+    margin: 0 0 24px 0;
+    font-size: 14px;
+    max-width: 300px;
+}
+
+/* ==================== 加载状态 ==================== */
+.summary-loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-progress {
+    width: 100%;
+    max-width: 300px;
+    margin-top: 16px;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 14px;
+    color: #6b7280;
+    text-align: center;
+    display: block;
+}
+
+/* ==================== 总结内容 ==================== */
+.summary-content {
+    display: none;
+}
+
+/* 元信息 */
+.summary-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.meta-label {
+    font-size: 12px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.meta-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+/* 章节样式 */
+.summary-section {
+    margin-bottom: 24px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.section-title .icon {
+    font-size: 18px;
+}
+
+.section-content {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #374151;
+}
+
+/* 关键要点 */
+.key-points-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.key-points-list li {
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #374151;
+}
+
+.key-points-list li.empty {
+    list-style: none;
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* 主题列表 */
+.topics-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.topic-item {
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.topic-title {
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.topic-keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.keyword-tag {
+    padding: 2px 8px;
+    background: #e0e7ff;
+    color: #4338ca;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.topic-score {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* 观点汇总 */
+.viewpoints-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.viewpoint-item {
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.viewpoint-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.participant-name {
+    font-weight: 600;
+    color: #111827;
+}
+
+.message-count {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.viewpoint-stance {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+.stance-support {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.stance-oppose {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.stance-neutral {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.stance-question {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.viewpoint-points {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 13px;
+    color: #4b5563;
+}
+
+.viewpoint-points li {
+    margin-bottom: 4px;
+}
+
+/* 结论建议 */
+.conclusions-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.conclusions-list li {
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #374151;
+    padding: 8px 12px;
+    background: #ecfdf5;
+    border-radius: 6px;
+    border-left: 3px solid #10b981;
+}
+
+/* 时间线 */
+.timeline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.timeline-item {
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 16px;
+    bottom: -24px;
+    width: 2px;
+    background: #e5e7eb;
+}
+
+.timeline-item:last-child::before {
+    display: none;
+}
+
+.timeline-time {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.timeline-type {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.type-opening {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.type-discussing {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.type-debating {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.type-concluding {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.type-closing {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.timeline-summary {
+    font-size: 13px;
+    color: #4b5563;
+    margin-bottom: 8px;
+}
+
+.timeline-participants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.participant-tag {
+    padding: 2px 8px;
+    background: #f3f4f6;
+    color: #4b5563;
+    border-radius: 12px;
+    font-size: 11px;
+}
+
+/* ==================== 底部操作栏 ==================== */
+.summary-panel-footer {
+    display: none;
+    padding: 16px 20px;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+}
+
+.footer-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+/* 导出下拉菜单 */
+.export-dropdown {
+    position: relative;
+}
+
+.dropdown-arrow {
+    font-size: 10px;
+    margin-left: 4px;
+}
+
+.dropdown-menu {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 8px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    min-width: 140px;
+    display: none;
+    overflow: hidden;
+    z-index: 100;
+}
+
+.export-dropdown.open .dropdown-menu {
+    display: block;
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: white;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+    background: #f3f4f6;
+}
+
+/* ==================== 弹窗样式 ==================== */
+.summary-history-modal,
+.summary-edit-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: none;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h4 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* 历史记录列表 */
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.history-item {
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.history-item:hover {
+    background: #f3f4f6;
+    border-color: #e5e7eb;
+}
+
+.history-item.active {
+    border-color: #667eea;
+    background: #f0f9ff;
+}
+
+.history-time {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.history-meta {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 8px;
+}
+
+.history-overview {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.5;
+}
+
+/* 编辑表单 */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 640px) {
+    .summary-panel-header {
+        padding: 12px 16px;
+    }
+    
+    .summary-panel-title {
+        font-size: 16px;
+    }
+    
+    .btn {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+    
+    .summary-meta {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .modal-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+}
+
+/* ==================== 滚动条样式 ==================== */
+.summary-panel-content::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.summary-panel-content::-webkit-scrollbar-track,
+.modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.summary-panel-content::-webkit-scrollbar-thumb,
+.modal-body::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.summary-panel-content::-webkit-scrollbar-thumb:hover,
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* ==================== 动画效果 ==================== */
+.summary-section {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==================== 加载状态覆盖 ==================== */
+.summary-panel.loading {
+    position: relative;
+}
+
+.summary-panel.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
