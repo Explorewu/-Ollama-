@@ -15,7 +15,6 @@ __pycache__/
 
 # 日志文件
 *.log
-rag_system.log
 
 # 临时文件
 *.tmp
@@ -46,13 +45,25 @@ build/
 # 图片缓存
 cache/
 generated_landscape.png
+landscape_result.html
 
 # 大型第三方库 - 不推送
 llama.cpp/
 lib/
 ollama/
-scripts/
-server/
+
+# Agent 相关
+.agent/
+
+# 大数据文件 - 使用 Git LFS 或本地存储
+data/rag_index/
+
+# Node.js
+node_modules/
 web/node_modules/
 web/dist/
 web/build/
+
+# 系统文件
+.DS_Store
+Thumbs.db
