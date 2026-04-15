@@ -14,7 +14,12 @@ const VoiceService = (function() {
 
     // 录音配置
     const RECORDING_CONFIG = {
-        mimeType: 'audio/webm',
+        preferredMimeTypes: [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/mp4',
+            'audio/ogg;codecs=opus'
+        ],
         audioBitsPerSecond: 128000
     };
 
@@ -39,6 +44,15 @@ const VoiceService = (function() {
                 return false;
             }
 
+            try {
+                const response = await fetch(`${API_BASE}/api/voice/status`);
+                if (!response.ok) {
+                    console.warn('[VoiceService] 后端语音服务状态异常:', response.status);
+                }
+            } catch (statusError) {
+                console.warn('[VoiceService] 无法获取语音服务状态:', statusError);
+            }
+
             console.log('[VoiceService] 初始化完成');
             return true;
         } catch (error) {
@@ -53,6 +67,23 @@ const VoiceService = (function() {
      */
     function isSupported() {
         return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    }
+
+    function getRecordingOptions() {
+        const options = {
+            audioBitsPerSecond: RECORDING_CONFIG.audioBitsPerSecond
+        };
+
+        if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+            return options;
+        }
+
+        const supportedMimeType = RECORDING_CONFIG.preferredMimeTypes.find(type => MediaRecorder.isTypeSupported(type));
+        if (supportedMimeType) {
+            options.mimeType = supportedMimeType;
+        }
+
+        return options;
     }
 
     /**
@@ -80,7 +111,8 @@ const VoiceService = (function() {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
             // 创建MediaRecorder
-            const mediaRecorder = new MediaRecorder(stream, RECORDING_CONFIG);
+            const recorderOptions = getRecordingOptions();
+            const mediaRecorder = new MediaRecorder(stream, recorderOptions);
             const audioChunks = [];
 
             mediaRecorder.ondataavailable = (event) => {
@@ -99,7 +131,9 @@ const VoiceService = (function() {
                 stream.getTracks().forEach(track => track.stop());
 
                 // 合并音频数据
-                const audioBlob = new Blob(audioChunks, { type: RECORDING_CONFIG.mimeType });
+                const audioBlob = new Blob(audioChunks, {
+                    type: mediaRecorder.mimeType || recorderOptions.mimeType || 'audio/webm'
+                });
 
                 // 触发停止回调
                 if (stateCallbacks.onStop) {
@@ -225,15 +259,25 @@ const VoiceService = (function() {
         try {
             // 创建FormData
             const formData = new FormData();
-            formData.append('audio', audioBlob, 'recording.webm');
+            formData.append('file', audioBlob, 'recording.webm');
+            formData.append('language', 'zh');
 
             // 发送识别请求
-            const response = await fetch(`${API_BASE}/api/voice/transcribe`, {
+            const response = await fetch(`${API_BASE}/api/asr/transcribe`, {
                 method: 'POST',
                 body: formData
             });
 
             const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                return {
+                    success: false,
+                    error: result.message || result.error || '语音识别失败'
+                };
+            }
+
+            applyTranscriptionResult(result.data);
 
             if (result.success && stateCallbacks.onTranscription) {
                 stateCallbacks.onTranscription(result.data);
@@ -256,6 +300,23 @@ const VoiceService = (function() {
      */
     function setCallbacks(callbacks) {
         stateCallbacks = { ...stateCallbacks, ...callbacks };
+    }
+
+    function applyTranscriptionResult(transcription) {
+        const text = transcription?.text?.trim();
+        if (!text) return;
+
+        const input =
+            document.getElementById('chatInput') ||
+            document.getElementById('overlayChatInput') ||
+            document.getElementById('groupChatInput') ||
+            document.getElementById('overlayGroupChatInput');
+
+        if (!input) return;
+
+        input.value = input.value ? `${input.value} ${text}` : text;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.focus();
     }
 
     /**

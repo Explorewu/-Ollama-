@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .back-link {
+            position: fixed;
+            top: 32px;
+            left: 32px;
+            width: 44px;
+            height: 44px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 18px;
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+
+        .back-link:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .voice-selector {
+            position: fixed;
+            top: 32px;
+            right: 32px;
+            z-index: 100;
+        }
+
+        .voice-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .voice-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .voice-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            min-width: 160px;
+        }
+
+        .voice-dropdown.show {
+            display: block;
+        }
+
+        .voice-option {
+            padding: 10px 16px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .voice-option:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .voice-option.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
+        .voice-icon {
+            flex-shrink: 0;
+        }
+
+        .main-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .dots-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            height: 80px;
+        }
+
+        .dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.45);
+            transition: transform 0.1s ease, opacity 0.1s ease, background 0.2s ease;
+        }
+
+        .dot.active {
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .waveform-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 60px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .waveform-container.visible {
+            opacity: 1;
+        }
+
+        .wave-bar {
+            width: 4px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            transition: height 0.1s ease, background 0.2s ease;
+        }
+
+        .wave-bar.speaking {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .status-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            transition: color 0.3s ease;
+        }
+
+        .status.connected {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .status.error {
+            color: #ff6b6b;
+        }
+
+        .reconnect-hint {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+            display: none;
+        }
+
+        .reconnect-hint.show {
+            display: block;
+        }
+
+        .conversation-history {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(90%, 500px);
+            max-height: 180px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .conversation-history::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .conversation-history::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .conv-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeInUp 0.3s ease forwards;
+            max-width: 85%;
+            width: fit-content;
+        }
+
+        .conv-item.user {
+            align-self: flex-end;
+            background: rgba(59, 130, 246, 0.2);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .conv-item.ai {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .conv-role {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.5;
+        }
+
+        .conv-text {
+            word-break: break-word;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .caption-layer {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(90%, 600px);
+            max-height: 150px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 4px;
+        }
+
+        .caption-layer::-webkit-scrollbar {
+            display: none;
+        }
+
+        .caption {
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.3s ease forwards;
+            max-width: 85%;
+            width: fit-content;
+        }
+
+        .caption.user {
+            align-self: flex-end;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .caption.ai {
+            align-self: flex-start;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .caption.thinking {
+            font-style: italic;
+            opacity: 0.6;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hint-text {
+            position: fixed;
+            bottom: 48px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            transition: color 0.3s ease;
+        }
+
+        .hint-text.error {
+            color: #ff6b6b;
+        }
+
+        .connection-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 32px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 20px;
+            z-index: 200;
+        }
+
+        .connection-indicator.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .connection-msg {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+
+        .error-details {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: center;
+            max-width: 280px;
+        }
+    </style>
+</head>
+<body>
+    <a class="back-link" href="index.html">←</a>
+
+    <div class="voice-selector">
+        <button class="voice-btn" id="voiceBtn">
+            <span id="currentVoiceName">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+                默认
+            </span>
+        </button>
+        <div class="voice-dropdown" id="voiceDropdown">
+            <div class="voice-option active" data-voice="default">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+                <span>默认音色</span>
+            </div>
+            <div class="voice-option" data-voice="vivian">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="8" r="5"/>
+                    <path d="M3 21v-2a7 7 0 0 1 7-7h4a7 7 0 0 1 7 7v2"/>
+                </svg>
+                <span>Vivian - 明亮女声</span>
+            </div>
+            <div class="voice-option" data-voice="serena">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <span>Serena - 温暖女声</span>
+            </div>
+            <div class="voice-option" data-voice="uncle_fu">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span>Uncle Fu - 成熟男声</span>
+            </div>
+            <div class="voice-option" data-voice="dylan">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18V5l12-2v13"/>
+                    <circle cx="6" cy="18" r="3"/>
+                    <circle cx="18" cy="16" r="3"/>
+                </svg>
+                <span>Dylan - 活力男声</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-area">
+        <div class="waveform-container" id="waveformContainer">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+        </div>
+
+        <div class="dots-container" id="dotsContainer">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </div>
+
+        <div class="status-area">
+            <div class="status" id="statusText">tap to start</div>
+            <div class="reconnect-hint" id="reconnectHint"></div>
+        </div>
+    </div>
+
+    <div class="conversation-history" id="conversationHistory"></div>
+
+    <div class="caption-layer" id="captionLayer"></div>
+
+    <div class="hint-text" id="hintText">点击任意位置开始对话</div>
+
+    <div class="connection-indicator" id="connectionIndicator">
+        <div class="spinner"></div>
+        <div class="connection-msg" id="connectionMsg">正在连接...</div>
+        <div class="error-details" id="errorDetails"></div>
+    </div>
+
+    <script src="js/features/voice_call.js?v=2026041301"></script>
+    <script>
+        let voiceCall = null;
+        let isCalling = false;
+        let currentVoice = 'default';
+        let selectedVoiceName = '🎤 默认';
+        let visualizerFrame = null;
+        let reconnectCount = 0;
+        const dots = document.querySelectorAll('.dot');
+        const waveBars = document.querySelectorAll('.wave-bar');
+        const dotsContainer = document.getElementById('dotsContainer');
+        const waveformContainer = document.getElementById('waveformContainer');
+        const statusText = document.getElementById('statusText');
+        const hintText = document.getElementById('hintText');
+        const reconnectHint = document.getElementById('reconnectHint');
+        const captionLayer = document.getElementById('captionLayer');
+        const conversationHistory = document.getElementById('conversationHistory');
+        const connectionIndicator = document.getElementById('connectionIndicator');
+        const connectionMsg = document.getElementById('connectionMsg');
+        const errorDetails = document.getElementById('errorDetails');
+        const voiceBtn = document.getElementById('voiceBtn');
+        const voiceDropdown = document.getElementById('voiceDropdown');
+        const currentVoiceName = document.getElementById('currentVoiceName');
+        const wsHost = window.location.hostname || 'localhost';
+        let pendingFallbackSpeak = null;
+        let serverAudioStartedAt = 0;
+        let ttsUnavailable = false;
+
+        let idleTime = 0;
+        let idleAnimFrame = null;
+
+        function animateIdle() {
+            if (isCalling) return;
+            idleTime += 0.012;
+
+            dots.forEach((dot, i) => {
+                const phase = i * 0.8;
+                const wave = Math.sin(idleTime * 0.8 - phase);
+                const bounce = Math.max(0, Math.sin(idleTime * 1.2 - phase * 1.2));
+                const y = wave * 10 - bounce * 5;
+                const scale = 1 + bounce * 0.25;
+                const opacity = 0.4 + bounce * 0.35;
+
+                dot.style.transform = `translateY(${y}px) scale(${scale})`;
+                dot.style.opacity = Math.max(0.3, Math.min(0.9, opacity));
+                dot.classList.remove('active');
+            });
+
+            idleAnimFrame = requestAnimationFrame(animateIdle);
+        }
+        animateIdle();
+
+        function showConnectionIndicator(msg, error = null) {
+            connectionMsg.textContent = msg;
+            errorDetails.textContent = error || '';
+            connectionIndicator.classList.add('show');
+        }
+
+        function hideConnectionIndicator() {
+            connectionIndicator.classList.remove('show');
+        }
+
+        function updateStatus(text, isError = false) {
+            statusText.textContent = text;
+            statusText.classList.toggle('error', isError);
+            hintText.textContent = text;
+            hintText.classList.toggle('error', isError);
+        }
+
+        function showReconnectHint(attempt, max) {
+            reconnectCount = attempt;
+            reconnectHint.textContent = `连接中断，正在重试 (${attempt}/${max})...`;
+            reconnectHint.classList.add('show');
+        }
+
+        function hideReconnectHint() {
+            reconnectHint.classList.remove('show');
+            reconnectCount = 0;
+        }
+
+        voiceBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            voiceDropdown.classList.toggle('show');
+        });
+
+        document.addEventListener('click', () => {
+            voiceDropdown.classList.remove('show');
+        });
+
+        document.querySelectorAll('.voice-option').forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const voice = option.dataset.voice;
+                currentVoice = voice;
+                const voiceText = option.querySelector('span:last-child').textContent.split(' - ')[0];
+                const voiceIcon = option.querySelector('.voice-icon');
+                currentVoiceName.innerHTML = voiceIcon.outerHTML + ' ' + voiceText;
+
+                document.querySelectorAll('.voice-option').forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                voiceDropdown.classList.remove('show');
+
+                if (voiceCall) {
+                    voiceCall.setVoice(voice);
+                }
+            });
+        });
+
+        document.body.addEventListener('click', async (e) => {
+            if (e.target.closest('.back-link') || e.target.closest('.voice-selector')) return;
+
+            if (isCalling) {
+                await endCall();
+            } else {
+                await startCall();
+            }
+        });
+
+        async function checkBackendHealth() {
+            try {
+                const response = await fetch(`http://${wsHost}:5001/api/voice/status`, {
+                    method: 'GET',
+                    timeout: 3000
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    return { ok: true, data };
+                }
+                return { ok: false, error: `HTTP ${response.status}` };
+            } catch (err) {
+                return { ok: false, error: err.message };
+            }
+        }
+
+        async function startCall() {
+            showConnectionIndicator('正在连接服务...');
+
+            const health = await checkBackendHealth();
+            if (!health.ok) {
+                hideConnectionIndicator();
+                updateStatus('后端服务未启动', true);
+                showConnectionIndicator('连接失败', `请确保 intelligent_api.py 已启动\n端口: 5001\n错误: ${health.error}`);
+                setTimeout(hideConnectionIndicator, 4000);
+                return;
+            }
+
+            try {
+                updateStatus('connecting...');
+
+                if (!voiceCall) {
+                    voiceCall = new VoiceCall({
+                        wsUrl: `ws://${wsHost}:5005/voice-call`,
+                        voice: currentVoice,
+                        onTranscript: (text, isFinal) => {
+                            showCaption(text, 'user');
+                            addToHistory('user', text);
+                        },
+                        onAiText: (text) => {
+                            showCaption(text, 'ai');
+                            addToHistory('ai', text);
+                            if (pendingFallbackSpeak) clearTimeout(pendingFallbackSpeak);
+                            if (ttsUnavailable && 'speechSynthesis' in window) {
+                                const utt = new SpeechSynthesisUtterance(text);
+                                utt.lang = 'zh-CN';
+                                try { window.speechSynthesis.cancel(); window.speechSynthesis.speak(utt); } catch (e) {}
+                                return;
+                            }
+                            pendingFallbackSpeak = setTimeout(() => {
+                                const elapsed = Date.now() - serverAudioStartedAt;
+                                if (elapsed > 1200 && 'speechSynthesis' in window) {
+                                    const utt = new SpeechSynthesisUtterance(text);
+                                    utt.lang = 'zh-CN';
+                                    try { window.speechSynthesis.cancel(); window.speechSynthesis.speak(utt); } catch (e) {}
+                                }
+                            }, 1400);
+                        },
+                        onStatusChange: (status, data) => {
+                            switch (status) {
+                                case 'connected':
+                                    hideConnectionIndicator();
+                                    updateStatus('ready');
+                                    hideReconnectHint();
+                                    setTimeout(() => updateStatus('tap to talk'), 1500);
+                                    break;
+                                case 'disconnected':
+                                    updateStatus('disconnected');
+                                    break;
+                                case 'reconnect_failed':
+                                    hideConnectionIndicator();
+                                    updateStatus('connection failed', true);
+                                    showReconnectHint(reconnectCount, 5);
+                                    break;
+                                case 'reconnecting':
+                                    showReconnectHint(data?.attempt || reconnectCount + 1, 5);
+                                    break;
+                                case 'speaking_started':
+                                    updateStatus('listening...');
+                                    waveformContainer.classList.add('visible');
+                                    break;
+                                case 'speaking_stopped':
+                                    updateStatus('processing...');
+                                    break;
+                                case 'ai_speaking_started':
+                                    updateStatus('AI speaking...');
+                                    serverAudioStartedAt = Date.now();
+                                    if (pendingFallbackSpeak) {
+                                        clearTimeout(pendingFallbackSpeak);
+                                        pendingFallbackSpeak = null;
+                                    }
+                                    if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+                                        window.speechSynthesis.cancel();
+                                    }
+                                    break;
+                                case 'ai_speaking_ended':
+                                    updateStatus('ready');
+                                    break;
+                                case 'interrupted':
+                                    updateStatus('interrupted');
+                                    break;
+                                case 'server_status':
+                                    if (data?.tts_available === false) {
+                                        ttsUnavailable = true;
+                                    }
+                                    break;
+                            }
+                        },
+                        onError: (error) => {
+                            console.error('Voice call error:', error);
+                            hideConnectionIndicator();
+
+                            let errorMsg = '语音服务连接失败';
+                            let errorDetail = error.message || error;
+
+                            if (error.message?.includes('WebSocket')) {
+                                errorMsg = 'WebSocket 连接失败';
+                                errorDetail = '请检查端口 5005 是否被占用';
+                            } else if (error.message?.includes('timeout')) {
+                                errorMsg = '连接超时';
+                                errorDetail = '服务响应时间过长';
+                            }
+
+                            updateStatus(errorMsg, true);
+                            showConnectionIndicator(errorMsg, errorDetail);
+                            setTimeout(hideConnectionIndicator, 5000);
+                        }
+                    });
+                }
+
+                await voiceCall.startCall();
+                isCalling = true;
+                cancelAnimationFrame(idleAnimFrame);
+                dotsContainer.style.display = 'none';
+                waveformContainer.classList.add('visible');
+                hintText.textContent = '点击结束对话';
+
+            } catch (error) {
+                console.error(error);
+                hideConnectionIndicator();
+
+                let errorMsg = error.message || 'microphone access denied';
+                let errorHint = '';
+
+                if (error.message?.includes('NotAllowedError') || error.message?.includes('permission')) {
+                    errorMsg = '麦克风权限被拒绝';
+                    errorHint = '请在浏览器设置中允许使用麦克风';
+                } else if (error.message?.includes('NotFoundError')) {
+                    errorMsg = '未找到麦克风';
+                    errorHint = '请检查麦克风设备是否连接';
+                } else if (error.message?.includes('NotReadableError')) {
+                    errorMsg = '麦克风被占用';
+                    errorHint = '请关闭其他使用麦克风的应用';
+                }
+
+                updateStatus(errorMsg, true);
+                showConnectionIndicator(errorMsg, errorHint);
+                setTimeout(hideConnectionIndicator, 5000);
+            }
+        }
+
+        async function endCall() {
+            if (voiceCall) {
+                await voiceCall.endCall();
+            }
+            voiceCall = null;
+            if (pendingFallbackSpeak) {
+                clearTimeout(pendingFallbackSpeak);
+                pendingFallbackSpeak = null;
+            }
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            ttsUnavailable = false;
+            isCalling = false;
+            updateStatus('tap to start');
+            hintText.textContent = '点击任意位置开始对话';
+            hintText.classList.remove('error');
+            cancelAnimationFrame(visualizerFrame);
+            waveformContainer.classList.remove('visible');
+            waveformContainer.classList.remove('visible');
+            dotsContainer.style.display = 'flex';
+            hideReconnectHint();
+            animateIdle();
+            captionLayer.innerHTML = '';
+        }
+
+        function visualizeAudio() {
+            if (!isCalling || !voiceCall) return;
+
+            const data = voiceCall.getVisualizerData();
+
+            if (data && data.length > 0) {
+                const segmentSize = Math.max(1, Math.floor(data.length / dots.length));
+                let totalEnergy = 0;
+
+                dots.forEach((dot, i) => {
+                    let sum = 0;
+                    for (let j = 0; j < segmentSize; j++) {
+                        sum += data[i * segmentSize + j] || 0;
+                    }
+                    const avg = sum / segmentSize;
+                    const energy = avg / 255;
+                    totalEnergy += energy;
+                    const scale = 1 + energy * 4;
+                    const opacity = 0.25 + energy * 0.75;
+                    dot.style.transform = `scale(${scale})`;
+                    dot.style.opacity = opacity;
+                    dot.classList.toggle('active', energy > 0.05);
+                });
+
+                waveBars.forEach((bar, i) => {
+                    const idx = Math.floor((i / waveBars.length) * (data.length / 3));
+                    const value = data[idx] || 0;
+                    const energy = value / 255;
+                    const height = 10 + energy * 50;
+                    bar.style.height = `${height}px`;
+                    bar.classList.toggle('speaking', totalEnergy / dots.length > 0.05);
+                });
+            }
+
+            visualizerFrame = requestAnimationFrame(visualizeAudio);
+        }
+
+        function showCaption(text, type) {
+            const cap = document.createElement('div');
+            cap.className = `caption ${type}`;
+            cap.textContent = text;
+            captionLayer.appendChild(cap);
+            captionLayer.scrollTop = captionLayer.scrollHeight;
+
+            if (captionLayer.children.length > 20) {
+                captionLayer.removeChild(captionLayer.firstChild);
+            }
+        }
+
+        function addToHistory(role, text) {
+            const item = document.createElement('div');
+            item.className = `conv-item ${role}`;
+            item.innerHTML = `
+                <span class="conv-role">${role === 'user' ? 'You' : 'AI'}</span>
+                <span class="conv-text">${escapeHtml(text)}</span>
+            `;
+            conversationHistory.appendChild(item);
+            conversationHistory.scrollTop = conversationHistory.scrollHeight;
+
+            if (conversationHistory.children.length > 50) {
+                conversationHistory.removeChild(conversationHistory.firstChild);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

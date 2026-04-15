@@ -6,6 +6,117 @@
     const Chat = {
         init(app) {
             this.app = app;
+            this.setupModernInputFeatures();
+        },
+
+        setupModernInputFeatures() {
+            // 设置现代化输入框功能
+            this.setupAutoResize();
+            this.setupButtonStates();
+            this.setupAccessibility();
+        },
+
+        setupAutoResize() {
+            // 为所有现代化输入框设置自适应高度
+            const textareas = document.querySelectorAll('.chat-input-wrapper.modern-style textarea');
+            
+            textareas.forEach(textarea => {
+                const updateHeight = () => {
+                    textarea.style.height = 'auto';
+                    const newHeight = Math.min(textarea.scrollHeight, 180);
+                    textarea.style.height = newHeight + 'px';
+                    
+                    // 触发容器高度调整
+                    const wrapper = textarea.closest('.chat-input-wrapper.modern-style');
+                    if (wrapper) {
+                        wrapper.style.transition = 'height 0.2s ease';
+                        wrapper.style.height = (newHeight + 32) + 'px';
+                    }
+                };
+                
+                textarea.addEventListener('input', updateHeight);
+                textarea.addEventListener('paste', () => setTimeout(updateHeight, 0));
+                
+                // 初始化高度
+                setTimeout(updateHeight, 100);
+            });
+        },
+
+        setupButtonStates() {
+            // 设置按钮状态管理
+            const inputsAndButtons = [
+                { input: '#chatInput', button: '#sendBtn' },
+                { input: '#groupChatInput', button: '#groupSendBtn' },
+                { input: '#overlayChatInput', button: '#overlaySendBtn' },
+                { input: '#overlayGroupChatInput', button: '#overlayGroupSendBtn' }
+            ];
+            
+            inputsAndButtons.forEach(({ input, button }) => {
+                const inputEl = document.querySelector(input);
+                const buttonEl = document.querySelector(button);
+                
+                if (inputEl && buttonEl) {
+                    const updateState = () => {
+                        const hasContent = inputEl.value.trim().length > 0;
+                        buttonEl.disabled = !hasContent;
+                        buttonEl.classList.toggle('has-content', hasContent);
+                        
+                        // 视觉反馈增强
+                        if (hasContent) {
+                            buttonEl.setAttribute('aria-label', '发送消息');
+                            buttonEl.title = '发送消息';
+                        } else {
+                            buttonEl.setAttribute('aria-label', '请输入消息内容');
+                            buttonEl.title = '请输入消息内容';
+                        }
+                    };
+                    
+                    // 添加键盘支持
+                    inputEl.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            if (!buttonEl.disabled) {
+                                buttonEl.click();
+                            }
+                        }
+                    });
+                    
+                    // 添加焦点管理
+                    inputEl.addEventListener('focus', () => {
+                        buttonEl.classList.add('focus-state');
+                    });
+                    
+                    inputEl.addEventListener('blur', () => {
+                        buttonEl.classList.remove('focus-state');
+                    });
+                    
+                    inputEl.addEventListener('input', updateState);
+                    updateState(); // 初始化状态
+                }
+            });
+        },
+
+        setupAccessibility() {
+            // 添加无障碍访问支持
+            const buttons = document.querySelectorAll('.action-button.modern-style, .send-button.modern-style');
+            
+            buttons.forEach(button => {
+                // 确保按钮有适当的ARIA标签
+                if (!button.getAttribute('aria-label')) {
+                    const title = button.getAttribute('title');
+                    if (title) {
+                        button.setAttribute('aria-label', title);
+                    }
+                }
+                
+                // 添加键盘支持
+                button.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        button.click();
+                    }
+                });
+            });
         },
 
         handleChatInput() {

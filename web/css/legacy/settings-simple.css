@@ -1,0 +1,190 @@
+/**
+ * Ollama Hub - 简洁设置页面样式
+ * 
+ * 移除了过度装饰：
+ * - 水墨纹理
+ * - 宣纸质感
+ * - 复杂边框
+ * - 卷轴样式
+ * 
+ * 版本：v2.0 (简化版)
+ * 日期：2026-02-25
+ */
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 1. 设置面板容器
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.settings-panel {
+    background: var(--bg-surface);
+    font-family: var(--font-sans);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 2. 设置组
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.setting-group {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin-bottom: var(--space-4);
+    transition: all var(--transition-fast) var(--ease-default);
+}
+
+.setting-group:hover {
+    border-color: var(--color-primary-400);
+}
+
+.setting-group:last-child {
+    margin-bottom: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 3. 设置项
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border-default);
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.setting-item:first-child {
+    padding-top: 0;
+}
+
+/* 设置项标签 */
+.setting-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+}
+
+/* 设置项描述 */
+.setting-description {
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+    margin-top: var(--space-1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 4. 设置控件
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 开关 */
+.setting-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--color-gray-200);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: background var(--transition-fast) var(--ease-default);
+}
+
+.setting-toggle.active {
+    background: var(--color-primary-600);
+}
+
+.setting-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: transform var(--transition-fast) var(--ease-default);
+    box-shadow: var(--shadow-sm);
+}
+
+.setting-toggle.active::after {
+    transform: translateX(20px);
+}
+
+/* 选择框 */
+.setting-select {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    outline: none;
+    transition: border-color var(--transition-fast) var(--ease-default);
+}
+
+.setting-select:focus {
+    border-color: var(--color-primary-500);
+}
+
+/* 输入框 */
+.setting-input {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    outline: none;
+    transition: border-color var(--transition-fast) var(--ease-default);
+}
+
+.setting-input:focus {
+    border-color: var(--color-primary-500);
+    box-shadow: var(--shadow-focus);
+}
+
+.setting-input::placeholder {
+    color: var(--text-placeholder);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 5. 设置标题
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.setting-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+}
+
+.setting-subtitle {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin-top: var(--space-1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 6. 移动端优化
+ * ═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 639px) {
+    .settings-panel {
+        padding: var(--space-4);
+    }
+    
+    .setting-group {
+        padding: var(--space-4);
+    }
+    
+    .setting-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+    }
+}

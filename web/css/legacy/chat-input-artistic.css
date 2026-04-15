@@ -1,0 +1,389 @@
+/* ============================================
+   艺术风格对话框 - 油画质感设计
+   ============================================ */
+
+/* 主对话框容器 - 画布质感 */
+.chat-input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    background: 
+        /* 画布纹理 */
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E"),
+        /* 暖色渐变基底 */
+        linear-gradient(145deg, 
+            rgba(250, 248, 245, 0.95) 0%,
+            rgba(245, 240, 235, 0.92) 25%,
+            rgba(240, 234, 228, 0.9) 50%,
+            rgba(235, 228, 220, 0.92) 75%,
+            rgba(230, 222, 213, 0.95) 100%
+        );
+    border: 2px solid rgba(139, 90, 43, 0.25);
+    border-radius: 24px 24px 28px 28px;
+    padding: 14px 18px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto 20px;
+    box-sizing: border-box;
+    min-height: 64px;
+    box-shadow: 
+        /* 油画般的柔和阴影 */
+        0 4px 20px rgba(101, 67, 33, 0.12),
+        0 8px 40px rgba(101, 67, 33, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        inset 0 -1px 0 rgba(139, 90, 43, 0.1);
+    position: relative;
+    overflow: visible;
+}
+
+/* 画布边框装饰效果 */
+.chat-input-wrapper::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(145deg,
+        rgba(160, 120, 80, 0.3) 0%,
+        rgba(180, 140, 100, 0.15) 25%,
+        rgba(200, 160, 120, 0.2) 50%,
+        rgba(180, 140, 100, 0.15) 75%,
+        rgba(160, 120, 80, 0.3) 100%
+    );
+    border-radius: 26px 26px 30px 30px;
+    z-index: -1;
+    opacity: 0.6;
+}
+
+/* 内发光效果 - 油画光泽感 */
+.chat-input-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(ellipse at 30% 20%, rgba(255, 250, 240, 0.4) 0%, transparent 40%),
+        radial-gradient(ellipse at 70% 80%, rgba(220, 200, 180, 0.2) 0%, transparent 50%);
+    border-radius: 24px 24px 28px 28px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* 聚焦状态 - 画布被点亮 */
+.chat-input-wrapper:focus-within {
+    background: 
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.06'/%3E%3C/svg%3E"),
+        linear-gradient(145deg, 
+            rgba(255, 252, 248, 0.98) 0%,
+            rgba(250, 246, 240, 0.96) 25%,
+            rgba(245, 240, 232, 0.94) 50%,
+            rgba(240, 234, 226, 0.96) 75%,
+            rgba(235, 228, 220, 0.98) 100%
+        );
+    border-color: rgba(139, 90, 43, 0.45);
+    box-shadow: 
+        0 6px 30px rgba(101, 67, 33, 0.18),
+        0 12px 50px rgba(101, 67, 33, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8),
+        inset 0 -1px 0 rgba(139, 90, 43, 0.15),
+        0 0 0 4px rgba(139, 90, 43, 0.08);
+    transform: translateY(-2px) scale(1.005);
+}
+
+/* 文本输入区 - 画布上的书写区域 */
+.chat-input-wrapper textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    color: #4a3728;
+    line-height: 1.7;
+    max-height: 180px;
+    font-size: 16px;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    min-height: 28px;
+    height: auto;
+    display: block;
+    overflow-y: auto;
+    padding: 8px 4px;
+    margin: 0;
+    position: relative;
+    z-index: 2;
+    letter-spacing: 0.3px;
+}
+
+/* 占位符文字 - 铅笔素描效果 */
+.chat-input-wrapper textarea::placeholder {
+    color: rgba(139, 90, 43, 0.45);
+    font-style: italic;
+    opacity: 0.8;
+    line-height: 1.7;
+    letter-spacing: 0.5px;
+}
+
+/* 按钮基础样式 - 油画颜料质感 */
+.chat-input-wrapper button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: 
+        linear-gradient(145deg,
+            rgba(250, 248, 245, 0.9) 0%,
+            rgba(240, 235, 230, 0.85) 50%,
+            rgba(230, 222, 215, 0.9) 100%
+        );
+    border: 2px solid rgba(139, 90, 43, 0.2);
+    color: rgba(101, 67, 33, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+    box-shadow: 
+        0 2px 8px rgba(101, 67, 33, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* 按钮悬停 - 颜料被激活 */
+.chat-input-wrapper button:hover {
+    background: 
+        linear-gradient(145deg,
+            rgba(255, 250, 245, 0.95) 0%,
+            rgba(245, 238, 232, 0.9) 50%,
+            rgba(235, 226, 218, 0.95) 100%
+        );
+    border-color: rgba(139, 90, 43, 0.4);
+    color: rgba(101, 67, 33, 0.95);
+    box-shadow: 
+        0 4px 15px rgba(101, 67, 33, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px) scale(1.05);
+}
+
+/* 按钮点击 - 颜料按压效果 */
+.chat-input-wrapper button:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 
+        0 1px 4px rgba(101, 67, 33, 0.15),
+        inset 0 2px 4px rgba(101, 67, 33, 0.1);
+}
+
+/* 发送按钮 - 特殊的油画笔触效果 */
+.chat-input-wrapper .send-btn {
+    background: 
+        linear-gradient(145deg,
+            rgba(139, 90, 43, 0.9) 0%,
+            rgba(160, 110, 60, 0.85) 50%,
+            rgba(180, 130, 80, 0.9) 100%
+        );
+    border-color: rgba(120, 80, 40, 0.4);
+    color: rgba(255, 252, 248, 0.95);
+    box-shadow: 
+        0 3px 12px rgba(101, 67, 33, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.chat-input-wrapper .send-btn:hover {
+    background: 
+        linear-gradient(145deg,
+            rgba(160, 110, 60, 0.95) 0%,
+            rgba(180, 130, 80, 0.9) 50%,
+            rgba(200, 150, 100, 0.95) 100%
+        );
+    border-color: rgba(140, 100, 50, 0.5);
+    color: #fff;
+    box-shadow: 
+        0 5px 20px rgba(101, 67, 33, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* 发送按钮禁用状态 */
+.chat-input-wrapper .send-btn:disabled {
+    background: 
+        linear-gradient(145deg,
+            rgba(200, 190, 180, 0.6) 0%,
+            rgba(190, 180, 170, 0.55) 100%
+        );
+    border-color: rgba(160, 150, 140, 0.3);
+    color: rgba(150, 140, 130, 0.5);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 清空按钮 - 警示色调 */
+.chat-input-wrapper .clear-chat-btn:hover {
+    background: 
+        linear-gradient(145deg,
+            rgba(200, 100, 80, 0.15) 0%,
+            rgba(180, 80, 60, 0.1) 100%
+        );
+    border-color: rgba(180, 80, 60, 0.4);
+    color: rgba(160, 60, 40, 0.9);
+}
+
+/* 图片上传按钮 */
+.chat-input-wrapper .image-upload-btn:hover {
+    background: 
+        linear-gradient(145deg,
+            rgba(100, 140, 120, 0.15) 0%,
+            rgba(80, 120, 100, 0.1) 100%
+        );
+    border-color: rgba(80, 120, 100, 0.4);
+    color: rgba(60, 100, 80, 0.9);
+}
+
+/* 图片预览区域 - 画框效果 */
+.chat-image-preview {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 18px;
+    background: 
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E"),
+        linear-gradient(145deg, rgba(250, 248, 245, 0.98), rgba(240, 235, 230, 0.95));
+    border: 3px solid rgba(139, 90, 43, 0.25);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 
+        0 8px 30px rgba(101, 67, 33, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    display: none;
+    z-index: 100;
+}
+
+.chat-image-preview img {
+    max-width: 120px;
+    max-height: 120px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 移除图片按钮 */
+.chat-image-preview .remove-chat-image {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 28px;
+    height: 28px;
+    background: 
+        linear-gradient(145deg, 
+            rgba(200, 80, 60, 0.95), 
+            rgba(180, 60, 40, 0.95)
+        );
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.chat-image-preview .remove-chat-image:hover {
+    transform: scale(1.1) rotate(90deg);
+    background: 
+        linear-gradient(145deg, 
+            rgba(220, 100, 80, 1), 
+            rgba(200, 80, 60, 1)
+        );
+}
+
+/* 深色模式适配 */
+[data-theme="dark"] .chat-input-wrapper {
+    background: 
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.1'/%3E%3C/svg%3E"),
+        linear-gradient(145deg, 
+            rgba(45, 40, 35, 0.95) 0%,
+            rgba(40, 35, 30, 0.92) 25%,
+            rgba(35, 30, 25, 0.9) 50%,
+            rgba(30, 25, 22, 0.92) 75%,
+            rgba(28, 23, 20, 0.95) 100%
+        );
+    border-color: rgba(139, 90, 43, 0.35);
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.4),
+        0 8px 40px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .chat-input-wrapper textarea {
+    color: rgba(230, 225, 218, 0.95);
+}
+
+[data-theme="dark"] .chat-input-wrapper textarea::placeholder {
+    color: rgba(180, 160, 140, 0.4);
+}
+
+[data-theme="dark"] .chat-input-wrapper button {
+    background: 
+        linear-gradient(145deg,
+            rgba(60, 55, 50, 0.9) 0%,
+            rgba(50, 45, 40, 0.85) 50%,
+            rgba(40, 35, 32, 0.9) 100%
+        );
+    border-color: rgba(139, 90, 43, 0.3);
+    color: rgba(200, 185, 170, 0.7);
+}
+
+[data-theme="dark"] .chat-input-wrapper button:hover {
+    background: 
+        linear-gradient(145deg,
+            rgba(70, 65, 60, 0.95) 0%,
+            rgba(60, 55, 50, 0.9) 50%,
+            rgba(50, 45, 42, 0.95) 100%
+        );
+    border-color: rgba(139, 90, 43, 0.5);
+    color: rgba(230, 220, 210, 0.95);
+}
+
+[data-theme="dark"] .chat-input-wrapper .send-btn {
+    background: 
+        linear-gradient(145deg,
+            rgba(139, 90, 43, 0.85) 0%,
+            rgba(160, 110, 60, 0.8) 50%,
+            rgba(180, 130, 80, 0.85) 100%
+        );
+    border-color: rgba(120, 80, 40, 0.5);
+    color: rgba(255, 252, 248, 0.95);
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+    .chat-input-wrapper {
+        max-width: 100%;
+        margin: 0 12px 16px;
+        padding: 12px 14px;
+        min-height: 56px;
+    }
+    
+    .chat-input-wrapper button {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .chat-input-wrapper textarea {
+        font-size: 15px;
+    }
+}
+
+/* 隐藏滚动条 - 保持画布纯净感 */
+.chat-input-wrapper textarea::-webkit-scrollbar {
+    display: none;
+}
+
+.chat-input-wrapper textarea {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

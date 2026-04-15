@@ -1,0 +1,26 @@
+生成时间: 周六 2026/02/28 10:31:46.60 
+============================================ 
+ 
+ 
+[步骤 1/8] 检查 Ollama 安装... 
+    [OK] 找到 Ollama: C:\Users\衡博悦0926\AppData\Local\Programs\Ollama\ollama.exe 
+    [信息] 版本: ollama version is 0.14.3 
+    [信息] 版本: Warning: client version is 0.17.2 
+ 
+[步骤 2/8] 检查环境变量配置... 
+    [检查] OLLAMA_HOST 环境变量 
+    [信息] OLLAMA_HOST=localhost 
+    [警告] OLLAMA_HOST 设置非标准值，可能导致连接问题 
+    [建议] 如需使用默认端口，请执行: setx OLLAMA_HOST "127.0.0.1:11434" 
+    [OK] 使用默认配置 (127.0.0.1:11434) 
+    [检查] OLLAMA_MODELS 环境变量 
+    [信息] OLLAMA_MODELS=D:\Explor\ollma\models\ollama 
+ 
+[步骤 3/8] 检查端口 11434 占用情况... 
+    [信息] 端口 11434 被占用 (PID: 23812) 
+    [信息] 占用进程: "ollama.exe","23812","Console","1","27,496 K" 
+    [OK] 端口被 Ollama 进程占用 
+    [警告] 端口 11434 未被占用 
+ 
+[步骤 4/8] 测试网络连接... 
+    [测试] 连接到 localhost:11434 

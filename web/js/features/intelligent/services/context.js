@@ -20,7 +20,17 @@ const ContextService = (function() {
         min_importance_threshold: 0.7,
         enable_memory: true,
         enable_summary: true,
-        enable_auto_save: true
+        enable_auto_save: true,
+        show_reasoning_summary: true,
+        reasoning_summary_level: 'brief',
+        response_depth: 'standard',
+        persona_strength: 70,
+        system_prompt_mode: 'template',
+        system_prompt_template: 'assistant_balanced',
+        system_prompt_custom: '',
+        safety_mode: 'balanced',
+        adult_tone_mode: false,
+        adult_tone_acknowledged: false
     };
     
     /**
@@ -95,21 +105,29 @@ const ContextService = (function() {
      * @returns {Promise<Object>}
      */
     async function saveConfig(config) {
-        // 验证配置
-        const validation = window.IntelligentValidators.validateContextConfig(config);
-        
-        if (!validation.valid) {
-            return {
-                success: false,
-                error: Object.values(validation.errors).flat().join(', ')
-            };
+        // 仅对旧上下文字段做校验；新策略字段直接透传
+        const hasLegacyContextKeys = [
+            'max_total_tokens',
+            'regular_window_size',
+            'core_messages_max',
+            'min_importance_threshold'
+        ].some(k => Object.prototype.hasOwnProperty.call(config, k));
+
+        if (hasLegacyContextKeys && window.IntelligentValidators?.validateContextConfig) {
+            const validation = window.IntelligentValidators.validateContextConfig(config);
+            if (!validation.valid) {
+                return {
+                    success: false,
+                    error: Object.values(validation.errors).flat().join(', ')
+                };
+            }
         }
         
         try {
             const response = await fetch(`${API_BASE}/api/context/config`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(config)
+                body: JSON.stringify({ settings: config })
             });
             
             const result = await response.json();

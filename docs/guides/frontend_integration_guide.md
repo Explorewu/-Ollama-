@@ -121,3 +121,27 @@ ImageGen.generate = async function(params) {
 - 确保向后兼容性
 
 这个集成方案提供了最佳的用户体验，无论本地环境如何配置，用户都能获得高质量的图像生成服务。
+
+---
+
+## 前后端整体对接（补充）
+
+### 统一 API 入口
+- 以 `http://localhost:5001/api/*` 作为业务 API 主入口
+- 以 `http://localhost:11434` 作为 Ollama 原生模型接口入口
+- 统一鉴权：前端通过 `/api/api-key/list` 获取密钥并自动注入 `Authorization`
+
+### 流式协议规范
+- 对话与群聊流式响应统一使用 SSE（`text/event-stream`）
+- 返回结构必须包含 `content` 与 `done` 字段，前端按增量拼接
+
+### 性能优化重点
+- 前端请求合并：重复调用统一在 `UnifiedAPIClient` 做去重与节流
+- 后端缓存：利用 `smart_cache` 缓存摘要、搜索结果、RAG 命中
+- 降低 RTT：API 层参数精简与响应结构扁平化
+
+### 对接必检清单
+- `/api/health` 与 `/api/stats` 返回格式一致
+- `/api/chat` 与 `/api/group-chat` 支持 `stream=true`
+- `/api/models` 与 `/api/vision` 对接前端对应模块
+- 错误统一结构：`success=false` + `message` + `code`

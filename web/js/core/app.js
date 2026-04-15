@@ -110,11 +110,19 @@ const App = {
 
         // 初始化电脑协助可控执行模式（默认关闭，可持久化）
         this.initComputerAssistControlMode();
+        
+        // 初始化智能情境学习助手（功能开发中）
+        // this.initSmartAssistant();
 
         // 初始化拖拽上传
         this.initDragUpload();
 
-        // 加载设置到UI
+        // 初始化模型管理模块（必须在 loadModels 之前调用）
+        if (typeof AppModels !== 'undefined') {
+            AppModels.init(this);
+        }
+
+        // 加载设置到 UI
         this.loadSettingsToUI();
 
         // ===== 并行初始化 =====
@@ -212,6 +220,8 @@ const App = {
             if (typeof FunctionManager !== 'undefined') {
                 FunctionManager.init();
             }
+
+            // 模型管理模块已在前面初始化
 
 
         }, 1000);
@@ -1131,17 +1141,21 @@ const App = {
         const grid = document.getElementById('modelsGrid');
 
         try {
-            const models = await API.getModels();
-            this.state.installedModels = models;
+            // 使用 AppModels 加载模型
+            if (typeof AppModels !== 'undefined' && AppModels.loadModels) {
+                // 确保 this 上下文正确传递
+                await AppModels.loadModels.call(AppModels);
+            } else {
+                // 回退到旧逻辑
+                const models = await API.getModels();
+                this.state.installedModels = models;
 
-            // 更新设置页面的模型选择下拉框
-            const settingsModelSelect = document.getElementById('modelSelectNew');
-            if (settingsModelSelect) {
-                this.updateSettingsModelSelect(models);
+                // 更新设置页面的模型选择下拉框
+                const settingsModelSelect = document.getElementById('modelSelectNew');
+                if (settingsModelSelect) {
+                    this.updateSettingsModelSelect(models);
+                }
             }
-
-            // 渲染模型卡片
-            this.renderModelCards(models);
 
             // 更新服务状态为正常
             this.updateServiceStatus(true);
@@ -1219,80 +1233,6 @@ const App = {
     },
 
     /**
-     * 渲染模型卡片
-     * @param {Array} models - 模型列表
-     */
-    renderModelCards(models) {
-        const grid = document.getElementById('modelsGrid');
-
-        // 过滤掉禁用的模型
-        const disabledModels = Storage.getDisabledModels();
-        const enabledModels = models.filter(model => !disabledModels.includes(model.name));
-
-        if (enabledModels.length === 0) {
-            grid.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">📦</div>
-                    <h3>暂无已启用的模型</h3>
-                    <p>所有模型已被禁用，请在设置中启用模型</p>
-                    <button class="btn btn-primary" onclick="App.switchPage('settings')">
-                        前往设置
-                    </button>
-                </div>
-            `;
-            return;
-        }
-
-        // 对模型排序，literary-super 优先显示
-        const sortedModels = [...enabledModels].sort((a, b) => {
-            if (a.name.includes('literary-super')) return -1;
-            if (b.name.includes('literary-super')) return 1;
-            if (a.name.includes('literary-assistant')) return -1;
-            if (b.name.includes('literary-assistant')) return 1;
-            return 0;
-        });
-        
-        grid.innerHTML = sortedModels.map(model => {
-            const icon = '🤖';
-            const description = '点击使用此模型进行对话，或删除模型以释放空间。';
-            
-            return `
-            <div class="model-card" data-model="${model.name}">
-                <div class="model-card-header">
-                    <div class="model-icon-large">${icon}</div>
-                    <div class="model-info">
-                        <div class="model-name">${model.name}</div>
-                        <div class="model-size">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                            </svg>
-                            ${API.formatSize(model.size)}
-                        </div>
-                    </div>
-                </div>
-                <div class="model-description">
-                    ${description}
-                </div>
-                <div class="model-actions">
-                    <button class="btn btn-primary" onclick="App.useModel('${model.name}')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        </svg>
-                        开始对话
-                    </button>
-                    <button class="btn btn-secondary" onclick="App.deleteModel('${model.name}')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        </svg>
-                        删除
-                    </button>
-                </div>
-            </div>
-        `}).join('');
-    },
-
-    /**
      * 过滤模型
      * @param {string} query - 搜索关键词
      * @param {string} filter - 筛选类型
@@ -1303,10 +1243,17 @@ const App = {
 
         cards.forEach(card => {
             const modelName = card.dataset.model.toLowerCase();
+            const isDownloaded = !card.classList.contains('not-downloaded');
             const matchesQuery = modelName.includes(lowercaseQuery);
             
-            // 目前所有模型都是已下载的，所以筛选逻辑可以根据需要扩展
-            const matchesFilter = filter === 'all' || filter === 'downloaded';
+            // 筛选逻辑
+            let matchesFilter = true;
+            if (filter === 'downloaded') {
+                matchesFilter = isDownloaded;
+            } else if (filter === 'not-downloaded') {
+                matchesFilter = !isDownloaded;
+            }
+            // 'all' 显示所有
             
             card.style.display = matchesQuery && matchesFilter ? '' : 'none';
         });
@@ -1353,6 +1300,12 @@ const App = {
         const ollamaVersion = document.getElementById('ollamaVersion');
         const apiAddress = document.getElementById('apiAddress');
 
+        // 检查元素是否存在，避免空指针错误
+        if (!osInfo || !ollamaVersion || !apiAddress) {
+            console.warn('[警告] 系统信息元素不存在，跳过初始化');
+            return;
+        }
+
         // 获取操作系统信息
         const platform = navigator.platform;
         osInfo.textContent = platform;
@@ -1393,16 +1346,26 @@ const App = {
         const statusElement = document.getElementById('serviceStatus');
         const statusIcon = document.querySelector('.status-icon');
 
+        // 检查元素是否存在，避免空指针错误
+        if (!statusElement) {
+            console.warn('[警告] serviceStatus 元素不存在，跳过状态更新');
+            return;
+        }
+
         if (isRunning) {
             statusElement.textContent = '运行中';
             statusElement.style.color = 'var(--success-color)';
-            statusIcon.style.background = 'var(--primary-subtle)';
-            statusIcon.style.color = 'var(--primary-color)';
+            if (statusIcon) {
+                statusIcon.style.background = 'var(--primary-subtle)';
+                statusIcon.style.color = 'var(--primary-color)';
+            }
         } else {
             statusElement.textContent = '未运行';
             statusElement.style.color = 'var(--error-color)';
-            statusIcon.style.background = '#fef2f2';
-            statusIcon.style.color = '#ef4444';
+            if (statusIcon) {
+                statusIcon.style.background = '#fef2f2';
+                statusIcon.style.color = '#ef4444';
+            }
         }
     },
 
@@ -4593,14 +4556,61 @@ const App = {
             }
         }
         
-        // 如果没有选择模型，默认选择 literary-super（超级文学助手）
+        // 如果没有选择模型，智能选择默认模型
         if (!this.state.selectedModel) {
-            this.state.selectedModel = 'literary-super:latest';
-            const modelSelect = document.getElementById('modelSelect');
-            if (modelSelect) {
-                modelSelect.value = 'literary-super:latest';
+            this.selectDefaultModel();
+        }
+    },
+
+    /**
+     * 智能选择默认模型
+     */
+    selectDefaultModel() {
+        // 优先级排序的推荐模型列表
+        const preferredModels = [
+            'qwen2.5:7b',      // 阿里千问2.5 7B - 中文友好
+            'llama3.2:3b',     // Meta Llama 3.2 3B - 性能优秀
+            'gemma2:9b',       // Google Gemma 2 9B - 谷歌出品
+            'qwen3:4b',        // 阿里千问3 4B - 最新版
+            'literary-assistant:latest', // 文学助手
+            'qwen2.5:3b',      // 阿里千问2.5 3B - 轻量级
+            'llama2',          // 经典Llama2
+            'mistral'          // Mistral
+        ];
+
+        // 检查已安装的模型
+        const installedModels = this.state.installedModels || [];
+        const installedModelNames = installedModels.map(m => m.name);
+
+        // 选择第一个可用的推荐模型
+        let selectedModel = null;
+        for (const model of preferredModels) {
+            if (installedModelNames.includes(model)) {
+                selectedModel = model;
+                break;
             }
         }
+
+        // 如果没有找到推荐模型，选择第一个安装的模型
+        if (!selectedModel && installedModelNames.length > 0) {
+            selectedModel = installedModelNames[0];
+        }
+
+        // 如果仍然没有模型，使用第一个推荐模型作为占位符
+        if (!selectedModel) {
+            selectedModel = preferredModels[0]; // 默认使用 qwen2.5:7b
+        }
+
+        // 设置默认模型
+        this.state.selectedModel = selectedModel;
+        
+        // 更新UI选择器
+        const modelSelect = document.getElementById('modelSelect');
+        if (modelSelect) {
+            modelSelect.value = selectedModel;
+        }
+        
+        console.log(`[默认模型] 已设置默认模型: ${selectedModel}`);
     },
 
     /**
@@ -7697,9 +7707,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 初始化艺术风格欢迎页面
     initArtisticWelcome();
     
-    // 初始化 Canvas 马群动画
-    initHorseCanvas();
-    
     // 延迟初始化主应用（等欢迎页面处理完）
     setTimeout(() => {
         App.init();
@@ -7736,12 +7743,6 @@ function initArtisticWelcome() {
             // 标记已访问
             sessionStorage.setItem('ollamaHubVisited', 'true');
             
-            // 销毁 Canvas 动画释放资源
-            if (window.horseAnimation && typeof window.horseAnimation.destroy === 'function') {
-                window.horseAnimation.destroy();
-                window.horseAnimation = null;
-            }
-            
             // 添加隐藏动画
             welcome.classList.add('hidden');
             
@@ -7767,21 +7768,4 @@ function initArtisticWelcome() {
     }
 }
 
-// ============================================
-// Canvas 马群动画初始化
-// ============================================
-function initHorseCanvas() {
-    const canvas = document.getElementById('horseCanvas');
-    if (!canvas) return;
-    
-    if (typeof HorseCanvas !== 'undefined') {
-        window.horseAnimation = new HorseCanvas(canvas);
-    } else {
-        console.warn('HorseCanvas 未加载，尝试延迟初始化');
-        setTimeout(() => {
-            if (typeof HorseCanvas !== 'undefined') {
-                window.horseAnimation = new HorseCanvas(canvas);
-            }
-        }, 500);
-    }
-}
+

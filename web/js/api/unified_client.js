@@ -26,21 +26,21 @@ const UnifiedAPIClient = (function() {
             priority: 2
         },
         summary: {
-            baseUrl: `http://${window.location.hostname || 'localhost'}:5002`,
+            baseUrl: `http://${window.location.hostname || 'localhost'}:5001`,
             timeout: 30000,
-            healthEndpoint: '/api/summary/health',
+            healthEndpoint: '/api/health',
             priority: 3
         },
         vision: {
-            baseUrl: `http://${window.location.hostname || 'localhost'}:5003`,
+            baseUrl: `http://${window.location.hostname || 'localhost'}:5001`,
             timeout: 60000,
-            healthEndpoint: '/api/vision/status',
+            healthEndpoint: '/api/health',
             priority: 3
         },
         nativeImage: {
-            baseUrl: `http://${window.location.hostname || 'localhost'}:5004`,
+            baseUrl: `http://${window.location.hostname || 'localhost'}:5001`,
             timeout: 60000,
-            healthEndpoint: '/api/native_llama_cpp_image/health',
+            healthEndpoint: '/api/health',
             priority: 4
         }
     };
@@ -199,6 +199,29 @@ const UnifiedAPIClient = (function() {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    async function getApiKey() {
+        // 优先从 localStorage 获取
+        const storedKey = localStorage.getItem('api_key');
+        if (storedKey) {
+            return storedKey;
+        }
+        
+        // 回退：从后端获取（仅用于兼容旧版本）
+        try {
+            const response = await fetch(`${ServiceConfig.backend.baseUrl}/api/api-key/list`);
+            const data = await response.json();
+            if (data.success && data.data && data.data.length > 0) {
+                const activeKey = data.data.find(k => k.is_active);
+                if (activeKey && activeKey.key) {
+                    return activeKey.key;
+                }
+            }
+        } catch (e) {
+            console.debug('[UnifiedAPIClient] 获取 API Key 失败，跳过认证');
+        }
+        return null;
+    }
+
     async function executeRequest(service, endpoint, options = {}) {
         const config = ServiceConfig[service];
         if (!config) {
@@ -212,7 +235,8 @@ const UnifiedAPIClient = (function() {
             timeout = config.timeout,
             useCache = method === 'GET',
             cacheTTL = CacheConfig.defaultTTL,
-            skipQueue = false
+            skipQueue = false,
+            requireAuth = false
         } = options;
 
         const cacheKey = generateCacheKey(service, endpoint, method, data);
@@ -233,6 +257,19 @@ const UnifiedAPIClient = (function() {
         const execute = async () => {
             const url = `${config.baseUrl}${endpoint}`;
             let lastError = null;
+            
+            const requestHeaders = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                ...headers
+            };
+            
+            if (requireAuth || endpoint.startsWith('/api/chat') || endpoint.startsWith('/api/search')) {
+                const apiKey = await getApiKey();
+                if (apiKey) {
+                    requestHeaders['Authorization'] = `Bearer ${apiKey}`;
+                }
+            }
 
             for (let attempt = 0; attempt < RetryConfig.maxRetries; attempt++) {
                 const startTime = Date.now();
@@ -243,11 +280,7 @@ const UnifiedAPIClient = (function() {
 
                     const fetchOptions = {
                         method: method,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            ...headers
-                        },
+                        headers: requestHeaders,
                         signal: controller.signal
                     };
 

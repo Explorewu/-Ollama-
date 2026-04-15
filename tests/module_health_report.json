@@ -1,0 +1,3105 @@
+{
+  "scan_info": {
+    "timestamp": "2026-04-08T15:38:47.682839",
+    "elapsed_seconds": 16.93,
+    "total_modules_scanned": 220,
+    "project_directory": "D:\\Explore\\ollma"
+  },
+  "statistics": {
+    "total": 220,
+    "healthy": 38,
+    "fixable": 6,
+    "unfixable": 176,
+    "useless": 0,
+    "health_rate": "17.3%"
+  },
+  "categories": {
+    "healthy": [
+      {
+        "name": "server/api/api_key.py",
+        "path": "server/api/api_key.py",
+        "line_count": 167,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/asr.py",
+        "path": "server/api/asr.py",
+        "line_count": 114,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/chat.py",
+        "path": "server/api/chat.py",
+        "line_count": 495,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/context.py",
+        "path": "server/api/context.py",
+        "line_count": 201,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/functions.py",
+        "path": "server/api/functions.py",
+        "line_count": 142,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/group_chat.py",
+        "path": "server/api/group_chat.py",
+        "line_count": 423,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/health.py",
+        "path": "server/api/health.py",
+        "line_count": 302,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/image.py",
+        "path": "server/api/image.py",
+        "line_count": 303,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/memory.py",
+        "path": "server/api/memory.py",
+        "line_count": 200,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/models.py",
+        "path": "server/api/models.py",
+        "line_count": 263,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/rag.py",
+        "path": "server/api/rag.py",
+        "line_count": 147,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/search.py",
+        "path": "server/api/search.py",
+        "line_count": 100,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/summary.py",
+        "path": "server/api/summary.py",
+        "line_count": 313,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api/vision.py",
+        "path": "server/api/vision.py",
+        "line_count": 189,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api_key_service.py",
+        "path": "server/api_key_service.py",
+        "line_count": 229,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/api_utils.py",
+        "path": "server/api_utils.py",
+        "line_count": 421,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/asr/base.py",
+        "path": "server/asr/base.py",
+        "line_count": 282,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/context_manager.py",
+        "path": "server/context_manager.py",
+        "line_count": 791,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/conversation_memory.py",
+        "path": "server/conversation_memory.py",
+        "line_count": 249,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/function_engine.py",
+        "path": "server/function_engine.py",
+        "line_count": 207,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/hybrid_group_chat_api.py",
+        "path": "server/hybrid_group_chat_api.py",
+        "line_count": 605,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/hybrid_group_chat_controller.py",
+        "path": "server/hybrid_group_chat_controller.py",
+        "line_count": 1547,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/intelligent_api.py",
+        "path": "server/intelligent_api.py",
+        "line_count": 257,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/intent_classifier.py",
+        "path": "server/intent_classifier.py",
+        "line_count": 276,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/loop_guard.py",
+        "path": "server/loop_guard.py",
+        "line_count": 208,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/memory_service.py",
+        "path": "server/memory_service.py",
+        "line_count": 555,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/model_paths.py",
+        "path": "server/model_paths.py",
+        "line_count": 130,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/prompt_optimizer.py",
+        "path": "server/prompt_optimizer.py",
+        "line_count": 498,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/rag_service.py",
+        "path": "server/rag_service.py",
+        "line_count": 299,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/security_utils.py",
+        "path": "server/security_utils.py",
+        "line_count": 443,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/service_connection_manager.py",
+        "path": "server/service_connection_manager.py",
+        "line_count": 533,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/smart_cache.py",
+        "path": "server/smart_cache.py",
+        "line_count": 342,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/summary_service.py",
+        "path": "server/summary_service.py",
+        "line_count": 757,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/text_segmenter.py",
+        "path": "server/text_segmenter.py",
+        "line_count": 349,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/utils/auth.py",
+        "path": "server/utils/auth.py",
+        "line_count": 104,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/utils/config.py",
+        "path": "server/utils/config.py",
+        "line_count": 221,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/utils/helpers.py",
+        "path": "server/utils/helpers.py",
+        "line_count": 166,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/web_search_service.py",
+        "path": "server/web_search_service.py",
+        "line_count": 212,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": true
+      }
+    ],
+    "fixable": [
+      {
+        "name": "server/api/__init__.py",
+        "path": "server/api/__init__.py",
+        "line_count": 37,
+        "errors": [],
+        "warnings": [
+          "缺少依赖: group_chat, chat, vision, rag, api_key, summary, functions, context, memory, image",
+          "运行时检查跳过: module 'importlib' has no attribute 'util'"
+        ],
+        "missing_deps": [
+          "group_chat",
+          "chat",
+          "vision",
+          "rag",
+          "api_key",
+          "summary",
+          "functions",
+          "context",
+          "memory",
+          "image",
+          "search",
+          "health"
+        ],
+        "diagnosis": "无函数/类定义，可能是配置文件",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": false,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/asr/__init__.py",
+        "path": "server/asr/__init__.py",
+        "line_count": 19,
+        "errors": [],
+        "warnings": [
+          "缺少依赖: base, factory"
+        ],
+        "missing_deps": [
+          "base",
+          "factory"
+        ],
+        "diagnosis": "无函数/类定义，可能是配置文件",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": false,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/asr/factory.py",
+        "path": "server/asr/factory.py",
+        "line_count": 236,
+        "errors": [],
+        "warnings": [
+          "缺少依赖: base"
+        ],
+        "missing_deps": [
+          "base"
+        ],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": false,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/asr/whisper_ollama.py",
+        "path": "server/asr/whisper_ollama.py",
+        "line_count": 181,
+        "errors": [],
+        "warnings": [
+          "缺少依赖: factory, base"
+        ],
+        "missing_deps": [
+          "factory",
+          "base"
+        ],
+        "diagnosis": "",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": false,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/local_model_loader.py",
+        "path": "server/local_model_loader.py",
+        "line_count": 488,
+        "errors": [],
+        "warnings": [
+          "缺少依赖: llama_cpp"
+        ],
+        "missing_deps": [
+          "llama_cpp"
+        ],
+        "diagnosis": "",
+        "fix_suggestions": [
+          "安装可选依赖以启用完整功能"
+        ],
+        "syntax_ok": true,
+        "imports_ok": false,
+        "runtime_ok": true
+      },
+      {
+        "name": "server/utils/__init__.py",
+        "path": "server/utils/__init__.py",
+        "line_count": 40,
+        "errors": [],
+        "warnings": [
+          "缺少依赖: config, auth, helpers"
+        ],
+        "missing_deps": [
+          "config",
+          "auth",
+          "helpers"
+        ],
+        "diagnosis": "无函数/类定义，可能是配置文件",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": false,
+        "runtime_ok": true
+      }
+    ],
+    "unfixable": [
+      {
+        "name": ".agent/skills/docx/scripts/accept_changes.py",
+        "path": ".agent/skills/docx/scripts/accept_changes.py",
+        "line_count": 135,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/docx/scripts/comment.py",
+        "path": ".agent/skills/docx/scripts/comment.py",
+        "line_count": 318,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/docx/scripts/office/helpers/merge_runs.py",
+        "path": ".agent/skills/docx/scripts/office/helpers/merge_runs.py",
+        "line_count": 199,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/docx/scripts/office/helpers/simplify_redlines.py",
+        "path": ".agent/skills/docx/scripts/office/helpers/simplify_redlines.py",
+        "line_count": 197,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/docx/scripts/office/pack.py",
+        "path": ".agent/skills/docx/scripts/office/pack.py",
+        "line_count": 159,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/docx/scripts/office/soffice.py",
+        "path": ".agent/skills/docx/scripts/office/soffice.py",
+        "line_count": 183,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/docx/scripts/office/unpack.py",
+        "path": ".agent/skills/docx/scripts/office/unpack.py",
+        "line_count": 132,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/docx/scripts/office/validate.py",
+        "path": ".agent/skills/docx/scripts/office/validate.py",
+        "line_count": 111,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/docx/scripts/office/validators/__init__.py",
+        "path": ".agent/skills/docx/scripts/office/validators/__init__.py",
+        "line_count": 15,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/docx/scripts/office/validators/base.py",
+        "path": ".agent/skills/docx/scripts/office/validators/base.py",
+        "line_count": 847,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/docx/scripts/office/validators/docx.py",
+        "path": ".agent/skills/docx/scripts/office/validators/docx.py",
+        "line_count": 446,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/docx/scripts/office/validators/pptx.py",
+        "path": ".agent/skills/docx/scripts/office/validators/pptx.py",
+        "line_count": 275,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/docx/scripts/office/validators/redlining.py",
+        "path": ".agent/skills/docx/scripts/office/validators/redlining.py",
+        "line_count": 247,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/mcp-builder/scripts/connections.py",
+        "path": ".agent/skills/mcp-builder/scripts/connections.py",
+        "line_count": 151,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/mcp-builder/scripts/evaluation.py",
+        "path": ".agent/skills/mcp-builder/scripts/evaluation.py",
+        "line_count": 373,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pdf/scripts/check_bounding_boxes.py",
+        "path": ".agent/skills/pdf/scripts/check_bounding_boxes.py",
+        "line_count": 65,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pdf/scripts/check_fillable_fields.py",
+        "path": ".agent/skills/pdf/scripts/check_fillable_fields.py",
+        "line_count": 11,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pdf/scripts/convert_pdf_to_images.py",
+        "path": ".agent/skills/pdf/scripts/convert_pdf_to_images.py",
+        "line_count": 33,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pdf/scripts/create_validation_image.py",
+        "path": ".agent/skills/pdf/scripts/create_validation_image.py",
+        "line_count": 37,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pdf/scripts/extract_form_field_info.py",
+        "path": ".agent/skills/pdf/scripts/extract_form_field_info.py",
+        "line_count": 122,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pdf/scripts/extract_form_structure.py",
+        "path": ".agent/skills/pdf/scripts/extract_form_structure.py",
+        "line_count": 115,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pdf/scripts/fill_fillable_fields.py",
+        "path": ".agent/skills/pdf/scripts/fill_fillable_fields.py",
+        "line_count": 98,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pdf/scripts/fill_pdf_form_with_annotations.py",
+        "path": ".agent/skills/pdf/scripts/fill_pdf_form_with_annotations.py",
+        "line_count": 107,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/add_slide.py",
+        "path": ".agent/skills/pptx/scripts/add_slide.py",
+        "line_count": 195,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/clean.py",
+        "path": ".agent/skills/pptx/scripts/clean.py",
+        "line_count": 286,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/office/helpers/merge_runs.py",
+        "path": ".agent/skills/pptx/scripts/office/helpers/merge_runs.py",
+        "line_count": 199,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/office/helpers/simplify_redlines.py",
+        "path": ".agent/skills/pptx/scripts/office/helpers/simplify_redlines.py",
+        "line_count": 197,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/office/pack.py",
+        "path": ".agent/skills/pptx/scripts/office/pack.py",
+        "line_count": 159,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/office/soffice.py",
+        "path": ".agent/skills/pptx/scripts/office/soffice.py",
+        "line_count": 183,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/office/unpack.py",
+        "path": ".agent/skills/pptx/scripts/office/unpack.py",
+        "line_count": 132,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/office/validate.py",
+        "path": ".agent/skills/pptx/scripts/office/validate.py",
+        "line_count": 111,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/office/validators/__init__.py",
+        "path": ".agent/skills/pptx/scripts/office/validators/__init__.py",
+        "line_count": 15,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/office/validators/base.py",
+        "path": ".agent/skills/pptx/scripts/office/validators/base.py",
+        "line_count": 847,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/office/validators/docx.py",
+        "path": ".agent/skills/pptx/scripts/office/validators/docx.py",
+        "line_count": 446,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/office/validators/pptx.py",
+        "path": ".agent/skills/pptx/scripts/office/validators/pptx.py",
+        "line_count": 275,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/office/validators/redlining.py",
+        "path": ".agent/skills/pptx/scripts/office/validators/redlining.py",
+        "line_count": 247,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/pptx/scripts/thumbnail.py",
+        "path": ".agent/skills/pptx/scripts/thumbnail.py",
+        "line_count": 289,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/skill-creator/scripts/init_skill.py",
+        "path": ".agent/skills/skill-creator/scripts/init_skill.py",
+        "line_count": 303,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/skill-creator/scripts/package_skill.py",
+        "path": ".agent/skills/skill-creator/scripts/package_skill.py",
+        "line_count": 110,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/skill-creator/scripts/quick_validate.py",
+        "path": ".agent/skills/skill-creator/scripts/quick_validate.py",
+        "line_count": 103,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/slack-gif-creator/core/easing.py",
+        "path": ".agent/skills/slack-gif-creator/core/easing.py",
+        "line_count": 234,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/slack-gif-creator/core/frame_composer.py",
+        "path": ".agent/skills/slack-gif-creator/core/frame_composer.py",
+        "line_count": 176,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/slack-gif-creator/core/gif_builder.py",
+        "path": ".agent/skills/slack-gif-creator/core/gif_builder.py",
+        "line_count": 269,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/slack-gif-creator/core/validators.py",
+        "path": ".agent/skills/slack-gif-creator/core/validators.py",
+        "line_count": 136,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/webapp-testing/examples/console_logging.py",
+        "path": ".agent/skills/webapp-testing/examples/console_logging.py",
+        "line_count": 35,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/webapp-testing/examples/element_discovery.py",
+        "path": ".agent/skills/webapp-testing/examples/element_discovery.py",
+        "line_count": 40,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/webapp-testing/examples/static_html_automation.py",
+        "path": ".agent/skills/webapp-testing/examples/static_html_automation.py",
+        "line_count": 33,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/webapp-testing/scripts/with_server.py",
+        "path": ".agent/skills/webapp-testing/scripts/with_server.py",
+        "line_count": 106,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/xlsx/scripts/office/helpers/merge_runs.py",
+        "path": ".agent/skills/xlsx/scripts/office/helpers/merge_runs.py",
+        "line_count": 199,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/xlsx/scripts/office/helpers/simplify_redlines.py",
+        "path": ".agent/skills/xlsx/scripts/office/helpers/simplify_redlines.py",
+        "line_count": 197,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/xlsx/scripts/office/pack.py",
+        "path": ".agent/skills/xlsx/scripts/office/pack.py",
+        "line_count": 159,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/xlsx/scripts/office/soffice.py",
+        "path": ".agent/skills/xlsx/scripts/office/soffice.py",
+        "line_count": 183,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/xlsx/scripts/office/unpack.py",
+        "path": ".agent/skills/xlsx/scripts/office/unpack.py",
+        "line_count": 132,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/xlsx/scripts/office/validate.py",
+        "path": ".agent/skills/xlsx/scripts/office/validate.py",
+        "line_count": 111,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/xlsx/scripts/office/validators/__init__.py",
+        "path": ".agent/skills/xlsx/scripts/office/validators/__init__.py",
+        "line_count": 15,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/xlsx/scripts/office/validators/base.py",
+        "path": ".agent/skills/xlsx/scripts/office/validators/base.py",
+        "line_count": 847,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/xlsx/scripts/office/validators/docx.py",
+        "path": ".agent/skills/xlsx/scripts/office/validators/docx.py",
+        "line_count": 446,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/xlsx/scripts/office/validators/pptx.py",
+        "path": ".agent/skills/xlsx/scripts/office/validators/pptx.py",
+        "line_count": 275,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/xlsx/scripts/office/validators/redlining.py",
+        "path": ".agent/skills/xlsx/scripts/office/validators/redlining.py",
+        "line_count": 247,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".agent/skills/xlsx/scripts/recalc.py",
+        "path": ".agent/skills/xlsx/scripts/recalc.py",
+        "line_count": 184,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".ollama/models/tts/ZhipuAI/GLM-TTS/vq32k-phoneme-tokenizer/tokenization_chatglm.py",
+        "path": ".ollama/models/tts/ZhipuAI/GLM-TTS/vq32k-phoneme-tokenizer/tokenization_chatglm.py",
+        "line_count": 224,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": ".opencode/skill/code_quality_checker/checker.py",
+        "path": ".opencode/skill/code_quality_checker/checker.py",
+        "line_count": 376,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "analyze_report.py",
+        "path": "analyze_report.py",
+        "line_count": 93,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "check_gguf.py",
+        "path": "check_gguf.py",
+        "line_count": 63,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "download_asr.py",
+        "path": "download_asr.py",
+        "line_count": 18,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "download_tts.py",
+        "path": "download_tts.py",
+        "line_count": 70,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "fix_bom.py",
+        "path": "fix_bom.py",
+        "line_count": 31,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/convert_hf_to_gguf.py",
+        "path": "llama.cpp/convert_hf_to_gguf.py",
+        "line_count": 11275,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/convert_hf_to_gguf_update.py",
+        "path": "llama.cpp/convert_hf_to_gguf_update.py",
+        "line_count": 479,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/convert_llama_ggml_to_gguf.py",
+        "path": "llama.cpp/convert_llama_ggml_to_gguf.py",
+        "line_count": 450,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/convert_lora_to_gguf.py",
+        "path": "llama.cpp/convert_lora_to_gguf.py",
+        "line_count": 493,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/convert_legacy_llama.py",
+        "path": "llama.cpp/examples/convert_legacy_llama.py",
+        "line_count": 1462,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/json_schema_pydantic_example.py",
+        "path": "llama.cpp/examples/json_schema_pydantic_example.py",
+        "line_count": 82,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/json_schema_to_grammar.py",
+        "path": "llama.cpp/examples/json_schema_to_grammar.py",
+        "line_count": 837,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/causal/compare-logits.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/causal/compare-logits.py",
+        "line_count": 87,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/causal/run-casual-gen-embeddings-org.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/causal/run-casual-gen-embeddings-org.py",
+        "line_count": 114,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/causal/run-org-model.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/causal/run-org-model.py",
+        "line_count": 168,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/embedding/run-original-model.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/embedding/run-original-model.py",
+        "line_count": 243,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/utils/check-nmse.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/utils/check-nmse.py",
+        "line_count": 177,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/utils/common.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/utils/common.py",
+        "line_count": 299,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/utils/compare_tokens.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/utils/compare_tokens.py",
+        "line_count": 76,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/utils/hf-add-model-to-collection.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/utils/hf-add-model-to-collection.py",
+        "line_count": 80,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/utils/hf-create-collection.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/utils/hf-create-collection.py",
+        "line_count": 106,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/utils/hf-create-model.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/utils/hf-create-model.py",
+        "line_count": 78,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/utils/hf-upload-gguf-model.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/utils/hf-upload-gguf-model.py",
+        "line_count": 58,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/utils/inspect-org-model.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/utils/inspect-org-model.py",
+        "line_count": 67,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/model-conversion/scripts/utils/semantic_check.py",
+        "path": "llama.cpp/examples/model-conversion/scripts/utils/semantic_check.py",
+        "line_count": 242,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/pydantic_models_to_grammar.py",
+        "path": "llama.cpp/examples/pydantic_models_to_grammar.py",
+        "line_count": 1322,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/pydantic_models_to_grammar_examples.py",
+        "path": "llama.cpp/examples/pydantic_models_to_grammar_examples.py",
+        "line_count": 312,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/regex_to_grammar.py",
+        "path": "llama.cpp/examples/regex_to_grammar.py",
+        "line_count": 20,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/examples/server_embd.py",
+        "path": "llama.cpp/examples/server_embd.py",
+        "line_count": 35,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/ggml/src/ggml-cuda/template-instances/generate_cu_files.py",
+        "path": "llama.cpp/ggml/src/ggml-cuda/template-instances/generate_cu_files.py",
+        "line_count": 99,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/ggml/src/ggml-opencl/kernels/embed_kernel.py",
+        "path": "llama.cpp/ggml/src/ggml-opencl/kernels/embed_kernel.py",
+        "line_count": 26,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/ggml/src/ggml-webgpu/wgsl-shaders/embed_wgsl.py",
+        "path": "llama.cpp/ggml/src/ggml-webgpu/wgsl-shaders/embed_wgsl.py",
+        "line_count": 147,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/examples/reader.py",
+        "path": "llama.cpp/gguf-py/examples/reader.py",
+        "line_count": 49,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/examples/writer.py",
+        "path": "llama.cpp/gguf-py/examples/writer.py",
+        "line_count": 39,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/__init__.py",
+        "path": "llama.cpp/gguf-py/gguf/__init__.py",
+        "line_count": 9,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/constants.py",
+        "path": "llama.cpp/gguf-py/gguf/constants.py",
+        "line_count": 3735,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/gguf.py",
+        "path": "llama.cpp/gguf-py/gguf/gguf.py",
+        "line_count": 15,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/gguf_reader.py",
+        "path": "llama.cpp/gguf-py/gguf/gguf_reader.py",
+        "line_count": 367,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/gguf_writer.py",
+        "path": "llama.cpp/gguf-py/gguf/gguf_writer.py",
+        "line_count": 1271,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/lazy.py",
+        "path": "llama.cpp/gguf-py/gguf/lazy.py",
+        "line_count": 228,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/metadata.py",
+        "path": "llama.cpp/gguf-py/gguf/metadata.py",
+        "line_count": 731,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/quants.py",
+        "path": "llama.cpp/gguf-py/gguf/quants.py",
+        "line_count": 1318,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/scripts/gguf_convert_endian.py",
+        "path": "llama.cpp/gguf-py/gguf/scripts/gguf_convert_endian.py",
+        "line_count": 186,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/scripts/gguf_dump.py",
+        "path": "llama.cpp/gguf-py/gguf/scripts/gguf_dump.py",
+        "line_count": 477,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/scripts/gguf_editor_gui.py",
+        "path": "llama.cpp/gguf-py/gguf/scripts/gguf_editor_gui.py",
+        "line_count": 1621,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/scripts/gguf_hash.py",
+        "path": "llama.cpp/gguf-py/gguf/scripts/gguf_hash.py",
+        "line_count": 102,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/scripts/gguf_new_metadata.py",
+        "path": "llama.cpp/gguf-py/gguf/scripts/gguf_new_metadata.py",
+        "line_count": 216,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/scripts/gguf_set_metadata.py",
+        "path": "llama.cpp/gguf-py/gguf/scripts/gguf_set_metadata.py",
+        "line_count": 95,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/tensor_mapping.py",
+        "path": "llama.cpp/gguf-py/gguf/tensor_mapping.py",
+        "line_count": 1897,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/utility.py",
+        "path": "llama.cpp/gguf-py/gguf/utility.py",
+        "line_count": 340,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/gguf-py/gguf/vocab.py",
+        "path": "llama.cpp/gguf-py/gguf/vocab.py",
+        "line_count": 891,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/scripts/compare-llama-bench.py",
+        "path": "llama.cpp/scripts/compare-llama-bench.py",
+        "line_count": 1093,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/scripts/compare-logprobs.py",
+        "path": "llama.cpp/scripts/compare-logprobs.py",
+        "line_count": 281,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/scripts/create_ops_docs.py",
+        "path": "llama.cpp/scripts/create_ops_docs.py",
+        "line_count": 201,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/scripts/fetch_server_test_models.py",
+        "path": "llama.cpp/scripts/fetch_server_test_models.py",
+        "line_count": 105,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/scripts/gen-unicode-data.py",
+        "path": "llama.cpp/scripts/gen-unicode-data.py",
+        "line_count": 196,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/scripts/get_chat_template.py",
+        "path": "llama.cpp/scripts/get_chat_template.py",
+        "line_count": 76,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/scripts/jinja/jinja-tester.py",
+        "path": "llama.cpp/scripts/jinja/jinja-tester.py",
+        "line_count": 504,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/scripts/server-bench.py",
+        "path": "llama.cpp/scripts/server-bench.py",
+        "line_count": 297,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/scripts/sync_vendor.py",
+        "path": "llama.cpp/scripts/sync_vendor.py",
+        "line_count": 40,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/scripts/tool_bench.py",
+        "path": "llama.cpp/scripts/tool_bench.py",
+        "line_count": 379,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/scripts/verify-checksum-models.py",
+        "path": "llama.cpp/scripts/verify-checksum-models.py",
+        "line_count": 84,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/tools/mtmd/legacy-models/convert_image_encoder_to_gguf.py",
+        "path": "llama.cpp/tools/mtmd/legacy-models/convert_image_encoder_to_gguf.py",
+        "line_count": 412,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/tools/mtmd/legacy-models/glmedge-convert-image-encoder-to-gguf.py",
+        "path": "llama.cpp/tools/mtmd/legacy-models/glmedge-convert-image-encoder-to-gguf.py",
+        "line_count": 280,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/tools/mtmd/legacy-models/glmedge-surgery.py",
+        "path": "llama.cpp/tools/mtmd/legacy-models/glmedge-surgery.py",
+        "line_count": 33,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/tools/mtmd/legacy-models/llava_surgery.py",
+        "path": "llama.cpp/tools/mtmd/legacy-models/llava_surgery.py",
+        "line_count": 38,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/tools/mtmd/legacy-models/llava_surgery_v2.py",
+        "path": "llama.cpp/tools/mtmd/legacy-models/llava_surgery_v2.py",
+        "line_count": 180,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/tools/mtmd/legacy-models/minicpmv-convert-image-encoder-to-gguf.py",
+        "path": "llama.cpp/tools/mtmd/legacy-models/minicpmv-convert-image-encoder-to-gguf.py",
+        "line_count": 885,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/tools/mtmd/legacy-models/minicpmv-surgery.py",
+        "path": "llama.cpp/tools/mtmd/legacy-models/minicpmv-surgery.py",
+        "line_count": 47,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/tools/server/bench/bench.py",
+        "path": "llama.cpp/tools/server/bench/bench.py",
+        "line_count": 322,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/tools/tts/convert_pt_to_hf.py",
+        "path": "llama.cpp/tools/tts/convert_pt_to_hf.py",
+        "line_count": 180,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "llama.cpp/tools/tts/tts-outetts.py",
+        "path": "llama.cpp/tools/tts/tts-outetts.py",
+        "line_count": 299,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "rag_system.py",
+        "path": "rag_system.py",
+        "line_count": 1722,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "sample.py",
+        "path": "sample.py",
+        "line_count": 29,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scan_all_files.py",
+        "path": "scan_all_files.py",
+        "line_count": 105,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/check_model_names.py",
+        "path": "scripts/check_model_names.py",
+        "line_count": 78,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/deployment/test_docker_deployment.py",
+        "path": "scripts/deployment/test_docker_deployment.py",
+        "line_count": 203,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/download_all_models.py",
+        "path": "scripts/download_all_models.py",
+        "line_count": 68,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/filter_vulnerabilities.py",
+        "path": "scripts/filter_vulnerabilities.py",
+        "line_count": 81,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/health_check.py",
+        "path": "scripts/health_check.py",
+        "line_count": 386,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/list_all_models.py",
+        "path": "scripts/list_all_models.py",
+        "line_count": 164,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/quick_download_models.py",
+        "path": "scripts/quick_download_models.py",
+        "line_count": 56,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/setup/generate_image.py",
+        "path": "scripts/setup/generate_image.py",
+        "line_count": 117,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/setup/generate_landscape.py",
+        "path": "scripts/setup/generate_landscape.py",
+        "line_count": 201,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/setup/generate_mock_image.py",
+        "path": "scripts/setup/generate_mock_image.py",
+        "line_count": 118,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/setup/install_llama_cpp.py",
+        "path": "scripts/setup/install_llama_cpp.py",
+        "line_count": 108,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/setup/prebuilt_binary_setup.py",
+        "path": "scripts/setup/prebuilt_binary_setup.py",
+        "line_count": 273,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/setup/windows_llama_cpp_setup.py",
+        "path": "scripts/setup/windows_llama_cpp_setup.py",
+        "line_count": 386,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/test_model_names.py",
+        "path": "scripts/test_model_names.py",
+        "line_count": 63,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/test_modelscope_tts.py",
+        "path": "scripts/test_modelscope_tts.py",
+        "line_count": 100,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/test_qwen3_tts_names.py",
+        "path": "scripts/test_qwen3_tts_names.py",
+        "line_count": 80,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "scripts/vulnerability_scanner.py",
+        "path": "scripts/vulnerability_scanner.py",
+        "line_count": 506,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/augment_super_training.py",
+        "path": "server/augment_super_training.py",
+        "line_count": 405,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/augment_with_ollama.py",
+        "path": "server/augment_with_ollama.py",
+        "line_count": 250,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/convert_gguf_to_hf.py",
+        "path": "server/convert_gguf_to_hf.py",
+        "line_count": 93,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/dasd_integration.py",
+        "path": "server/dasd_integration.py",
+        "line_count": 203,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/discussion_summarizer.py",
+        "path": "server/discussion_summarizer.py",
+        "line_count": 684,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/llama_cpp_image_server.py",
+        "path": "server/llama_cpp_image_server.py",
+        "line_count": 554,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/llama_cpp_native_image_server.py",
+        "path": "server/llama_cpp_native_image_server.py",
+        "line_count": 377,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/local_whisper_service.py",
+        "path": "server/local_whisper_service.py",
+        "line_count": 317,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/model_downloader.py",
+        "path": "server/model_downloader.py",
+        "line_count": 362,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/model_fine_tune.py",
+        "path": "server/model_fine_tune.py",
+        "line_count": 978,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/qwen3_asr_service.py",
+        "path": "server/qwen3_asr_service.py",
+        "line_count": 379,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/qwen3_tts_service.py",
+        "path": "server/qwen3_tts_service.py",
+        "line_count": 573,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/silero_tts_service.py",
+        "path": "server/silero_tts_service.py",
+        "line_count": 556,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/summary_api.py",
+        "path": "server/summary_api.py",
+        "line_count": 550,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/topology_optimizer.py",
+        "path": "server/topology_optimizer.py",
+        "line_count": 568,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/train_cpu_safe.py",
+        "path": "server/train_cpu_safe.py",
+        "line_count": 325,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/train_qwen2.5_1.5b.py",
+        "path": "server/train_qwen2.5_1.5b.py",
+        "line_count": 289,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/train_template.py",
+        "path": "server/train_template.py",
+        "line_count": 157,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/voice_call_service.py",
+        "path": "server/voice_call_service.py",
+        "line_count": 745,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "server/whisper_service.py",
+        "path": "server/whisper_service.py",
+        "line_count": 645,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "start_ollama_hub.py",
+        "path": "start_ollama_hub.py",
+        "line_count": 197,
+        "errors": [],
+        "warnings": [],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      },
+      {
+        "name": "test_ws.py",
+        "path": "test_ws.py",
+        "line_count": 17,
+        "errors": [],
+        "warnings": [
+          "部分函数可能缺少返回值"
+        ],
+        "missing_deps": [],
+        "diagnosis": "存在无法自动修复的运行时问题",
+        "fix_suggestions": [],
+        "syntax_ok": true,
+        "imports_ok": true,
+        "runtime_ok": false
+      }
+    ],
+    "useless": []
+  },
+  "critical_issues": [],
+  "recommendations": [
+    "有 6 个可修复模块，建议按优先级处理",
+    "⚠️ 有 176 个可能无法修复的模块，需要人工审查",
+    "统一安装缺失依赖: pip install api_key auth base chat config context factory functions group_chat health helpers image llama_cpp memory rag"
+  ]
+}

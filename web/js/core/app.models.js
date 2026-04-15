@@ -9,19 +9,49 @@
         },
 
         async loadModels() {
+            console.log('[AppModels.loadModels] 开始执行，this.app =', this.app);
+            console.log('[AppModels.loadModels] API 对象存在吗？', typeof API !== 'undefined');
+            console.log('[AppModels.loadModels] window.API 存在吗？', typeof window.API !== 'undefined');
+            
             const app = this.app;
+            
+            // 检查 app 是否已正确初始化
+            if (!app) {
+                console.error('[错误] AppModels 未初始化，无法加载模型');
+                return;
+            }
+            
+            // 检查 API 对象是否存在
+            if (typeof API === 'undefined') {
+                console.error('[错误] API 对象未定义，无法加载模型');
+                console.error('[调试] 当前全局对象:', Object.keys(window).filter(k => k.includes('API')));
+                return;
+            }
+            
             const grid = document.getElementById('modelsGrid');
 
             try {
-                const models = await API.getModels();
-                app.state.installedModels = models;
+                // 获取所有模型（包括未下载的）
+                console.log('[AppModels.loadModels] 准备调用 API.getAllModels()');
+                const allModels = await API.getAllModels();
+                console.log('[AppModels.loadModels] API 调用成功，模型数量:', allModels.length);
+                app.state.allModels = allModels;
+                
+                // 获取已下载且可运行的模型
+                const downloadedModels = allModels.filter(m => m.isDownloaded && m.runnable);
+                app.state.installedModels = downloadedModels;
 
                 const settingsModelSelect = document.getElementById('modelSelectNew');
                 if (settingsModelSelect) {
-                    this.updateSettingsModelSelect(models);
+                    this.updateSettingsModelSelect(downloadedModels);
                 }
 
-                this.renderModelCards(models);
+                this.renderModelCards(allModels);
+
+                // 模型加载完成后，重新设置默认模型选择
+                if (!app.state.selectedModel || app.state.selectedModel === 'literary-super:latest') {
+                    app.selectDefaultModel();
+                }
 
             } catch (error) {
                 console.error('加载模型失败:', error);
@@ -68,27 +98,28 @@
 
             const disabledModels = Storage.getDisabledModels();
             const enabledModels = models.filter(model => !disabledModels.includes(model.name));
+            const runnableModels = enabledModels.filter(model => model.runnable);
 
             select.innerHTML = '<option value="">选择模型...</option>';
 
-            enabledModels.forEach(model => {
+            runnableModels.forEach(model => {
                 const option = document.createElement('option');
                 option.value = model.name;
                 option.textContent = model.name;
                 select.appendChild(option);
             });
 
-            if (currentValue && enabledModels.find(m => m.name === currentValue)) {
+            if (currentValue && runnableModels.find(m => m.name === currentValue)) {
                 select.value = currentValue;
                 app.state.selectedModel = currentValue;
-            } else if (enabledModels.length > 0) {
-                select.value = enabledModels[0].name;
-                app.state.selectedModel = enabledModels[0].name;
+            } else if (runnableModels.length > 0) {
+                select.value = runnableModels[0].name;
+                app.state.selectedModel = runnableModels[0].name;
             }
 
             const modelCountEl = document.getElementById('modelCount');
             if (modelCountEl) {
-                modelCountEl.textContent = `${enabledModels.length}/${models.length}`;
+                modelCountEl.textContent = `${runnableModels.length}/${models.length}`;
             }
         },
 
@@ -98,6 +129,7 @@
 
             const disabledModels = Storage.getDisabledModels();
             const enabledModels = models.filter(model => !disabledModels.includes(model.name));
+            const runnableModels = enabledModels.filter(model => model.runnable);
 
             if (enabledModels.length === 0) {
                 grid.innerHTML = `
@@ -123,14 +155,35 @@
             
             grid.innerHTML = sortedModels.map(model => {
                 const icon = '🤖';
-                const description = '点击使用此模型进行对话，或删除模型以释放空间。';
+                const isDownloaded = model.isDownloaded !== false;
+                const isRunnable = model.runnable !== false;
+                const statusText = isRunnable ? (isDownloaded ? '可直接使用' : '已注册') : '需要注册';
+                const statusClass = isRunnable ? (isDownloaded ? 'status-downloaded' : 'status-registered') : 'status-locked';
+                const description = isRunnable
+                    ? '点击使用此模型进行对话，或删除模型以释放空间。'
+                    : '需要先通过 Ollama 注册才可运行该模型。';
+
+                const downloadButton = !isDownloaded ? `
+                    <button class="btn btn-download" onclick="AppModels.downloadModel('${model.name}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        下载
+                    </button>
+                ` : '';
                 
                 return `
-                <div class="model-card" data-model="${model.name}">
+                <div class="model-card ${isDownloaded ? '' : 'not-downloaded'}" data-model="${model.name}">
                     <div class="model-card-header">
                         <div class="model-icon-large">${icon}</div>
                         <div class="model-info">
                             <div class="model-name">${model.name}</div>
+                            <div class="model-status ${statusClass}">
+                                <span class="status-dot"></span>
+                                ${statusText}
+                            </div>
                             <div class="model-size">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -141,8 +194,14 @@
                     </div>
                     <div class="model-description">
                         ${description}
+                        <div class="model-meta">
+                            <span class="provider">${model.provider ? model.provider.toUpperCase() : 'OLLAMA'}</span>
+                            <span class="source">${model.source || 'ollama'}</span>
+                        </div>
                     </div>
                     <div class="model-actions">
+                        ${downloadButton}
+                        ${isDownloaded && isRunnable ? `
                         <button class="btn btn-primary" onclick="App.useModel('${model.name}')">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -156,6 +215,7 @@
                             </svg>
                             删除
                         </button>
+                        ` : ''}
                     </div>
                 </div>
             `}).join('');
@@ -167,8 +227,17 @@
 
             cards.forEach(card => {
                 const modelName = card.dataset.model.toLowerCase();
+                const isDownloaded = !card.classList.contains('not-downloaded');
                 const matchesQuery = modelName.includes(lowercaseQuery);
-                const matchesFilter = filter === 'all' || filter === 'downloaded';
+                
+                // 筛选逻辑
+                let matchesFilter = true;
+                if (filter === 'downloaded') {
+                    matchesFilter = isDownloaded;
+                } else if (filter === 'not-downloaded') {
+                    matchesFilter = !isDownloaded;
+                }
+                // 'all' 显示所有
                 
                 card.style.display = matchesQuery && matchesFilter ? '' : 'none';
             });
@@ -197,6 +266,31 @@
                 await this.loadModels();
             } catch (error) {
                 app.showToast(`删除失败: ${error.message}`, 'error');
+            }
+        },
+
+        async downloadModel(modelName) {
+            const app = this.app;
+            
+            try {
+                app.showToast(`开始下载模型: ${modelName}`, 'info');
+                
+                await API.pullModel(modelName, (progress) => {
+                    const status = progress.status || '下载中...';
+                    const percent = progress.percent || 0;
+                    
+                    console.log(`下载进度: ${percent}% - ${status}`);
+                    
+                    if (progress.total > 0 && progress.completed > 0) {
+                        app.showToast(`下载中: ${percent}%`, 'info');
+                    }
+                });
+
+                app.showToast(`模型下载完成: ${modelName}`, 'success');
+                await this.loadModels();
+            } catch (error) {
+                console.error('下载模型失败:', error);
+                app.showToast(`下载失败: ${error.message}`, 'error');
             }
         },
 
@@ -306,6 +400,19 @@
             modal.classList.add('active');
             document.getElementById('pullModelName').value = '';
             document.getElementById('pullModelName').focus();
+            
+            // 设置默认选中的推荐模型
+            const recommendedModels = ['qwen2.5:7b', 'llama2', 'mistral'];
+            const installedModelNames = app.state.installedModels?.map(m => m.name) || [];
+            
+            // 选择第一个未安装的推荐模型作为默认值
+            const defaultModel = recommendedModels.find(model => 
+                !installedModelNames.includes(model)
+            ) || recommendedModels[0];
+            
+            if (defaultModel) {
+                document.getElementById('pullModelName').value = defaultModel;
+            }
         }
     };
 

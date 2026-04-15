@@ -12,7 +12,8 @@
 const HealthMonitor = (function() {
     
     const Config = {
-        checkInterval: 15000,
+        // 禁用自动监控：将检查间隔设置为极大值（1 小时）
+        checkInterval: 3600000,
         alertThreshold: {
             responseTime: 5000,
             consecutiveFailures: 3
@@ -32,15 +33,24 @@ const HealthMonitor = (function() {
     };
 
     function init() {
+        // 完全禁用健康监控的自动初始化
+        // 所有服务已整合到主后端，不需要单独监控
+        console.log('[HealthMonitor v2.0] 自动监控已禁用（服务已整合）');
+        return;
+        
+        // 以下代码已禁用
+        /*
         if (state.isRunning) return;
         
         state.isRunning = true;
         
         initializeServices();
         
-        startMonitoring();
+        // 禁用自动启动监控，改为手动控制
+        // startMonitoring();
         
-        console.log('[HealthMonitor] 健康监控已启动');
+        console.log('[HealthMonitor] 健康监控已初始化（自动监控已禁用）');
+        */
     }
 
     function initializeServices() {
@@ -65,6 +75,11 @@ const HealthMonitor = (function() {
     }
 
     function startMonitoring() {
+        // 完全禁用自动监控
+        console.warn('[HealthMonitor v2.0] startMonitoring 已禁用（服务已整合到主后端）');
+        return;
+        
+        /*
         if (state.checkTimer) {
             clearInterval(state.checkTimer);
         }
@@ -72,6 +87,7 @@ const HealthMonitor = (function() {
         checkAllServices();
         
         state.checkTimer = setInterval(checkAllServices, Config.checkInterval);
+        */
     }
 
     function stopMonitoring() {
@@ -84,6 +100,11 @@ const HealthMonitor = (function() {
     }
 
     async function checkAllServices() {
+        // 禁用健康检查 - 所有服务已整合到主后端
+        console.log('[HealthMonitor] 健康检查已禁用（服务已整合）');
+        return;
+        
+        /*
         const healthResults = await UnifiedAPIClient.checkHealth();
         state.lastCheckTime = Date.now();
         
@@ -95,6 +116,7 @@ const HealthMonitor = (function() {
             services: getServiceStatus(),
             timestamp: state.lastCheckTime
         });
+        */
     }
 
     function updateServiceStatus(serviceName, result) {
@@ -369,11 +391,12 @@ const HealthMonitor = (function() {
 if (typeof window !== 'undefined') {
     window.HealthMonitor = HealthMonitor;
     
-    document.addEventListener('DOMContentLoaded', () => {
-        if (typeof UnifiedAPIClient !== 'undefined') {
-            HealthMonitor.init();
-        }
-    });
+    // 暂时禁用自动初始化，等待手动调试
+    // document.addEventListener('DOMContentLoaded', () => {
+    //     if (typeof UnifiedAPIClient !== 'undefined') {
+    //         HealthMonitor.init();
+    //     }
+    // });
 }
 
 if (typeof module !== 'undefined' && module.exports) {

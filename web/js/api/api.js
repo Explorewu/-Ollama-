@@ -157,6 +157,9 @@ const API = {
             'Content-Type': 'application/json'
         }
     },
+    
+    // 当前聊天请求的 AbortController
+    _currentChatController: null,
 
     /**
      * 初始化 API 配置
@@ -176,54 +179,76 @@ const API = {
     async request(endpoint, options = {}) {
         this.init();
         
+        // 确保使用 UnifiedAPIClient
         if (typeof UnifiedAPIClient !== 'undefined') {
             const method = options.method || 'GET';
-            const data = options.body ? JSON.parse(options.body) : null;
+            const body = options.body ? JSON.parse(options.body) : null;
             
-            return await UnifiedAPIClient.request(
-                UnifiedAPIClient.ollama,
-                endpoint,
-                {
-                    method,
-                    data,
-                    timeout: this.config.timeout,
-                    headers: options.headers
+            // 自动添加API密钥认证
+            const headers = { ...options.headers };
+            
+            // 针对流式请求的特殊处理
+            if (options.stream) {
+                return this.streamRequest(endpoint, options);
+            }
+
+            try {
+                // 使用 UnifiedAPIClient 发起请求
+                // 根据 endpoint 自动选择服务 (backend/ollama)
+                let service = 'backend';
+                if (endpoint.startsWith('/api/tags') || endpoint.startsWith('/api/generate')) {
+                    service = 'ollama';
                 }
-            );
-        }
 
-        const url = `${this.config.baseUrl}${endpoint}`;
+                const response = await UnifiedAPIClient.request(service, endpoint, {
+                    method,
+                    headers,
+                    body
+                });
+
+                return response;
+            } catch (error) {
+                console.error('[API] 请求失败:', error);
+                throw error;
+            }
+        }
         
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+        // 降级回退 (Fetch)
+        return this.fetchRequest(endpoint, options);
+    },
 
-        try {
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    ...this.config.headers,
-                    ...options.headers
-                },
-                signal: controller.signal
-            });
+    /**
+     * 流式请求处理
+     */
+    async streamRequest(endpoint, options) {
+        const url = `${this.config.apiBaseUrl}${endpoint}`;
+        const response = await fetch(url, {
+            method: options.method || 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            },
+            body: options.body
+        });
 
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`API 请求失败 (${response.status}): ${errorText || response.statusText}`);
-            }
-
-            return await response.json();
-        } catch (error) {
-            clearTimeout(timeoutId);
-            
-            if (error.name === 'AbortError') {
-                throw new Error('请求超时，请检查 Ollama 服务是否正常运行');
-            }
-            
-            throw error;
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        return response;
+    },
+
+    /**
+     * 原生 Fetch 请求 (回退方案)
+     */
+    async fetchRequest(endpoint, options) {
+        const url = endpoint.startsWith('http') ? endpoint : `${this.config.apiBaseUrl}${endpoint}`;
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
     },
 
     /**
@@ -259,22 +284,73 @@ const API = {
      */
     async getModels() {
         try {
-            const response = await this.request('/api/tags');
-            
-            if (response.models && Array.isArray(response.models)) {
-                return response.models.map(model => ({
-                    name: model.name,
-                    size: model.size,
-                    digest: model.digest,
-                    modified_at: model.modified_at,
-                    // 提取模型基础名称
-                    baseName: this.extractBaseModelName(model.name)
-                }));
+            const response = await fetch(`${this.config.apiBaseUrl}/api/models`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await response.json();
+            const models = this.extractModelList(data);
+
+            if (models.length) {
+                return models.map(this.normalizeModelEntry.bind(this));
             }
-            
+
+            const fallbackResponse = await this.request('/api/tags');
+            const fallbackModels = this.extractModelList(fallbackResponse);
+            if (fallbackModels.length) {
+                return fallbackModels.map(this.normalizeModelEntry.bind(this));
+            }
+
             return [];
         } catch (error) {
             console.error('获取模型列表失败:', error);
+            try {
+                const fallbackResponse = await this.request('/api/tags');
+                const fallbackModels = this.extractModelList(fallbackResponse);
+                if (fallbackModels.length) {
+                    return fallbackModels.map(this.normalizeModelEntry.bind(this));
+                }
+            } catch (fallbackError) {
+                console.error('回退获取模型列表也失败:', fallbackError);
+            }
+            throw error;
+        }
+    },
+
+    /**
+     * 获取所有可用模型（包括未下载的）
+     * @returns {Promise<Array>} 模型列表
+     */
+    async getAllModels() {
+        try {
+            const response = await fetch(`${this.config.apiBaseUrl}/api/models`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const result = await response.json();
+            const models = this.extractModelList(result.data || result);
+            
+            if (models.length) {
+                return models.map(model => this.normalizeModelEntry(model));
+            }
+
+            return [];
+        } catch (error) {
+            console.error('获取所有模型列表失败:', error);
+            try {
+                const fallbackResponse = await fetch(`${this.config.baseUrl}/api/tags`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const fallbackData = await fallbackResponse.json();
+                const fallbackModels = this.extractModelList(fallbackData);
+                if (fallbackModels.length) {
+                    return fallbackModels.map(model => this.normalizeModelEntry(model));
+                }
+            } catch (fallbackError) {
+                console.error('回退获取模型列表也失败:', fallbackError);
+            }
             throw error;
         }
     },
@@ -288,6 +364,31 @@ const API = {
         // 处理如 "llama2:7b-chat" -> "llama2"
         const parts = modelName.split(':');
         return parts[0];
+    },
+
+    extractModelList(payload) {
+        if (!payload) return [];
+        if (Array.isArray(payload.models)) return payload.models;
+        if (payload.data && Array.isArray(payload.data.models)) return payload.data.models;
+        return [];
+    },
+
+    normalizeModelEntry(model) {
+        const normalizedName = model.name || model.id || '';
+        const baseName = normalizedName ? this.extractBaseModelName(normalizedName) : '';
+        const runnable = model.runnable !== false;
+        const isDownloaded = runnable || !!model.digest || model.source === 'local_file';
+        return {
+            name: normalizedName,
+            size: model.size || 0,
+            digest: model.digest || '',
+            modified_at: model.modified_at || '',
+            baseName,
+            provider: model.provider || (model.source === 'local_file' ? 'local' : 'ollama'),
+            source: model.source || 'ollama',
+            runnable,
+            isDownloaded
+        };
     },
 
     /**
@@ -464,20 +565,72 @@ const API = {
             });
         }
 
+        // 创建 AbortController 用于取消请求
+        this._currentChatController = new AbortController();
+        const signal = this._currentChatController.signal;
+
+        // 获取 API 密钥（如果需要）
+        const requestHeaders = {
+            'Content-Type': 'application/json'
+        };
+        
+        // 优先从 localStorage 获取
+        const storedKey = localStorage.getItem('api_key');
+        if (storedKey) {
+            requestHeaders['Authorization'] = `Bearer ${storedKey}`;
+        } else {
+            // 回退：从后端获取
+            try {
+                const keyResponse = await fetch(`${this.config.apiBaseUrl}/api/api-key/list`);
+                const keyData = await keyResponse.json();
+                if (keyData.success && keyData.data && keyData.data.length > 0) {
+                    const activeKey = keyData.data.find(k => k.is_active);
+                    if (activeKey && activeKey.key) {
+                        requestHeaders['Authorization'] = `Bearer ${activeKey.key}`;
+                    }
+                }
+            } catch (e) {
+                // API 密钥获取失败，继续无认证请求
+            }
+        }
+
         // 使用智能 API 的聊天接口（支持记忆、摘要、上下文管理）
         const response = await fetch(`${this.config.apiBaseUrl}/api/chat`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: requestHeaders,
             body: JSON.stringify({
                 message: messages[messages.length - 1]?.content || '', // 最后一条用户消息
                 conversation_id: conversationId,
                 model: params.model,
                 use_memory: true,
                 use_summary: true,
-                stream: true
-            })
+                stream: true,
+                persona: currentPersona ? {
+                    name: currentPersona.name,
+                    tone: currentPersona.description || '',
+                    worldview: '',
+                    taboos: [],
+                    signature_style: ''
+                } : null,
+                chat_settings: {
+                    thinking: settings.thinking === true,
+                    show_reasoning_summary: settings.showReasoningSummary !== false,
+                    reasoning_summary_level: settings.reasoningSummaryLevel || 'brief',
+                    response_depth: settings.responseDepth || 'standard',
+                    persona_strength: typeof settings.personaStrength === 'number' ? settings.personaStrength : 70,
+                    system_prompt_mode: settings.systemPromptMode || 'template',
+                    system_prompt_template: settings.systemPromptTemplate || 'assistant_balanced',
+                    system_prompt_custom: settings.systemPromptCustom || '',
+                    safety_mode: settings.safetyMode || 'balanced',
+                    adult_tone_mode: !!settings.adultToneMode,
+                    adult_tone_acknowledged: !!settings.adultToneMode,
+                    temperature: typeof settings.temperature === 'number' ? settings.temperature : 0.7,
+                    repeat_penalty: typeof settings.repeatPenalty === 'number' ? settings.repeatPenalty : 1.1,
+                    top_k: typeof settings.topK === 'number' ? settings.topK : 40,
+                    top_p: typeof settings.topP === 'number' ? settings.topP : 0.9
+                }
+            }),
+            signal: signal
         });
 
         if (!response.ok) {
@@ -525,6 +678,38 @@ const API = {
                 throw new Error(data.error);
             }
 
+            if (data.event === 'reasoning_summary_chunk') {
+                onChunk({
+                    content: '',
+                    reasoningSummary: data.content || '',
+                    done: false,
+                    isNewSegment: false
+                });
+                return;
+            }
+
+            if (data.event === 'thinking_start') {
+                onChunk({
+                    content: '',
+                    thinkingStart: true,
+                    done: false,
+                    isNewSegment: false
+                });
+                return;
+            }
+
+            // 处理重复检测信号
+            if (data.repeat_detected) {
+                onChunk({
+                    content: '',
+                    repeatDetected: true,
+                    suggestedTemperature: data.suggested_temperature,
+                    done: false,
+                    isNewSegment: false
+                });
+                return;
+            }
+
             const content = typeof data.content === 'string' ? data.content : '';
             if (content) {
                 fullResponse += content;
@@ -537,26 +722,46 @@ const API = {
 
             if (data.done && !doneSignalReceived) {
                 doneSignalReceived = true;
-                onChunk({ content: '', done: true, isNewSegment: false });
+                onChunk({
+                    content: '',
+                    done: true,
+                    isNewSegment: false,
+                    repeatDetected: !!data.repeat_detected,
+                    suggestedTemperature: data.suggested_temperature
+                });
             }
         };
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-            sseBuffer += decoder.decode(value, { stream: true });
-            const eventBlocks = sseBuffer.split('\n\n');
-            sseBuffer = eventBlocks.pop() || '';
+                sseBuffer += decoder.decode(value, { stream: true });
+                const eventBlocks = sseBuffer.split('\n\n');
+                sseBuffer = eventBlocks.pop() || '';
 
-            for (const eventBlock of eventBlocks) {
-                processSSEEvent(eventBlock);
+                for (const eventBlock of eventBlocks) {
+                    processSSEEvent(eventBlock);
+                }
             }
-        }
-
-        sseBuffer += decoder.decode();
-        if (sseBuffer.trim()) {
-            processSSEEvent(sseBuffer);
+        } catch (error) {
+            // 处理用户主动取消
+            if (error.name === 'AbortError') {
+                console.log('🛑 用户取消了请求');
+                onChunk({ content: '', done: true, isNewSegment: false });
+                return fullResponse;
+            }
+            if (!error.message.includes('closed')) {
+                console.error('SSE 读取错误:', error);
+            }
+        } finally {
+            sseBuffer += decoder.decode();
+            if (sseBuffer.trim()) {
+                processSSEEvent(sseBuffer);
+            }
+            // 清理 AbortController
+            this._currentChatController = null;
         }
 
         if (!doneSignalReceived) {
@@ -564,6 +769,17 @@ const API = {
         }
 
         return fullResponse;
+    },
+    
+    /**
+     * 中止当前聊天请求
+     */
+    abortCurrentChat() {
+        if (this._currentChatController) {
+            this._currentChatController.abort();
+            this._currentChatController = null;
+            console.log('✅ 已中止当前聊天请求');
+        }
     },
 
     /**

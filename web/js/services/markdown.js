@@ -8,34 +8,14 @@ const MarkdownRenderer = (function() {
     const CSS_PREFIX = 'md-'; // Markdown Renderer 前缀
     const ALLOWED_PROTOCOLS = ['http:', 'https:', 'mailto:', 'tel:'];
     
-    // 分段配置
-    const PARAGRAPH_CONFIG = {
-        // 段落分隔符：连续2个及以上换行
-        paragraphBreak: /\n{2,}/,
-        // 需要保护的结构（不参与分段）
-        protectedStructures: [
-            { type: 'codeBlock', pattern: /```[\s\S]*?```/g },
-            { type: 'htmlBlock', pattern: /<[a-zA-Z][^>]*>[\s\S]*?<\/[a-zA-Z][^>]*>/g },
-            { type: 'table', pattern: /\|.+\|\n\|[-:| ]+\|\n\|.+\|/g }
-        ],
-        // 块级元素标记（不应被包裹为段落）
-        blockElements: [
-            '<h1', '<h2', '<h3', '<h4', '<h5', '<h6',
-            '<ul', '<ol', '<li', '<blockquote', '<pre',
-            '<div', '<table', '<hr', '<' + CSS_PREFIX
-        ],
-        // AI回复格式模式
-        aiFormats: {
-            // 冒号分隔的键值对
-            keyValue: /^([^：:]+)[：:]\s*(.+)$/,
-            // 编号列表
-            numberedItem: /^\s*(\d+)[.．、]\s*(.+)$/,
-            // 项目符号
-            bulletItem: /^\s*[-*•]\s*(.+)$/
-        }
-    };
+    // 渲染缓存 - LRU缓存最近100次渲染结果
+    const RENDER_CACHE = new Map();
+    const MAX_CACHE_SIZE = 100;
     
-    // 语言关键字配置
+    // 关键字正则缓存 - 预编译所有语言的关键字正则
+    const KEYWORD_REGEX_CACHE = {};
+    
+    // 语言关键字配置（必须在 initKeywordCache 之前定义）
     const languageKeywords = {
         javascript: [
             'const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while',
@@ -125,6 +105,44 @@ const MarkdownRenderer = (function() {
         symbol: '#032F62'
     };
 
+    // 初始化关键字正则缓存
+    (function initKeywordCache() {
+        Object.keys(languageKeywords).forEach(lang => {
+            const keywords = languageKeywords[lang];
+            if (Array.isArray(keywords) && keywords.length > 0) {
+                const pattern = '\\b(' + keywords.join('|') + ')\\b';
+                KEYWORD_REGEX_CACHE[lang] = new RegExp(pattern, 'g');
+            }
+        });
+    })();
+    
+    // 分段配置
+    const PARAGRAPH_CONFIG = {
+        // 段落分隔符：连续2个及以上换行
+        paragraphBreak: /\n{2,}/,
+        // 需要保护的结构（不参与分段）
+        protectedStructures: [
+            { type: 'codeBlock', pattern: /```[\s\S]*?```/g },
+            { type: 'htmlBlock', pattern: /<[a-zA-Z][^>]*>[\s\S]*?<\/[a-zA-Z][^>]*>/g },
+            { type: 'table', pattern: /\|.+\|\n\|[-:| ]+\|\n\|.+\|/g }
+        ],
+        // 块级元素标记（不应被包裹为段落）
+        blockElements: [
+            '<h1', '<h2', '<h3', '<h4', '<h5', '<h6',
+            '<ul', '<ol', '<li', '<blockquote', '<pre',
+            '<div', '<table', '<hr', '<' + CSS_PREFIX
+        ],
+        // AI回复格式模式
+        aiFormats: {
+            // 冒号分隔的键值对
+            keyValue: /^([^：:]+)[：:]\s*(.+)$/,
+            // 编号列表
+            numberedItem: /^\s*(\d+)[.．、]\s*(.+)$/,
+            // 项目符号
+            bulletItem: /^\s*[-*•]\s*(.+)$/
+        }
+    };
+    
     // 检测代码语言
     function detectLanguage(code) {
         const lowerCode = code.trim().toLowerCase();
@@ -194,16 +212,11 @@ const MarkdownRenderer = (function() {
             return '<span class="code-plaintext">' + highlighted + '</span>';
         }
 
-        const keywords = languageKeywords[language];
-        
-        if (Array.isArray(keywords)) {
-            // 处理关键字 - 使用函数替换避免 $ 字符问题
-            keywords.forEach(keyword => {
-                const pattern = new RegExp('\\b(' + keyword + ')\\b', 'g');
-                highlighted = highlighted.replace(pattern, function(match, p1) {
-                    return '<span class="code-keyword">' + p1 + '</span>';
-                });
-            });
+        // 使用预编译的关键字正则表达式
+        if (KEYWORD_REGEX_CACHE[language]) {
+            highlighted = highlighted.replace(KEYWORD_REGEX_CACHE[language], 
+                function(match) { return '<span class="code-keyword">' + match + '</span>'; }
+            );
         }
 
         // 处理字符串（单引号和双引号）- 使用函数替换
@@ -365,62 +378,30 @@ const MarkdownRenderer = (function() {
         return result.join('\n');
     }
 
-    // 解析粗体和斜体 - 优化版本：单次遍历完成所有强调格式解析
+    // 解析粗体和斜体 - 简化高效版本
     function parseEmphasis(text) {
-        // 按优先级排序的正则表达式模式（长的优先，避免部分匹配）
-        const patterns = [
-            { regex: /\*\*\*([^*]+)\*\*\*/g, handler: function(match, p1) { return '<strong class="' + CSS_PREFIX + 'bold"><em class="' + CSS_PREFIX + 'italic">' + p1 + '</em></strong>'; } },
-            { regex: /___([^_]+)___/g, handler: function(match, p1) { return '<strong class="' + CSS_PREFIX + 'bold"><em class="' + CSS_PREFIX + 'italic">' + p1 + '</em></strong>'; } },
-            { regex: /\*\*([^*]+)\*\*/g, handler: function(match, p1) { return '<strong class="' + CSS_PREFIX + 'bold">' + p1 + '</strong>'; } },
-            { regex: /__([^_]+)__/g, handler: function(match, p1) { return '<strong class="' + CSS_PREFIX + 'bold">' + p1 + '</strong>'; } },
-            { regex: /~~([^~]+)~~/g, handler: function(match, p1) { return '<del class="' + CSS_PREFIX + 'strike">' + p1 + '</del>'; } },
-            { regex: /\*([^*]+)\*/g, handler: function(match, p1) { return '<em class="' + CSS_PREFIX + 'italic">' + p1 + '</em>'; } },
-            { regex: /_([^_]+)_/g, handler: function(match, p1) { return '<em class="' + CSS_PREFIX + 'italic">' + p1 + '</em>'; } }
-        ];
-        
-        // 使用单次遍历处理所有模式
-        // 策略：先找到所有匹配位置，然后按位置排序后统一替换
-        let matches = [];
-        
-        patterns.forEach(function(patternObj, patternIndex) {
-            let match;
-            // 重置正则表达式的 lastIndex
-            patternObj.regex.lastIndex = 0;
-            while ((match = patternObj.regex.exec(text)) !== null) {
-                matches.push({
-                    index: match.index,
-                    length: match[0].length,
-                    replacement: patternObj.handler(match[0], match[1]),
-                    patternIndex: patternIndex
-                });
-                // 避免零长度匹配的无限循环
-                if (match.index === patternObj.regex.lastIndex) {
-                    patternObj.regex.lastIndex++;
-                }
-            }
-        });
-        
-        // 按位置排序，并移除重叠的匹配（保留优先级高的）
-        matches.sort(function(a, b) { return a.index - b.index; });
-        
-        let filteredMatches = [];
-        let lastEnd = -1;
-        
-        matches.forEach(function(match) {
-            if (match.index >= lastEnd) {
-                filteredMatches.push(match);
-                lastEnd = match.index + match.length;
-            }
-        });
-        
-        // 从后向前替换，避免位置偏移问题
-        let result = text;
-        for (let i = filteredMatches.length - 1; i >= 0; i--) {
-            const match = filteredMatches[i];
-            result = result.substring(0, match.index) + match.replacement + result.substring(match.index + match.length);
-        }
-        
-        return result;
+        return text
+            .replace(/\*\*\*([^*]+)\*\*\*/g, function(match, p1) { 
+                return '<strong class="' + CSS_PREFIX + 'bold"><em class="' + CSS_PREFIX + 'italic">' + p1 + '</em></strong>'; 
+            })
+            .replace(/___([^_]+)___/g, function(match, p1) { 
+                return '<strong class="' + CSS_PREFIX + 'bold"><em class="' + CSS_PREFIX + 'italic">' + p1 + '</em></strong>'; 
+            })
+            .replace(/\*\*([^*]+)\*\*/g, function(match, p1) { 
+                return '<strong class="' + CSS_PREFIX + 'bold">' + p1 + '</strong>'; 
+            })
+            .replace(/__([^_]+)__/g, function(match, p1) { 
+                return '<strong class="' + CSS_PREFIX + 'bold">' + p1 + '</strong>'; 
+            })
+            .replace(/~~([^~]+)~~/g, function(match, p1) { 
+                return '<del class="' + CSS_PREFIX + 'strike">' + p1 + '</del>'; 
+            })
+            .replace(/\*([^*]+)\*/g, function(match, p1) { 
+                return '<em class="' + CSS_PREFIX + 'italic">' + p1 + '</em>'; 
+            })
+            .replace(/_([^_]+)_/g, function(match, p1) { 
+                return '<em class="' + CSS_PREFIX + 'italic">' + p1 + '</em>'; 
+            });
     }
 
     // 安全的 URL 检查函数
@@ -1026,10 +1007,30 @@ const MarkdownRenderer = (function() {
         return { thinkingContent, finalContent };
     }
 
-    // 渲染Markdown文本
+    // 缓存管理函数
+    function getFromCache(key) {
+        return RENDER_CACHE.get(key);
+    }
+    
+    function setToCache(key, value) {
+        if (RENDER_CACHE.size >= MAX_CACHE_SIZE) {
+            const firstKey = RENDER_CACHE.keys().next().value;
+            RENDER_CACHE.delete(firstKey);
+        }
+        RENDER_CACHE.set(key, value);
+    }
+    
+    // 渲染Markdown文本 - 带缓存优化
     function render(text) {
         if (!text || typeof text !== 'string') {
             return '<p class="' + CSS_PREFIX + 'paragraph"></p>';
+        }
+        
+        // 检查缓存
+        const cacheKey = text.length + '_' + text.substring(0, Math.min(100, text.length));
+        const cached = getFromCache(cacheKey);
+        if (cached) {
+            return cached;
         }
         
         // 首先处理 DeepSeek R1 的思考链格式
@@ -1094,6 +1095,9 @@ const MarkdownRenderer = (function() {
             `;
             html = thinkingHtml + html;
         }
+        
+        // 存入缓存
+        setToCache(cacheKey, html);
         
         return html;
     }

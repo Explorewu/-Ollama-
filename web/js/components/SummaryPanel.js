@@ -32,7 +32,7 @@ class SummaryPanel {
         this.conversationId = options.conversationId || '';
         this.onGenerate = options.onGenerate || (() => {});
         this.onExport = options.onExport || (() => {});
-        this.apiBaseUrl = options.apiBaseUrl || `http://${window.location.hostname || 'localhost'}:5002`;
+        this.apiBaseUrl = options.apiBaseUrl || `http://${window.location.hostname || 'localhost'}:5001`;
         
         // 状态
         this.summaries = [];

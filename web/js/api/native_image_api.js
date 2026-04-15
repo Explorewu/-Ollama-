@@ -4,7 +4,7 @@
  */
 
 const NativeImageGen = {
-    serverUrl: `http://${window.location.hostname || 'localhost'}:5004`,
+    serverUrl: `http://${window.location.hostname || 'localhost'}:5001`,
     state: {
         isGenerating: false,
         history: [],

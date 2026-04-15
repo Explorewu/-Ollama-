@@ -8,7 +8,7 @@
 const VisionAPI = {
     // 服务配置
     config: {
-        baseUrl: `http://${window.location.hostname || 'localhost'}:5003`,
+        baseUrl: `http://${window.location.hostname || 'localhost'}:5001`,
         timeout: 120000,
         retryCount: 2,
         retryDelay: 1000

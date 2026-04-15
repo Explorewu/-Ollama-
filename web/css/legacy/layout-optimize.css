@@ -1,0 +1,539 @@
+/**
+ * Ollama Hub - 布局优化补丁
+ * 
+ * 在不改变HTML结构的情况下，通过CSS优化现有布局
+ * 使用新的变量系统和布局类
+ * 
+ * 版本：v1.0
+ * 日期：2026-02-25
+ */
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 1. 优化主布局容器
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 优化主内容区域 - 使用新变量 */
+.main-content {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    min-height: 100vh;
+    background: var(--bg-body);
+}
+
+/* 优化标签内容区 */
+.tab-content {
+    display: none;
+    margin: 0 auto;
+    padding: 0 var(--space-6);
+    max-width: var(--content-max-width, 800px);
+    animation: fadeIn var(--duration-normal) var(--ease-default);
+    height: calc(100vh - var(--header-height, 56px));
+}
+
+.tab-content.active {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--header-height, 56px));
+}
+
+/* 移动端优化 */
+@media (max-width: 639px) {
+    .tab-content {
+        padding: 0 var(--space-3);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 2. 优化侧边栏 - 简化功能
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 侧边栏基础样式 */
+.sidebar {
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border-default);
+    width: var(--sidebar-width, 280px);
+    transition: all var(--transition-normal) var(--ease-default);
+}
+
+/* 侧边栏Logo区域 */
+.sidebar-logo {
+    height: var(--header-height, 56px);
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-4);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.sidebar-logo h1 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* 导航菜单 - 简化样式 */
+.sidebar-nav {
+    padding: var(--space-2);
+}
+
+.sidebar-nav .nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast) var(--ease-default);
+    text-align: left;
+    margin-bottom: var(--space-1);
+}
+
+.sidebar-nav .nav-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.sidebar-nav .nav-item.active {
+    background: var(--color-primary-600);
+    color: #ffffff;
+}
+
+.sidebar-nav .nav-item svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+/* 对话历史区域 */
+.conversations-section {
+    padding: var(--space-3);
+    border-top: 1px solid var(--border-default);
+}
+
+.conversations-section .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: none;
+}
+
+.conversations-section .section-header h3 {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 3. 优化内容区域
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 页面头部 - 简化 */
+.page-header {
+    margin-bottom: var(--space-6);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.page-header-title {
+    max-width: 480px;
+}
+
+.page-header h2 {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+    letter-spacing: -0.02em;
+}
+
+.page-header .subtitle {
+    color: var(--text-secondary);
+    font-size: var(--text-base);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 4. 优化设置页面布局
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 设置页面布局 */
+.settings-layout {
+    display: flex;
+    min-height: calc(100vh - 140px);
+    margin: 0 auto;
+    max-width: var(--content-max-width, 800px);
+    gap: var(--space-6);
+}
+
+/* 设置侧边栏 */
+.settings-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.settings-sidebar .sidebar-header {
+    padding: var(--space-4) var(--space-4);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.settings-sidebar .sidebar-header h3 {
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* 设置导航 */
+.settings-nav {
+    flex: 1;
+    padding: var(--space-2);
+    overflow-y: auto;
+}
+
+.settings-nav .nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast) var(--ease-default);
+    text-align: left;
+    margin-bottom: var(--space-1);
+}
+
+.settings-nav .nav-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.settings-nav .nav-item.active {
+    background: var(--color-primary-600);
+    color: #ffffff;
+}
+
+.settings-nav .nav-item svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* 设置内容区 */
+.settings-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: var(--space-8);
+}
+
+.settings-section {
+    display: none;
+    animation: fadeIn var(--duration-normal) var(--ease-default);
+}
+
+.settings-section.active {
+    display: block;
+}
+
+/* 区块头部 */
+.section-header {
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.section-header h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin: 0 0 var(--space-2) 0;
+}
+
+.section-header .subtitle {
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 5. 响应式优化
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 平板 */
+@media (max-width: 1023px) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: var(--z-fixed, 300);
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .settings-layout {
+        flex-direction: column;
+    }
+    
+    .settings-sidebar {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        border-radius: var(--radius-md);
+        margin-bottom: var(--space-4);
+    }
+    
+    .settings-sidebar .sidebar-header {
+        padding: var(--space-3) var(--space-4);
+        border-bottom: none;
+        border-right: 1px solid var(--border-default);
+    }
+    
+    .settings-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1);
+        padding: var(--space-2);
+    }
+    
+    .settings-nav .nav-item {
+        flex-shrink: 0;
+        margin-bottom: 0;
+        padding: var(--space-2) var(--space-3);
+        font-size: var(--text-xs);
+    }
+}
+
+/* 移动端 */
+@media (max-width: 639px) {
+    .sidebar {
+        width: 100%;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+    
+    .page-header-title {
+        max-width: 100%;
+    }
+    
+    .page-header h2 {
+        font-size: var(--text-xl);
+    }
+    
+    .settings-sidebar .sidebar-header h3 {
+        font-size: var(--text-sm);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 6. 简化分隔线和边框
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 移除过度的边框样式 */
+.stat-card,
+.card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-fast) var(--ease-default);
+}
+
+.stat-card:hover,
+.card:hover {
+    box-shadow: var(--shadow-sm);
+    border-color: var(--color-primary-400);
+}
+
+/* 卡片头部 */
+.card-header {
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--border-default);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.card-header h3 {
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.card-body {
+    padding: var(--space-5);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 7. 动画优化 - 简洁
+ * ═══════════════════════════════════════════════════════════════════ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 8. 按钮样式优化 - 使用新变量
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 基础按钮 */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-weight: var(--font-medium);
+    font-size: var(--text-sm);
+    transition: all var(--transition-fast) var(--ease-default);
+    cursor: pointer;
+    border: 1px solid var(--border-default);
+    outline: none;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-xs);
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-xs);
+}
+
+/* 主要按钮 */
+.btn-primary {
+    background: var(--color-primary-600);
+    border-color: var(--color-primary-600);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: var(--color-primary-700);
+    border-color: var(--color-primary-700);
+}
+
+/* 次要按钮 */
+.btn-secondary {
+    background: transparent;
+    border-color: var(--border-default);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+    border-color: var(--color-primary-400);
+}
+
+/* 按钮图标 */
+.btn svg,
+.btn-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 9. 输入框样式优化
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 输入框 */
+input[type="text"],
+input[type="search"],
+textarea {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    outline: none;
+    transition: all var(--transition-fast) var(--ease-default);
+}
+
+input[type="text"]:focus,
+input[type="search"]:focus,
+textarea:focus {
+    border-color: var(--color-primary-500);
+    box-shadow: var(--shadow-focus);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-placeholder);
+}
+
+/* 搜索框 */
+.search-box {
+    position: relative;
+    flex: 1;
+    max-width: 320px;
+}
+
+.search-box svg {
+    position: absolute;
+    left: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: var(--text-tertiary);
+}
+
+.search-box input {
+    width: 100%;
+    padding-left: var(--space-10);
+}

@@ -1,0 +1,486 @@
+/* ============================================
+   设置界面 - 东方水墨风格
+   ============================================ */
+
+/* 导入中文字体 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&display=swap');
+
+/* 设置面板容器 - 宣纸质感 */
+.settings-panel {
+    background: 
+        /* 宣纸纹理 */
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paperFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paperFilter)' opacity='0.15'/%3E%3C/svg%3E"),
+        /* 米白渐变 */
+        linear-gradient(180deg, 
+            rgba(252, 250, 245, 0.98) 0%,
+            rgba(250, 247, 240, 0.96) 50%,
+            rgba(248, 244, 236, 0.98) 100%
+        );
+    font-family: 'Noto Serif SC', 'STKaiti', 'KaiTi', '楷体', serif;
+    padding: 40px;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 水墨装饰边框 */
+.settings-panel::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    border: 1px solid rgba(80, 60, 40, 0.15);
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* 角落水墨点缀 */
+.settings-panel::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 60px;
+    height: 60px;
+    background: 
+        radial-gradient(ellipse at 30% 30%, rgba(60, 40, 20, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 70%, rgba(80, 60, 40, 0.08) 0%, transparent 40%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* 设置组 - 卷轴样式 */
+.setting-group {
+    background: 
+        linear-gradient(180deg,
+            rgba(255, 253, 250, 0.9) 0%,
+            rgba(252, 249, 244, 0.85) 100%
+        );
+    border: 1px solid rgba(100, 80, 60, 0.2);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    position: relative;
+    box-shadow: 
+        0 2px 12px rgba(60, 40, 20, 0.08),
+        0 4px 24px rgba(60, 40, 20, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.setting-group:hover {
+    box-shadow: 
+        0 4px 20px rgba(60, 40, 20, 0.12),
+        0 8px 32px rgba(60, 40, 20, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+}
+
+/* 卷轴装饰线 */
+.setting-group::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 32px;
+    right: 32px;
+    height: 2px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(100, 80, 60, 0.3) 15%,
+        rgba(100, 80, 60, 0.3) 85%,
+        transparent 100%
+    );
+}
+
+/* 标题 - 书法风格 */
+.setting-group h3 {
+    font-family: 'ZCOOL XiaoWei', 'STKaiti', 'KaiTi', '楷体', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: #3d2e1f;
+    margin: 0 0 12px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(100, 80, 60, 0.15);
+    letter-spacing: 2px;
+    position: relative;
+}
+
+/* 标题装饰点 */
+.setting-group h3::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: linear-gradient(90deg, 
+        rgba(139, 90, 43, 0.6) 0%,
+        rgba(139, 90, 43, 0.3) 100%
+    );
+    border-radius: 2px;
+}
+
+/* 描述文字 */
+.setting-group .setting-desc {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    color: rgba(80, 60, 40, 0.7);
+    line-height: 1.8;
+    margin: 0 0 20px 0;
+    font-style: italic;
+    letter-spacing: 0.5px;
+}
+
+/* 模型切换列表 - 名册样式 */
+.model-toggle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 模型项 - 竹简风格 */
+.model-toggle-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: 
+        linear-gradient(90deg,
+            rgba(245, 240, 232, 0.6) 0%,
+            rgba(250, 245, 238, 0.8) 50%,
+            rgba(245, 240, 232, 0.6) 100%
+        );
+    border: 1px solid rgba(100, 80, 60, 0.12);
+    border-radius: 8px;
+    position: relative;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+/* 竹简纹理 */
+.model-toggle-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 28px,
+            rgba(100, 80, 60, 0.03) 28px,
+            rgba(100, 80, 60, 0.03) 29px
+        );
+    pointer-events: none;
+}
+
+.model-toggle-item:hover {
+    background: 
+        linear-gradient(90deg,
+            rgba(250, 245, 238, 0.8) 0%,
+            rgba(255, 250, 243, 0.9) 50%,
+            rgba(250, 245, 238, 0.8) 100%
+        );
+    border-color: rgba(139, 90, 43, 0.25);
+    box-shadow: 0 2px 8px rgba(60, 40, 20, 0.08);
+    transform: translateX(4px);
+}
+
+/* 模型信息 */
+.model-toggle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 1;
+}
+
+.model-toggle-name {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #3d2e1f;
+    letter-spacing: 0.5px;
+}
+
+.model-toggle-size {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 12px;
+    color: rgba(100, 80, 60, 0.6);
+    letter-spacing: 0.3px;
+}
+
+/* 开关 - 玉玺风格 */
+.model-toggle-switch {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.model-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* 开关滑块 - 玉石质感 */
+.toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        linear-gradient(145deg,
+            rgba(180, 170, 160, 0.6) 0%,
+            rgba(160, 150, 140, 0.5) 100%
+        );
+    border: 1px solid rgba(100, 90, 80, 0.2);
+    border-radius: 28px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+        inset 0 1px 3px rgba(0, 0, 0, 0.1),
+        0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+/* 开关圆点 - 印章 */
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 22px;
+    width: 22px;
+    left: 2px;
+    bottom: 2px;
+    background: 
+        radial-gradient(circle at 30% 30%, 
+            rgba(255, 255, 255, 0.9) 0%,
+            rgba(240, 235, 230, 0.8) 50%,
+            rgba(220, 210, 200, 0.9) 100%
+        );
+    border: 1px solid rgba(100, 90, 80, 0.15);
+    border-radius: 50%;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.15),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* 开启状态 - 翡翠色 */
+.model-toggle-switch input:checked + .toggle-slider {
+    background: 
+        linear-gradient(145deg,
+            rgba(80, 140, 100, 0.7) 0%,
+            rgba(60, 120, 80, 0.6) 100%
+        );
+    border-color: rgba(60, 120, 80, 0.3);
+}
+
+.model-toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(24px);
+    background: 
+        radial-gradient(circle at 30% 30%, 
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(240, 250, 245, 0.9) 50%,
+            rgba(220, 240, 230, 0.95) 100%
+        );
+    box-shadow: 
+        0 2px 6px rgba(60, 120, 80, 0.3),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* API 信息区域 - 碑文风格 */
+.settings-panel .setting-group:last-child {
+    background: 
+        linear-gradient(180deg,
+            rgba(248, 245, 240, 0.95) 0%,
+            rgba(245, 242, 236, 0.9) 100%
+        );
+    border: 2px solid rgba(100, 80, 60, 0.15);
+}
+
+/* API 代码块 - 石刻效果 */
+.settings-panel code {
+    font-family: 'Noto Serif SC', 'Courier New', monospace;
+    background: 
+        linear-gradient(145deg,
+            rgba(235, 230, 222, 0.9) 0%,
+            rgba(230, 225, 217, 0.85) 100%
+        );
+    border: 1px solid rgba(100, 80, 60, 0.15);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: #4a3728;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    box-shadow: 
+        inset 0 1px 3px rgba(0, 0, 0, 0.05),
+        0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* 复制按钮 - 朱砂印风格 */
+.settings-panel button[onclick*="clipboard"] {
+    font-family: 'Noto Serif SC', serif;
+    background: 
+        linear-gradient(145deg,
+            rgba(180, 80, 60, 0.9) 0%,
+            rgba(160, 60, 40, 0.85) 100%
+        );
+    border: 1px solid rgba(140, 60, 40, 0.3);
+    border-radius: 6px;
+    color: rgba(255, 250, 245, 0.95);
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 1px;
+    box-shadow: 
+        0 2px 6px rgba(140, 60, 40, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.settings-panel button[onclick*="clipboard"]:hover {
+    background: 
+        linear-gradient(145deg,
+            rgba(200, 90, 70, 0.95) 0%,
+            rgba(180, 70, 50, 0.9) 100%
+        );
+    transform: translateY(-1px);
+    box-shadow: 
+        0 4px 10px rgba(140, 60, 40, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* 标签文字 */
+.settings-panel label {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 13px;
+    color: rgba(80, 60, 40, 0.8);
+    letter-spacing: 0.5px;
+}
+
+/* 深色模式 - 夜间书房 */
+[data-theme="dark"] .settings-panel {
+    background: 
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paperFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='5' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paperFilter)' opacity='0.08'/%3E%3C/svg%3E"),
+        linear-gradient(180deg, 
+            rgba(35, 32, 28, 0.98) 0%,
+            rgba(32, 29, 25, 0.96) 50%,
+            rgba(30, 27, 23, 0.98) 100%
+        );
+}
+
+[data-theme="dark"] .setting-group {
+    background: 
+        linear-gradient(180deg,
+            rgba(45, 42, 38, 0.9) 0%,
+            rgba(42, 39, 35, 0.85) 100%
+        );
+    border-color: rgba(120, 100, 80, 0.2);
+    box-shadow: 
+        0 2px 12px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .setting-group h3 {
+    color: rgba(220, 210, 195, 0.95);
+    border-bottom-color: rgba(120, 100, 80, 0.2);
+}
+
+[data-theme="dark"] .setting-group h3::after {
+    background: linear-gradient(90deg, 
+        rgba(139, 90, 43, 0.5) 0%,
+        rgba(139, 90, 43, 0.25) 100%
+    );
+}
+
+[data-theme="dark"] .setting-desc {
+    color: rgba(160, 150, 135, 0.7);
+}
+
+[data-theme="dark"] .model-toggle-item {
+    background: 
+        linear-gradient(90deg,
+            rgba(50, 47, 43, 0.6) 0%,
+            rgba(55, 52, 48, 0.8) 50%,
+            rgba(50, 47, 43, 0.6) 100%
+        );
+    border-color: rgba(100, 90, 80, 0.15);
+}
+
+[data-theme="dark"] .model-toggle-item:hover {
+    background: 
+        linear-gradient(90deg,
+            rgba(55, 52, 48, 0.8) 0%,
+            rgba(60, 57, 53, 0.9) 50%,
+            rgba(55, 52, 48, 0.8) 100%
+        );
+    border-color: rgba(139, 90, 43, 0.3);
+}
+
+[data-theme="dark"] .model-toggle-name {
+    color: rgba(220, 210, 195, 0.95);
+}
+
+[data-theme="dark"] .model-toggle-size {
+    color: rgba(140, 130, 115, 0.6);
+}
+
+[data-theme="dark"] .toggle-slider {
+    background: 
+        linear-gradient(145deg,
+            rgba(70, 65, 60, 0.6) 0%,
+            rgba(60, 55, 50, 0.5) 100%
+        );
+}
+
+[data-theme="dark"] .toggle-slider::before {
+    background: 
+        radial-gradient(circle at 30% 30%, 
+            rgba(80, 75, 70, 0.9) 0%,
+            rgba(70, 65, 60, 0.8) 50%,
+            rgba(60, 55, 50, 0.9) 100%
+        );
+}
+
+[data-theme="dark"] .model-toggle-switch input:checked + .toggle-slider {
+    background: 
+        linear-gradient(145deg,
+            rgba(60, 120, 80, 0.6) 0%,
+            rgba(40, 100, 60, 0.5) 100%
+        );
+}
+
+[data-theme="dark"] code {
+    background: 
+        linear-gradient(145deg,
+            rgba(50, 47, 43, 0.9) 0%,
+            rgba(45, 42, 38, 0.85) 100%
+        );
+    border-color: rgba(100, 90, 80, 0.2);
+    color: rgba(200, 190, 175, 0.95);
+}
+
+[data-theme="dark"] label {
+    color: rgba(160, 150, 135, 0.8);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .settings-panel {
+        padding: 24px;
+    }
+    
+    .setting-group {
+        padding: 20px;
+    }
+    
+    .setting-group h3 {
+        font-size: 18px;
+    }
+}

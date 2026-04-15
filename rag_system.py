@@ -118,6 +118,108 @@ def load_config(config_path: str = None) -> Dict:
         return default_config
 
 
+class RAGConfig:
+    """RAG 配置管理器"""
+    
+    DEFAULT_CONFIG = {
+        'data_dir': './data/premium_classics',
+        'index_dir': './data/rag_index',
+        'chunk_size': 512,
+        'chunk_overlap': 50,
+        'top_k': 8,
+        'score_threshold': 0.25,
+        'semantic_weight': 0.7,
+        'keyword_weight': 0.3,
+        'cache_size': 1000,
+        'cache_ttl': 7200,
+        'embedding_model': 'paraphrase-multilingual-MiniLM-L12-v2',
+        'reranker_model': 'cross-encoder/ms-marco-MiniLM-L6-v2',
+        'use_fusion': True,
+        'use_cache': True,
+        'use_rerank': True,
+        'eager_load': False
+    }
+    
+    def __init__(self, config_path: str = None, **kwargs):
+        """
+        初始化配置管理器
+        
+        Args:
+            config_path: 配置文件路径
+            **kwargs: 覆盖配置的参数
+        """
+        self._config = self._load_config(config_path)
+        self._merge_params(kwargs)
+    
+    def _load_config(self, config_path: str) -> Dict:
+        """
+        加载配置文件
+        
+        Args:
+            config_path: 配置文件路径
+            
+        Returns:
+            配置字典
+        """
+        if config_path is None:
+            config_path = Path(__file__).parent / 'config.yaml'
+        else:
+            config_path = Path(config_path)
+        
+        if not config_path.exists():
+            logger.info(f"配置文件不存在，使用默认配置: {config_path}")
+            return self.DEFAULT_CONFIG.copy()
+        
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            
+            if config is None:
+                logger.info("配置文件为空，使用默认配置")
+                return self.DEFAULT_CONFIG.copy()
+            
+            rag_config = config.get('rag', {})
+            merged_config = {**self.DEFAULT_CONFIG, **rag_config}
+            logger.info(f"配置加载成功: {config_path}")
+            return merged_config
+        except Exception as e:
+            logger.warning(f"配置加载失败，使用默认配置: {e}")
+            return self.DEFAULT_CONFIG.copy()
+    
+    def _merge_params(self, params: Dict):
+        """
+        合并参数，覆盖配置文件
+        
+        Args:
+            params: 参数字典
+        """
+        for key, value in params.items():
+            if value is not None:
+                self._config[key] = value
+    
+    def get(self, key: str, default=None):
+        """
+        获取配置项
+        
+        Args:
+            key: 配置键
+            default: 默认值
+            
+        Returns:
+            配置值
+        """
+        return self._config.get(key, default)
+    
+    def to_dict(self) -> Dict:
+        """
+        转换为字典
+        
+        Returns:
+            配置字典的副本
+        """
+        return self._config.copy()
+
+
 class TextChunker:
     """文本分块器"""
     
@@ -262,8 +364,85 @@ class TextChunker:
         }
 
 
+class FileEncodingReader:
+    """文件编码读取器
+    
+    自动检测文件编码并读取文件内容，支持多种常见编码格式。
+    """
+    
+    DEFAULT_ENCODINGS = ['utf-8', 'gbk', 'gb2312', 'gb18030', 'latin-1']
+    
+    def __init__(self, encodings: List[str] = None):
+        """
+        初始化文件编码读取器
+        
+        Args:
+            encodings: 支持的编码列表，默认为常见中文编码
+        """
+        self.encodings = encodings or self.DEFAULT_ENCODINGS
+    
+    def read(self, file_path: Path) -> Optional[str]:
+        """
+        自动检测文件编码并读取
+        
+        Args:
+            file_path: 文件路径
+            
+        Returns:
+            文件内容，失败返回 None
+        """
+        for encoding in self.encodings:
+            try:
+                content = file_path.read_text(encoding=encoding)
+                if content.strip():
+                    return content
+            except (UnicodeDecodeError, IOError):
+                continue
+        
+        logger.warning(f"无法读取文件（编码不支持）: {file_path.name}")
+        return None
+
+
+class IndexPathManager:
+    """索引文件路径管理器
+    
+    统一管理所有 RAG 索引文件的路径和命名规范，避免硬编码路径分散在多个类中。
+    
+    Attributes:
+        index_dir: 索引目录的 Path 对象
+    """
+    
+    def __init__(self, index_dir: str):
+        """
+        初始化路径管理器
+        
+        Args:
+            index_dir: 索引目录路径
+        """
+        self.index_dir = Path(index_dir)
+    
+    @property
+    def faiss_index(self) -> Path:
+        """FAISS 向量索引文件路径"""
+        return self.index_dir / 'faiss_index.bin'
+    
+    @property
+    def chunks(self) -> Path:
+        """文档分块数据文件路径"""
+        return self.index_dir / 'chunks.pkl'
+    
+    @property
+    def bm25_docs(self) -> Path:
+        """BM25 索引数据文件路径"""
+        return self.index_dir / 'bm25_docs.pkl'
+    
+    def ensure_dir(self):
+        """确保索引目录存在"""
+        self.index_dir.mkdir(parents=True, exist_ok=True)
+
+
 class LRUCache:
-    """LRU缓存（带TTL过期和统计）"""
+    """LRU 缓存（带 TTL 过期和统计）"""
     
     def __init__(self, capacity: int = 1000, ttl_seconds: int = 3600):
         self.capacity = capacity
@@ -365,6 +544,7 @@ class SemanticRetriever:
         self._index_path = None
         self._cache = LRUCache(capacity=cache_size, ttl_seconds=cache_ttl)
         self._default_index_path = index_path
+        self.path_manager = IndexPathManager(index_path)
     
     def load_model(self):
         """加载模型"""
@@ -376,14 +556,14 @@ class SemanticRetriever:
     def build_index(
         self,
         chunks: List[Dict],
-        index_path: str = './data/rag_index'
+        index_path: str = None
     ):
         """
         构建向量索引
         
         Args:
             chunks: 分块列表
-            index_path: 索引保存路径
+            index_path: 索引保存路径，如果为 None 则使用初始化时的路径
         """
         self.load_model()
         
@@ -391,7 +571,12 @@ class SemanticRetriever:
             logger.warning("没有分块数据")
             return
         
-        logger.info(f"构建索引: {len(chunks)} 个分块")
+        if index_path:
+            self.path_manager = IndexPathManager(index_path)
+        
+        self.path_manager.ensure_dir()
+        
+        logger.info(f"构建索引：{len(chunks)} 个分块")
         
         contents = [chunk['content'] for chunk in chunks]
         
@@ -409,15 +594,15 @@ class SemanticRetriever:
         index = faiss.IndexFlatIP(dimension)
         index.add(embedding_array)
         
-        faiss.write_index(index, f"{index_path}/faiss_index.bin")
+        faiss.write_index(index, str(self.path_manager.faiss_index))
         
         self.documents = contents
         self.chunk_map = {i: chunks[i] for i in range(len(chunks))}
         
-        with open(f"{index_path}/chunks.pkl", 'wb') as f:
+        with open(self.path_manager.chunks, 'wb') as f:
             pickle.dump(chunks, f)
         
-        logger.info(f"索引已保存: {index_path}")
+        logger.info(f"索引已保存：{self.path_manager.index_dir}")
     
     def retrieve(
         self,
@@ -475,7 +660,7 @@ class SemanticRetriever:
         query_embedding = self.model.encode([query])
         query_array = np.array(query_embedding).astype('float32')
 
-        index_file = f"{self._default_index_path}/faiss_index.bin"
+        index_file = str(self.path_manager.faiss_index)
         if self._index_cache is None or self._index_path != index_file:
             try:
                 self._index_cache = faiss.read_index(index_file)
@@ -577,7 +762,6 @@ class Reranker:
     def __init__(self, model_name: str = 'cross-encoder/ms-marco-MiniLM-L-6-v2'):
         self.model_name = model_name
         self.model = None
-        self._load_model()
     
     def _load_model(self):
         """懒加载模型"""
@@ -606,6 +790,8 @@ class Reranker:
         Returns:
             重排序后的结果
         """
+        self._load_model()
+
         if not self.model or not results:
             return results[:top_k]
         
@@ -640,11 +826,26 @@ class KeywordRetriever:
         self._doc_lengths = []
         self._avg_doc_length = 0
         self._num_docs = 0
+        self.path_manager = None
     
-    def build_index(self, chunks: List[Dict], index_path: str = './data/rag_index'):
-        """构建 BM25 索引（预计算IDF和文档长度）"""
+    def build_index(self, chunks: List[Dict], index_path: str = None):
+        """
+        构建 BM25 索引（预计算 IDF 和文档长度）
+        
+        Args:
+            chunks: 分块列表
+            index_path: 索引保存路径，如果为 None 则使用初始化时的路径
+        """
         if not chunks:
             return
+        
+        if index_path:
+            self.path_manager = IndexPathManager(index_path)
+        
+        if self.path_manager is None:
+            raise ValueError("必须先指定 index_path 或调用 build_index 时传入 index_path")
+        
+        self.path_manager.ensure_dir()
         
         self.documents = [chunk['content'] for chunk in chunks]
         self.doc_map = {i: chunks[i] for i in range(len(chunks))}
@@ -678,10 +879,10 @@ class KeywordRetriever:
             'bm25_max_score': self.bm25_max_score
         }
         
-        with open(f"{index_path}/bm25_docs.pkl", 'wb') as f:
+        with open(self.path_manager.bm25_docs, 'wb') as f:
             pickle.dump(index_data, f)
         
-        logger.info(f"BM25 索引已保存: {self._num_docs} 篇文档, {len(self._idf)} 个词项")
+        logger.info(f"BM25 索引已保存：{self._num_docs} 篇文档，{len(self._idf)} 个词项")
     
     def retrieve(
         self,
@@ -747,6 +948,8 @@ class HybridRetriever:
         self._total_time_ms = 0.0
         self._last_query_time_ms = 0.0
         
+        self.path_manager = IndexPathManager(index_path)
+        
         if semantic_weight > 0:
             self.semantic_retriever = SemanticRetriever(
                 model_name=embedding_model,
@@ -755,11 +958,13 @@ class HybridRetriever:
                 cache_ttl=cache_ttl,
                 index_path=index_path
             )
+            self.semantic_retriever.path_manager = self.path_manager
         else:
             self.semantic_retriever = None
             logger.info("语义检索已禁用，仅使用关键词检索")
         
         self.keyword_retriever = KeywordRetriever()
+        self.keyword_retriever.path_manager = self.path_manager
         
         if use_rerank:
             self.reranker = Reranker(model_name=reranker_model)
@@ -769,18 +974,28 @@ class HybridRetriever:
     def build_index(
         self,
         chunks: List[Dict],
-        index_path: str = './data/rag_index'
+        index_path: str = None
     ):
-        """构建索引"""
-        Path(index_path).mkdir(parents=True, exist_ok=True)
+        """
+        构建索引
         
-        # 只在需要时构建语义索引
+        Args:
+            chunks: 分块列表
+            index_path: 索引保存路径，如果为 None 则使用初始化时的路径
+        """
+        if index_path:
+            self.path_manager = IndexPathManager(index_path)
+            self.semantic_retriever.path_manager = self.path_manager
+            self.keyword_retriever.path_manager = self.path_manager
+        
+        self.path_manager.ensure_dir()
+        
         if self.semantic_retriever is not None:
-            self.semantic_retriever.build_index(chunks, index_path)
+            self.semantic_retriever.build_index(chunks)
         else:
             logger.info("跳过语义索引构建（已禁用）")
         
-        self.keyword_retriever.build_index(chunks, index_path)
+        self.keyword_retriever.build_index(chunks)
         
         self.index_built = True
         logger.info("混合索引构建完成")
@@ -903,189 +1118,163 @@ class HybridRetriever:
         }
 
 
-class RAGRetriever:
-    """RAG 检索器（对外接口）"""
+class ContextBuilder:
+    """上下文构建器
     
-    def __init__(
-        self,
-        config_path: str = None,
-        data_dir: str = None,
-        index_dir: str = None,
-        chunk_size: int = None,
-        chunk_overlap: int = None,
-        top_k: int = None,
-        score_threshold: float = None,
-        semantic_weight: float = None,
-        keyword_weight: float = None,
-        cache_size: int = None,
-        cache_ttl: int = None,
-        embedding_model: str = None,
-        reranker_model: str = None,
-        use_fusion: bool = None,
-        use_cache: bool = None,
-        use_rerank: bool = None,
-        eager_load: bool = None
-    ):
-        config = load_config(config_path)
-        
-        self.data_dir = Path(data_dir or config['data_dir'])
-        self.index_dir = Path(index_dir or config['index_dir'])
-        self.chunk_size = chunk_size or config['chunk_size']
-        self.chunk_overlap = chunk_overlap or config['chunk_overlap']
-        self.top_k = top_k or config['top_k']
-        self.score_threshold = score_threshold or config['score_threshold']
-        self.semantic_weight = semantic_weight or config['semantic_weight']
-        self.keyword_weight = keyword_weight or config['keyword_weight']
-        self.cache_size = cache_size or config['cache_size']
-        self.cache_ttl = cache_ttl or config['cache_ttl']
-        self.embedding_model = embedding_model or config['embedding_model']
-        self.reranker_model = reranker_model or config.get('reranker_model', 'cross-encoder/ms-marco-MiniLM-L-6-v2')
-        self.use_fusion = use_fusion if use_fusion is not None else config['use_fusion']
-        self.use_cache = use_cache if use_cache is not None else config['use_cache']
-        self.use_rerank = use_rerank if use_rerank is not None else config.get('use_rerank', True)
-        self.eager_load = eager_load if eager_load is not None else config['eager_load']
-        
-        self.chunker = TextChunker(
-            chunk_size=self.chunk_size,
-            chunk_overlap=self.chunk_overlap
-        )
-        
-        self.retriever = HybridRetriever(
-            semantic_weight=self.semantic_weight,
-            keyword_weight=self.keyword_weight,
-            top_k=self.top_k,
-            cache_size=self.cache_size,
-            cache_ttl=self.cache_ttl,
-            embedding_model=self.embedding_model,
-            reranker_model=self.reranker_model,
-            use_rerank=self.use_rerank,
-            index_path=str(self.index_dir)
-        )
-        
-        self._initialized = False
-        
-        if self.eager_load:
-            self.initialize()
+    将检索结果格式化为上下文字符串，支持自定义最大字符数限制。
+    """
     
-    def __enter__(self):
-        """上下文管理器入口"""
-        self.initialize()
-        return self
-    
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """上下文管理器出口，释放资源"""
-        self.close()
-        return False
-    
-    def close(self):
-        """释放资源"""
-        if self.retriever.semantic_retriever._index_cache is not None:
-            self.retriever.semantic_retriever._index_cache = None
-            logger.info("FAISS索引已释放")
-    
-    def reload(self, force_rebuild: bool = False):
+    def __init__(self, max_chars: int = 3000):
         """
-        重新加载索引
+        初始化上下文构建器
         
         Args:
-            force_rebuild: 是否强制重新构建索引
+            max_chars: 默认最大字符数
         """
-        logger.info("开始重新加载索引...")
+        self.max_chars = max_chars
+    
+    def build(self, results: List[Dict], max_chars: int = None) -> str:
+        """
+        构建上下文
         
-        self._clear_cache()
+        Args:
+            results: 检索结果列表
+            max_chars: 最大字符数，覆盖默认值
+            
+        Returns:
+            上下文字符串
+        """
+        max_chars = max_chars or self.max_chars
+        context_parts = []
+        total_chars = 0
         
-        self.retriever.semantic_retriever._index_cache = None
-        self.retriever.semantic_retriever._index_path = None
-        self.retriever.index_built = False
+        for r in results:
+            source = r.get('title', r.get('source', 'Unknown'))
+            content = r.get('content', '')
+            
+            if total_chars + len(content) > max_chars:
+                remaining = max_chars - total_chars
+                if remaining > 100:
+                    context_parts.append(f"[来源: {source}]\n{content[:remaining]}")
+                break
+            
+            context_parts.append(f"[来源: {source}]\n{content}")
+            total_chars += len(content)
+        
+        return '\n\n'.join(context_parts)
+
+
+class PromptAugmenter:
+    """提示词增强器
+    
+    将上下文和用户查询组装成增强后的提示词，支持自定义模板。
+    """
+    
+    DEFAULT_TEMPLATE = """## 相关参考资料
+
+{context}
+
+## 用户问题
+
+{query}
+
+请根据以上参考资料回答用户问题。"""
+    
+    TEMPLATE_WITH_SYSTEM = """{system_prompt}
+
+## 相关参考资料
+
+{context}
+
+## 用户问题
+
+{query}
+
+请根据以上参考资料回答用户问题。如果参考资料中没有相关信息，请基于你的知识库回答。"""
+    
+    def __init__(self, template: str = None, template_with_system: str = None):
+        """
+        初始化提示词增强器
+        
+        Args:
+            template: 默认提示词模板
+            template_with_system: 包含系统提示词的模板
+        """
+        self.template = template or self.DEFAULT_TEMPLATE
+        self.template_with_system = template_with_system or self.TEMPLATE_WITH_SYSTEM
+    
+    def augment(
+        self,
+        query: str,
+        context: str,
+        system_prompt: str = None
+    ) -> str:
+        """
+        增强提示词
+        
+        Args:
+            query: 用户查询
+            context: 上下文
+            system_prompt: 系统提示词
+            
+        Returns:
+            增强后的提示词
+        """
+        if not context:
+            return query
+        
+        if system_prompt:
+            return self.template_with_system.format(
+                system_prompt=system_prompt,
+                context=context,
+                query=query
+            )
+        
+        return self.template.format(context=context, query=query)
+
+
+class IndexManager:
+    """索引管理器
+    
+    负责索引的构建、加载、重载和资源管理，封装索引相关的所有操作。
+    """
+    
+    def __init__(self, config: RAGConfig):
+        """
+        初始化索引管理器
+        
+        Args:
+            config: RAG 配置对象
+        """
+        self.config = config
+        self.path_manager = IndexPathManager(str(config.get('index_dir')))
+        self.chunker = TextChunker(
+            chunk_size=config.get('chunk_size'),
+            chunk_overlap=config.get('chunk_overlap')
+        )
+        self.retriever = HybridRetriever(
+            semantic_weight=config.get('semantic_weight'),
+            keyword_weight=config.get('keyword_weight'),
+            top_k=config.get('top_k'),
+            cache_size=config.get('cache_size'),
+            cache_ttl=config.get('cache_ttl'),
+            embedding_model=config.get('embedding_model'),
+            reranker_model=config.get('reranker_model'),
+            use_rerank=config.get('use_rerank'),
+            index_path=str(config.get('index_dir'))
+        )
+        self.file_reader = FileEncodingReader()
         self._initialized = False
-        
-        if force_rebuild or not self.index_dir.exists():
-            logger.info("强制重新构建索引...")
-            self._build_index()
-        else:
-            logger.info("重新加载已有索引...")
-            self._load_index()
-        
-        logger.info("索引重载完成")
     
-    def _clear_cache(self):
-        """清空所有缓存"""
-        if self.retriever.semantic_retriever is not None:
-            self.retriever.semantic_retriever._cache.clear()
-        self.retriever._cache.clear()
-        logger.info("缓存已清空")
-    
-    def stats(self) -> Dict:
-        """获取完整统计信息"""
-        hybrid_stats = self.retriever.get_stats()
-        semantic_cache = self.retriever.semantic_retriever._cache.get_stats() if self.retriever.semantic_retriever else {}
-        
-        # 获取文档数量（从关键词检索器获取，因为总是存在）
-        num_docs = self.retriever.keyword_retriever._num_docs
-        num_chunks = len(self.retriever.keyword_retriever.doc_map)
-        
-        return {
-            'index': {
-                'num_documents': num_docs,
-                'num_chunks': num_chunks,
-                'index_dir': str(self.index_dir)
-            },
-            'retrieval': {
-                'num_retrievals': hybrid_stats['num_retrievals'],
-                'total_time_ms': hybrid_stats['total_time_ms'],
-                'avg_time_ms': hybrid_stats['avg_time_ms'],
-                'last_query_time_ms': hybrid_stats['last_query_time_ms'],
-                'use_fusion': self.use_fusion,
-                'semantic_weight': self.semantic_weight,
-                'keyword_weight': self.keyword_weight
-            },
-            'hybrid_cache': hybrid_stats['cache'],
-            'semantic_cache': semantic_cache
-        }
-    
-    def get_config(self) -> Dict:
-        """获取当前配置"""
-        return {
-            'data_dir': str(self.data_dir),
-            'index_dir': str(self.index_dir),
-            'chunk_size': self.chunk_size,
-            'chunk_overlap': self.chunk_overlap,
-            'top_k': self.top_k,
-            'score_threshold': self.score_threshold,
-            'semantic_weight': self.semantic_weight,
-            'keyword_weight': self.keyword_weight,
-            'cache_size': self.cache_size,
-            'cache_ttl': self.cache_ttl,
-            'embedding_model': self.embedding_model,
-            'use_fusion': self.use_fusion,
-            'use_cache': self.use_cache,
-            'eager_load': self.eager_load
-        }
-    
-    def initialize(self):
-        """初始化"""
-        if self._initialized:
-            return
-        
-        if self.index_dir.exists():
-            logger.info("加载已有索引...")
-            self._load_index()
-        else:
-            logger.info("构建新索引...")
-            self._build_index()
-        
-        self._initialized = True
-    
-    def _build_index(self):
+    def build_index(self):
         """构建索引"""
-        self.index_dir.mkdir(parents=True, exist_ok=True)
-        
+        self.path_manager.ensure_dir()
         chunks = []
+        raw_dir = Path(self.config.get('data_dir')) / 'raw'
         
-        raw_dir = self.data_dir / 'raw'
         if raw_dir.exists():
             for file_path in raw_dir.glob('*.txt'):
-                content = self._read_file_with_encoding(file_path)
+                content = self.file_reader.read(file_path)
                 
                 if content is None:
                     continue
@@ -1099,48 +1288,23 @@ class RAGRetriever:
                 )
                 
                 chunks.extend(file_chunks)
-                
                 logger.info(f"分块: {file_path.name} -> {len(file_chunks)} 块")
         
         if chunks:
-            self.retriever.build_index(chunks, str(self.index_dir))
-            logger.info(f"索引构建完成: {len(chunks)} 个分块")
+            self.retriever.build_index(chunks)
+            logger.info(f"索引构建完成：{len(chunks)} 个分块")
         else:
             logger.warning("没有找到分块数据")
     
-    def _read_file_with_encoding(self, file_path: Path) -> Optional[str]:
-        """
-        自动检测文件编码并读取
-        
-        Args:
-            file_path: 文件路径
-            
-        Returns:
-            文件内容，失败返回 None
-        """
-        encodings = ['utf-8', 'gbk', 'gb2312', 'gb18030', 'latin-1']
-        
-        for encoding in encodings:
-            try:
-                content = file_path.read_text(encoding=encoding)
-                if content.strip():
-                    return content
-            except (UnicodeDecodeError, IOError):
-                continue
-        
-        logger.warning(f"无法读取文件（编码不支持）: {file_path.name}")
-        return None
-    
-    def _load_index(self):
+    def load_index(self):
         """加载已有索引"""
-        # 只在需要时加载语义模型
         if self.retriever.semantic_retriever is not None:
             self.retriever.semantic_retriever.load_model()
         else:
             logger.info("跳过语义模型加载（已禁用）")
         
-        chunks_path = self.index_dir / 'chunks.pkl'
-        bm25_path = self.index_dir / 'bm25_docs.pkl'
+        chunks_path = self.path_manager.chunks
+        bm25_path = self.path_manager.bm25_docs
         
         if not chunks_path.exists():
             raise RuntimeError(f"索引文件不存在: {chunks_path}")
@@ -1152,7 +1316,6 @@ class RAGRetriever:
             logger.error(f"加载chunks.pkl失败: {e}")
             raise RuntimeError(f"索引文件损坏: {chunks_path}")
         
-        # 只在需要时设置语义检索器数据
         if self.retriever.semantic_retriever is not None:
             try:
                 self.retriever.semantic_retriever.documents = [c['content'] for c in chunks]
@@ -1188,6 +1351,183 @@ class RAGRetriever:
         self.retriever.index_built = True
         logger.info(f"索引加载完成: {len(chunks)} 个分块")
     
+    def reload(self, force_rebuild: bool = False):
+        """
+        重新加载索引
+        
+        Args:
+            force_rebuild: 是否强制重新构建索引
+        """
+        logger.info("开始重新加载索引...")
+        
+        self._clear_cache()
+        
+        self.retriever.semantic_retriever._index_cache = None
+        self.retriever.semantic_retriever._index_path = None
+        self.retriever.index_built = False
+        self._initialized = False
+        
+        index_dir = Path(self.config.get('index_dir'))
+        if force_rebuild or not index_dir.exists():
+            logger.info("强制重新构建索引...")
+            self.build_index()
+        else:
+            logger.info("重新加载已有索引...")
+            self.load_index()
+        
+        logger.info("索引重载完成")
+    
+    def _clear_cache(self):
+        """清空所有缓存"""
+        if self.retriever.semantic_retriever is not None:
+            self.retriever.semantic_retriever._cache.clear()
+        self.retriever._cache.clear()
+        logger.info("缓存已清空")
+    
+    def is_built(self) -> bool:
+        """
+        检查索引是否已构建
+        
+        Returns:
+            是否已构建
+        """
+        return self.retriever.index_built
+    
+    def get_stats(self) -> Dict:
+        """
+        获取索引统计信息
+        
+        Returns:
+            统计信息字典
+        """
+        num_docs = self.retriever.keyword_retriever._num_docs
+        num_chunks = len(self.retriever.keyword_retriever.doc_map)
+        
+        return {
+            'num_documents': num_docs,
+            'num_chunks': num_chunks,
+            'index_dir': str(self.config.get('index_dir'))
+        }
+    
+    def close(self):
+        """释放资源"""
+        if self.retriever.semantic_retriever._index_cache is not None:
+            self.retriever.semantic_retriever._index_cache = None
+            logger.info("FAISS索引已释放")
+
+
+class RAGRetriever:
+    """RAG 检索器（对外接口）
+    
+    作为门面模式（Facade Pattern）的实现，提供统一的 RAG 检索接口，
+    内部委托给各个专门的组件处理具体职责。
+    """
+    
+    def __init__(
+        self,
+        config: RAGConfig = None,
+        config_path: str = None,
+        **kwargs
+    ):
+        """
+        初始化 RAG 检索器
+        
+        Args:
+            config: RAG 配置对象，优先级最高
+            config_path: 配置文件路径，当 config 为 None 时使用
+            **kwargs: 覆盖配置的参数
+        """
+        if config is None:
+            config = RAGConfig(config_path=config_path, **kwargs)
+        
+        self.config = config
+        
+        self.index_manager = IndexManager(config)
+        self.context_builder = ContextBuilder(max_chars=config.get('chunk_size') * 5)
+        self.prompt_augmenter = PromptAugmenter()
+        
+        self._initialized = False
+        
+        if config.get('eager_load'):
+            self.initialize()
+    
+    def __enter__(self):
+        """上下文管理器入口"""
+        self.initialize()
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """上下文管理器出口，释放资源"""
+        self.close()
+        return False
+    
+    def close(self):
+        """释放资源"""
+        self.index_manager.close()
+    
+    def reload(self, force_rebuild: bool = False):
+        """
+        重新加载索引
+        
+        Args:
+            force_rebuild: 是否强制重新构建索引
+        """
+        self.index_manager.reload(force_rebuild=force_rebuild)
+        self._initialized = False
+    
+    def stats(self) -> Dict:
+        """
+        获取完整统计信息
+        
+        Returns:
+            统计信息字典
+        """
+        hybrid_stats = self.index_manager.retriever.get_stats()
+        semantic_cache = {}
+        if self.index_manager.retriever.semantic_retriever:
+            semantic_cache = self.index_manager.retriever.semantic_retriever._cache.get_stats()
+        
+        index_stats = self.index_manager.get_stats()
+        
+        return {
+            'index': index_stats,
+            'retrieval': {
+                'num_retrievals': hybrid_stats['num_retrievals'],
+                'total_time_ms': hybrid_stats['total_time_ms'],
+                'avg_time_ms': hybrid_stats['avg_time_ms'],
+                'last_query_time_ms': hybrid_stats['last_query_time_ms'],
+                'use_fusion': self.config.get('use_fusion'),
+                'semantic_weight': self.config.get('semantic_weight'),
+                'keyword_weight': self.config.get('keyword_weight')
+            },
+            'hybrid_cache': hybrid_stats['cache'],
+            'semantic_cache': semantic_cache
+        }
+    
+    def get_config(self) -> Dict:
+        """
+        获取当前配置
+        
+        Returns:
+            配置字典
+        """
+        return self.config.to_dict()
+    
+    def initialize(self):
+        """初始化"""
+        if self._initialized:
+            return
+        
+        index_dir = Path(self.config.get('index_dir'))
+        if index_dir.exists():
+            logger.info("加载已有索引...")
+            self.index_manager.load_index()
+        else:
+            logger.info("构建新索引...")
+            self.index_manager.build_index()
+        
+        self._initialized = True
+    
     def retrieve(
         self,
         query: str,
@@ -1209,10 +1549,10 @@ class RAGRetriever:
         """
         self.initialize()
         
-        fusion = use_fusion if use_fusion is not None else self.use_fusion
-        cache = use_cache if use_cache is not None else self.use_cache
+        fusion = use_fusion if use_fusion is not None else self.config.get('use_fusion')
+        cache = use_cache if use_cache is not None else self.config.get('use_cache')
         
-        return self.retriever.retrieve(
+        return self.index_manager.retriever.retrieve(
             query,
             top_k=top_k,
             use_fusion=fusion,
@@ -1223,7 +1563,7 @@ class RAGRetriever:
         self,
         query: str,
         top_k: int = None,
-        max_chars: int = 3000
+        max_chars: int = None
     ) -> str:
         """
         构建上下文
@@ -1237,24 +1577,7 @@ class RAGRetriever:
             上下文字符串
         """
         results = self.retrieve(query, top_k=top_k)
-        
-        context_parts = []
-        total_chars = 0
-        
-        for r in results:
-            source = r.get('title', r.get('source', 'Unknown'))
-            content = r.get('content', '')
-            
-            if total_chars + len(content) > max_chars:
-                remaining = max_chars - total_chars
-                if remaining > 100:
-                    context_parts.append(f"[来源: {source}]\n{content[:remaining]}")
-                break
-            
-            context_parts.append(f"[来源: {source}]\n{content}")
-            total_chars += len(content)
-        
-        return '\n\n'.join(context_parts)
+        return self.context_builder.build(results, max_chars=max_chars)
     
     def augment_prompt(
         self,
@@ -1272,36 +1595,7 @@ class RAGRetriever:
             增强后的提示词
         """
         context = self.build_context(query)
-        
-        if not context:
-            return query
-        
-        if system_prompt:
-            augmented = f"""{system_prompt}
-
-## 相关参考资料
-
-{context}
-
-## 用户问题
-
-{query}
-
-请根据以上参考资料回答用户问题。如果参考资料中没有相关信息，请基于你的知识库回答。
-"""
-        else:
-            augmented = f"""## 相关参考资料
-
-{context}
-
-## 用户问题
-
-{query}
-
-请根据以上参考资料回答用户问题。
-"""
-        
-        return augmented
+        return self.prompt_augmenter.augment(query, context, system_prompt)
 
 
 class RAGService:

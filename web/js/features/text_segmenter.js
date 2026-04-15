@@ -50,7 +50,11 @@ class TextSegmenter {
         // 统计中文字符数量
         let chineseChars = 0;
         for (let char of text) {
-            if (this.chinesePattern.test(char)) {
+            const code = char.charCodeAt(0);
+            // 中文字符范围: 4E00-9FFF (基本汉字), 3000-303F (CJK符号), FF00-FFEF (全角字符)
+            if ((code >= 0x4E00 && code <= 0x9FFF) || 
+                (code >= 0x3000 && code <= 0x303F) || 
+                (code >= 0xFF00 && code <= 0xFFEF)) {
                 chineseChars++;
             }
         }
@@ -275,9 +279,13 @@ class TextSegmenter {
      * 检测单个字符的语言
      */
     _detectCharLanguage(char) {
-        if (this.chinesePattern.test(char)) {
+        const code = char.charCodeAt(0);
+        // 中文字符范围: 4E00-9FFF (基本汉字), 3000-303F (CJK符号), FF00-FFEF (全角字符)
+        if ((code >= 0x4E00 && code <= 0x9FFF) || 
+            (code >= 0x3000 && code <= 0x303F) || 
+            (code >= 0xFF00 && code <= 0xFFEF)) {
             return 'zh';
-        } else if (/[a-zA-Z]/.test(char)) {
+        } else if ((code >= 0x41 && code <= 0x5A) || (code >= 0x61 && code <= 0x7A)) { // A-Z, a-z
             return 'en';
         } else {
             return 'other';

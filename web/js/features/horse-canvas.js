@@ -306,27 +306,22 @@
             this.ctx.scale(scale, scale);
             this.ctx.globalAlpha = opacity;
 
-            const breathOffset = Math.sin(breathPhase) * 2;
+            const breathOffset = Math.sin(breathPhase) * 1.5;
             const runCycle = Math.sin(legPhase);
-            const bounce = Math.abs(Math.sin(legPhase)) * 8;
+            const bounce = Math.abs(Math.sin(legPhase)) * 6;
 
             this.ctx.save();
             this.ctx.translate(0, -bounce);
 
-            this.drawHorseBody(color, breathOffset);
-            this.drawHorseHead(color, breathOffset);
-            this.drawHorseLegs(color, legPhase);
-            this.drawHorseMane(maneColor, runCycle);
-            this.drawHorseTail(tailColor, runCycle);
-            this.drawHorseEye();
+            this.drawRealisticHorse(color, maneColor, tailColor, breathOffset, legPhase, runCycle);
             
             this.ctx.restore();
             this.ctx.restore();
 
             horse.x += horse.speed * this.speedMultiplier;
             
-            if (horse.x > this.width + 200) {
-                horse.x = -200;
+            if (horse.x > this.width + 250) {
+                horse.x = -250;
                 horse.y = this.height * 0.4 + Math.random() * this.height * 0.35;
                 horse.baseY = horse.y;
             }
@@ -335,161 +330,301 @@
             horse.legPhase += 0.15 * this.speedMultiplier;
         }
 
-        drawHorseBody(color, breathOffset) {
-            const bodyGradient = this.ctx.createLinearGradient(-60, -30, -60, 30);
+        drawRealisticHorse(color, maneColor, tailColor, breathOffset, legPhase, runCycle) {
+            this.ctx.save();
+            
+            this.drawHorseNeck(color, breathOffset);
+            this.drawHorseBodyRealistic(color, breathOffset);
+            this.drawHorseHeadRealistic(color, breathOffset, runCycle);
+            this.drawHorseLegsRealistic(color, legPhase);
+            this.drawHorseManeRealistic(maneColor, runCycle);
+            this.drawHorseTailRealistic(tailColor, runCycle);
+            this.drawHorseDetails(color, breathOffset);
+            
+            this.ctx.restore();
+        }
+
+        drawHorseNeck(color, breathOffset) {
+            const neckGradient = this.ctx.createLinearGradient(-30, -60, 40, -20);
+            neckGradient.addColorStop(0, color.highlight);
+            neckGradient.addColorStop(0.4, color.body);
+            neckGradient.addColorStop(1, color.shadow);
+            
+            this.ctx.fillStyle = neckGradient;
+            this.ctx.beginPath();
+            this.ctx.moveTo(30, -15 + breathOffset);
+            this.ctx.bezierCurveTo(45, -35 + breathOffset, 55, -55 + breathOffset, 50, -75 + breathOffset);
+            this.ctx.bezierCurveTo(48, -85 + breathOffset, 40, -90 + breathOffset, 30, -85 + breathOffset);
+            this.ctx.bezierCurveTo(15, -80 + breathOffset, 5, -65 + breathOffset, -10, -45 + breathOffset);
+            this.ctx.bezierCurveTo(-20, -30 + breathOffset, -25, -15 + breathOffset, -30, 0);
+            this.ctx.lineTo(30, -15 + breathOffset);
+            this.ctx.fill();
+        }
+
+        drawHorseBodyRealistic(color, breathOffset) {
+            const bodyGradient = this.ctx.createLinearGradient(-80, -40, -80, 40);
             bodyGradient.addColorStop(0, color.highlight);
-            bodyGradient.addColorStop(0.5, color.body);
+            bodyGradient.addColorStop(0.3, color.body);
+            bodyGradient.addColorStop(0.7, color.body);
             bodyGradient.addColorStop(1, color.shadow);
             
             this.ctx.fillStyle = bodyGradient;
             this.ctx.beginPath();
-            this.ctx.ellipse(0, breathOffset, 70, 35, 0, 0, Math.PI * 2);
+            this.ctx.moveTo(-85, -10 + breathOffset);
+            this.ctx.bezierCurveTo(-90, -30 + breathOffset, -80, -45 + breathOffset, -60, -45 + breathOffset);
+            this.ctx.bezierCurveTo(-30, -48 + breathOffset, 10, -40 + breathOffset, 35, -25 + breathOffset);
+            this.ctx.bezierCurveTo(50, -15 + breathOffset, 55, 0, 50, 15);
+            this.ctx.bezierCurveTo(40, 30, 10, 35, -30, 35);
+            this.ctx.bezierCurveTo(-60, 35, -85, 25, -90, 10);
+            this.ctx.bezierCurveTo(-95, 0, -90, -10 + breathOffset, -85, -10 + breathOffset);
+            this.ctx.fill();
+
+            this.ctx.fillStyle = color.highlight;
+            this.ctx.globalAlpha = 0.25;
+            this.ctx.beginPath();
+            this.ctx.ellipse(-30, -25 + breathOffset, 35, 15, -0.2, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.globalAlpha = 1;
+
+            this.ctx.strokeStyle = color.shadow;
+            this.ctx.lineWidth = 1;
+            this.ctx.globalAlpha = 0.5;
+            this.ctx.beginPath();
+            this.ctx.moveTo(-20, 35);
+            this.ctx.bezierCurveTo(-10, 32, 5, 28, 15, 25);
+            this.ctx.stroke();
+            this.ctx.globalAlpha = 1;
+        }
+
+        drawHorseHeadRealistic(color, breathOffset, runCycle) {
+            const headX = 65;
+            const headY = -70 + breathOffset;
+            const headTilt = Math.sin(runCycle * 0.3) * 0.05;
+            
+            this.ctx.save();
+            this.ctx.translate(headX, headY);
+            this.ctx.rotate(headTilt);
+
+            const headGradient = this.ctx.createLinearGradient(-15, -30, 30, 10);
+            headGradient.addColorStop(0, color.highlight);
+            headGradient.addColorStop(0.5, color.body);
+            headGradient.addColorStop(1, color.shadow);
+            
+            this.ctx.fillStyle = headGradient;
+            this.ctx.beginPath();
+            this.ctx.moveTo(-10, -25);
+            this.ctx.bezierCurveTo(-15, -35, -10, -45, 5, -48);
+            this.ctx.bezierCurveTo(20, -50, 35, -45, 40, -35);
+            this.ctx.bezierCurveTo(45, -25, 42, -15, 38, -5);
+            this.ctx.bezierCurveTo(35, 5, 25, 12, 15, 15);
+            this.ctx.bezierCurveTo(5, 18, -5, 15, -8, 5);
+            this.ctx.bezierCurveTo(-12, -5, -12, -15, -10, -25);
+            this.ctx.fill();
+
+            this.ctx.fillStyle = '#0a0503';
+            this.ctx.beginPath();
+            this.ctx.ellipse(25, -30, 8, 5, 0.2, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.beginPath();
+            this.ctx.arc(27, -32, 2, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            this.ctx.fillStyle = '#1a0f08';
+            this.ctx.beginPath();
+            this.ctx.ellipse(38, -15, 5, 3, 0.3, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            this.ctx.fillStyle = '#0a0503';
+            this.ctx.beginPath();
+            this.ctx.ellipse(40, -15, 2.5, 1.5, 0.3, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            this.ctx.fillStyle = color.body;
+            this.ctx.beginPath();
+            this.ctx.moveTo(38, -5);
+            this.ctx.bezierCurveTo(42, 0, 40, 8, 35, 12);
+            this.ctx.lineTo(30, 8);
+            this.ctx.bezierCurveTo(35, 5, 38, 0, 38, -5);
             this.ctx.fill();
 
             this.ctx.strokeStyle = color.shadow;
             this.ctx.lineWidth = 2;
             this.ctx.beginPath();
-            this.ctx.ellipse(0, breathOffset, 70, 35, 0, 0, Math.PI * 2);
+            this.ctx.moveTo(10, 15);
+            this.ctx.bezierCurveTo(15, 22, 20, 25, 25, 22);
             this.ctx.stroke();
+
+            this.ctx.restore();
+        }
+
+        drawHorseLegsRealistic(color, legPhase) {
+            const frontRightPhase = legPhase;
+            const frontLeftPhase = legPhase + Math.PI * 0.5;
+            const backRightPhase = legPhase + Math.PI;
+            const backLeftPhase = legPhase + Math.PI * 1.5;
+
+            this.drawSingleLeg(-65, 35, color, backLeftPhase, true, true);
+            this.drawSingleLeg(-45, 35, color, backRightPhase, true, false);
+            this.drawSingleLeg(25, 30, color, frontLeftPhase, false, true);
+            this.drawSingleLeg(40, 28, color, frontRightPhase, false, false);
+        }
+
+        drawSingleLeg(baseX, baseY, color, phase, isBack, isFar) {
+            const swing = Math.sin(phase) * 25;
+            const kneeBend = Math.cos(phase) * 20;
+            const hockBend = Math.sin(phase + 0.5) * 15;
+            
+            const upperLength = isBack ? 35 : 32;
+            const lowerLength = isBack ? 40 : 38;
+            const fetlockLength = 15;
+
+            const shoulderX = baseX;
+            const shoulderY = baseY;
+            
+            const elbowX = shoulderX + swing * 0.3;
+            const elbowY = shoulderY + upperLength * 0.6;
+            
+            const kneeX = shoulderX + swing * 0.6;
+            const kneeY = shoulderY + upperLength;
+            
+            const fetlockX = kneeX + swing * 0.4 + kneeBend * 0.3;
+            const fetlockY = kneeY + lowerLength;
+            
+            const hoofX = fetlockX + hockBend * 0.2;
+            const hoofY = fetlockY + fetlockLength;
+
+            const legGradient = this.ctx.createLinearGradient(
+                shoulderX - 6, shoulderY, 
+                shoulderX + 6, hoofY
+            );
+            legGradient.addColorStop(0, color.body);
+            legGradient.addColorStop(0.5, color.highlight);
+            legGradient.addColorStop(1, color.shadow);
+
+            this.ctx.strokeStyle = legGradient;
+            this.ctx.lineWidth = isFar ? 7 : 9;
+            this.ctx.lineCap = 'round';
+            this.ctx.lineJoin = 'round';
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(shoulderX, shoulderY);
+            this.ctx.quadraticCurveTo(elbowX, elbowY, kneeX, kneeY);
+            this.ctx.stroke();
+
+            this.ctx.lineWidth = isFar ? 6 : 8;
+            this.ctx.beginPath();
+            this.ctx.moveTo(kneeX, kneeY);
+            this.ctx.quadraticCurveTo(
+                kneeX + kneeBend * 0.2, 
+                kneeY + lowerLength * 0.5,
+                fetlockX, 
+                fetlockY
+            );
+            this.ctx.stroke();
+
+            this.ctx.lineWidth = isFar ? 4 : 5;
+            this.ctx.beginPath();
+            this.ctx.moveTo(fetlockX, fetlockY);
+            this.ctx.lineTo(hoofX, hoofY);
+            this.ctx.stroke();
+
+            this.ctx.fillStyle = '#1a0f08';
+            this.ctx.beginPath();
+            this.ctx.ellipse(hoofX, hoofY + 4, 8, 5, swing * 0.01, 0, Math.PI * 2);
+            this.ctx.fill();
 
             this.ctx.fillStyle = color.highlight;
             this.ctx.globalAlpha = 0.3;
             this.ctx.beginPath();
-            this.ctx.ellipse(-20, -15 + breathOffset, 25, 12, -0.3, 0, Math.PI * 2);
+            this.ctx.ellipse(shoulderX + 2, shoulderY + 5, 4, 8, 0.3, 0, Math.PI * 2);
             this.ctx.fill();
             this.ctx.globalAlpha = 1;
         }
 
-        drawHorseHead(color, breathOffset) {
-            const headX = 75;
-            const headY = -25 + breathOffset;
-
-            const headGradient = this.ctx.createLinearGradient(headX - 25, -15, headX + 15, -35);
-            headGradient.addColorStop(0, color.highlight);
-            headGradient.addColorStop(1, color.body);
+        drawHorseManeRealistic(maneColor, runCycle) {
+            const maneStrands = 12;
+            const baseX = 50;
+            const baseY = -85;
             
-            this.ctx.fillStyle = headGradient;
-            this.ctx.beginPath();
-            this.ctx.moveTo(headX - 25, headY);
-            this.ctx.quadraticCurveTo(headX - 30, headY - 15, headX - 20, headY - 25);
-            this.ctx.quadraticCurveTo(headX, headY - 40, headX + 20, headY - 30);
-            this.ctx.quadraticCurveTo(headX + 30, headY - 20, headX + 25, headY);
-            this.ctx.quadraticCurveTo(headX + 20, headY + 10, headX, headY + 5);
-            this.ctx.quadraticCurveTo(headX - 15, headY + 5, headX - 25, headY);
-            this.ctx.fill();
-
-            this.ctx.fillStyle = '#0d0704';
-            this.ctx.beginPath();
-            this.ctx.ellipse(headX + 5, headY - 22, 6, 4, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.beginPath();
-            this.ctx.arc(headX + 7, headY - 23, 1.5, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            this.ctx.fillStyle = '#1a0f08';
-            this.ctx.beginPath();
-            this.ctx.ellipse(headX + 25, headY - 12, 4, 3, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            this.ctx.fillStyle = '#0a0503';
-            this.ctx.beginPath();
-            this.ctx.ellipse(headX + 27, headY - 12, 2, 1.5, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-        }
-
-        drawHorseLegs(color, legPhase) {
-            const legPositions = [
-                { x: -45, y: 25, phase: 0 },
-                { x: -20, y: 25, phase: Math.PI },
-                { x: 15, y: 25, phase: 0 },
-                { x: 40, y: 25, phase: Math.PI }
-            ];
-
-            legPositions.forEach((leg, index) => {
-                const offset = Math.sin(legPhase + leg.phase) * 15;
-                const legLength = 45 + (index % 2 === 0 ? 0 : 5);
+            for (let i = 0; i < maneStrands; i++) {
+                const t = i / maneStrands;
+                const startX = baseX - t * 80;
+                const startY = baseY + t * 35;
+                const wave = Math.sin(runCycle + i * 0.4) * (8 + i * 1.5);
+                const length = 25 + i * 3 + Math.sin(runCycle + i) * 5;
                 
-                const legGradient = this.ctx.createLinearGradient(leg.x - 5, 0, leg.x + 5, 0);
-                legGradient.addColorStop(0, color.shadow);
-                legGradient.addColorStop(0.5, color.body);
-                legGradient.addColorStop(1, color.shadow);
+                const strandGradient = this.ctx.createLinearGradient(
+                    startX, startY, 
+                    startX - wave, startY + length
+                );
+                strandGradient.addColorStop(0, maneColor);
+                strandGradient.addColorStop(1, '#0a0503');
                 
-                this.ctx.strokeStyle = legGradient;
-                this.ctx.lineWidth = 8;
+                this.ctx.strokeStyle = strandGradient;
+                this.ctx.lineWidth = 3 - t * 1.5;
                 this.ctx.lineCap = 'round';
-                this.ctx.beginPath();
-                this.ctx.moveTo(leg.x, leg.y);
                 
-                const kneeX = leg.x + (index % 2 === 0 ? offset : -offset) * 0.5;
-                const kneeY = leg.y + legLength * 0.4;
-                const footX = leg.x + (index % 2 === 0 ? offset : -offset);
-                const footY = leg.y + legLength;
-                
-                this.ctx.quadraticCurveTo(kneeX, kneeY, footX, footY);
-                this.ctx.stroke();
-
-                this.ctx.fillStyle = '#1a0f08';
                 this.ctx.beginPath();
-                this.ctx.ellipse(footX, footY + 3, 6, 4, 0, 0, Math.PI * 2);
-                this.ctx.fill();
-            });
-        }
-
-        drawHorseMane(maneColor, runCycle) {
-            const manePoints = [
-                { x: -30, y: -40, offset: 0 },
-                { x: -10, y: -45, offset: 5 },
-                { x: 10, y: -42, offset: -5 },
-                { x: 30, y: -35, offset: 8 },
-                { x: 50, y: -25, offset: -3 }
-            ];
-
-            manePoints.forEach((point, i) => {
-                const wave = Math.sin(runCycle + i * 0.5) * 8;
-                
-                this.ctx.strokeStyle = maneColor;
-                this.ctx.lineWidth = 4 - i * 0.5;
-                this.ctx.lineCap = 'round';
-                this.ctx.beginPath();
-                this.ctx.moveTo(point.x, point.y);
-                this.ctx.quadraticCurveTo(
-                    point.x + wave, 
-                    point.y + 25 + point.offset,
-                    point.x + wave * 0.5, 
-                    point.y + 45 + point.offset
+                this.ctx.moveTo(startX, startY);
+                this.ctx.bezierCurveTo(
+                    startX - wave * 0.3, startY + length * 0.3,
+                    startX - wave * 0.7, startY + length * 0.6,
+                    startX - wave, startY + length
                 );
                 this.ctx.stroke();
-            });
+            }
         }
 
-        drawHorseTail(tailColor, runCycle) {
-            const tailBaseX = -60;
-            const tailBaseY = -10;
-
-            for (let i = 0; i < 5; i++) {
-                const wave = Math.sin(runCycle + i * 0.4) * (10 + i * 3);
+        drawHorseTailRealistic(tailColor, runCycle) {
+            const tailBaseX = -85;
+            const tailBaseY = -5;
+            const tailStrands = 8;
+            
+            for (let i = 0; i < tailStrands; i++) {
+                const wave = Math.sin(runCycle + i * 0.5) * (15 + i * 4);
+                const length = 40 + i * 8 + Math.sin(runCycle + i * 0.3) * 10;
+                const spread = (i - tailStrands / 2) * 3;
                 
-                this.ctx.strokeStyle = tailColor;
-                this.ctx.lineWidth = 6 - i;
+                const tailGradient = this.ctx.createLinearGradient(
+                    tailBaseX, tailBaseY,
+                    tailBaseX - 40 + wave, tailBaseY + length
+                );
+                tailGradient.addColorStop(0, tailColor);
+                tailGradient.addColorStop(1, '#0a0503');
+                
+                this.ctx.strokeStyle = tailGradient;
+                this.ctx.lineWidth = 5 - i * 0.4;
                 this.ctx.lineCap = 'round';
-                this.ctx.globalAlpha = 1 - i * 0.15;
+                this.ctx.globalAlpha = 1 - i * 0.08;
                 
                 this.ctx.beginPath();
                 this.ctx.moveTo(tailBaseX, tailBaseY);
-                this.ctx.quadraticCurveTo(
-                    tailBaseX - 20 + wave,
-                    tailBaseY + 20 + i * 5,
-                    tailBaseX - 30 + wave * 1.5,
-                    tailBaseY + 45 + i * 8
+                this.ctx.bezierCurveTo(
+                    tailBaseX - 15 + wave * 0.3, tailBaseY + length * 0.3,
+                    tailBaseX - 30 + wave * 0.7 + spread, tailBaseY + length * 0.6,
+                    tailBaseX - 40 + wave + spread, tailBaseY + length
                 );
                 this.ctx.stroke();
             }
             this.ctx.globalAlpha = 1;
         }
 
-        drawHorseEye() {
+        drawHorseDetails(color, breathOffset) {
+            this.ctx.fillStyle = color.shadow;
+            this.ctx.globalAlpha = 0.4;
+            this.ctx.beginPath();
+            this.ctx.ellipse(-50, 5 + breathOffset, 8, 4, 0.5, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.globalAlpha = 1;
+
+            this.ctx.fillStyle = color.highlight;
+            this.ctx.globalAlpha = 0.2;
+            this.ctx.beginPath();
+            this.ctx.ellipse(35, -50 + breathOffset, 6, 3, 0.3, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.globalAlpha = 1;
         }
 
         drawParticles() {

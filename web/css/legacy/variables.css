@@ -1,0 +1,677 @@
+/**
+ * Ollama Hub - CSS变量系统 v3.0
+ * 
+ * 设计理念（基于国际产品设计趋势）：
+ * - 极简克制：单一主色，大量留白，干净的视觉
+ * - 自然现代：无装饰性纹理，尊重内容本身
+ * - 专业温暖：适度的亲和力，不过于冰冷
+ * - 对话核心：以内容为中心的简洁设计
+ * 
+ * 版本：v3.0
+ * 日期：2026-02-25
+ * 
+ * 色彩使用规范：
+ * - 主色：用于主要交互元素（按钮、链接、激活状态）
+ * - 灰阶：用于文本、边框、背景层次
+ * - 语义色：仅用于状态提示（成功、警告、错误、信息）
+ * - 禁止使用：油画风、发光、噪点纹理、过度装饰
+ */
+
+/* ==================== 根变量定义 ==================== */
+:root {
+    /* ═══════════════════════════════════════════════════════════════
+     * 1. 主色调系统 - 单一主色 + 辅助色
+     * ═══════════════════════════════════════════════════════════════ */
+    
+    /* 主色 - 现代青蓝 (Teal 500-600)
+     * 选择理由：比绿色更专业，比蓝色更温暖
+     * WCAG对比度：#0d9488 在白色背景上达到4.5:1 */
+    --color-primary-50: #f0fdfa;
+    --color-primary-100: #ccfbf1;
+    --color-primary-200: #99f6e4;
+    --color-primary-300: #5eead4;
+    --color-primary-400: #2dd4bf;
+    --color-primary-500: #14b8a6;  /* 主色基准 */
+    --color-primary-600: #0d9488;  /* 主要交互色 */
+    --color-primary-700: #0f766e;
+    --color-primary-800: #115e59;
+    --color-primary-900: #134e4a;
+    
+    /* 主色RGB值（用于rgba计算） */
+    --color-primary-rgb: 13, 148, 136;
+    
+    /* 辅助色 - 暖橙 (用于次要强调点缓)
+     * 仅在必要时使用，如新功能提示、徽标等 */
+    --color-accent-50: #fff7ed;
+    --color-accent-100: #ffedd5;
+    --color-accent-200: #fed7aa;
+    --color-accent-300: #fdba74;
+    --color-accent-400: #fb923c;
+    --color-accent-500: #f97316;  /* 辅助色基准 */
+    --color-accent-600: #ea580c;
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 2. 灰阶色彩系统 - 用于文本、边框、背景层次
+     * ═══════════════════════════════════════════════════════════════ */
+    /* 浅色模式灰阶 - 温暖中性灰 */
+    --color-gray-50: #fafaf9;
+    --color-gray-100: #f5f5f4;
+    --color-gray-200: #e7e5e4;
+    --color-gray-300: #d6d3d1;
+    --color-gray-400: #a8a29e;
+    --color-gray-500: #78716c;
+    --color-gray-600: #57534e;
+    --color-gray-700: #44403c;
+    --color-gray-800: #292524;
+    --color-gray-900: #1c1917;
+    --color-gray-950: #0c0a09;
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 3. 语义色彩 - 状态提示
+     * ═══════════════════════════════════════════════════════════════ */
+    
+    /* 成功 - 绿色 */
+    --color-success-50: #f0fdf4;
+    --color-success-100: #dcfce7;
+    --color-success-200: #bbf7d0;
+    --color-success-300: #86efac;
+    --color-success-400: #4ade80;
+    --color-success-500: #22c55e;
+    --color-success-600: #16a34a;
+    --color-success-700: #15803d;
+    
+    /* 警告 - 琥珀色 */
+    --color-warning-50: #fffbeb;
+    --color-warning-100: #fef3c7;
+    --color-warning-200: #fde68a;
+    --color-warning-300: #fcd34d;
+    --color-warning-400: #fbbf24;
+    --color-warning-500: #f59e0b;
+    --color-warning-600: #d97706;
+    
+    /* 错误 - 红色 */
+    --color-error-50: #fef2f2;
+    --color-error-100: #fee2e2;
+    --color-error-200: #fecaca;
+    --color-error-300: #fca5a5;
+    --color-error-400: #f87171;
+    --color-error-500: #ef4444;
+    --color-error-600: #dc2626;
+    --color-error-700: #b91c1c;
+    
+    /* 信息 - 蓝色 */
+    --color-info-50: #eff6ff;
+    --color-info-100: #dbeafe;
+    --color-info-200: #bfdbfe;
+    --color-info-300: #93c5fd;
+    --color-info-400: #60a5fa;
+    --color-info-500: #3b82f6;
+    --color-info-600: #2563eb;
+    --color-info-700: #1d4ed8;
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 4. 主题色彩 - 浅色模式
+     * ═══════════════════════════════════════════════════════════════ */
+    
+    /* 背景色 - 从白到灰的层次 */
+    --bg-body: var(--color-gray-50);
+    --bg-surface: #ffffff;
+    --bg-elevated: var(--color-gray-50);
+    --bg-subtle: var(--color-gray-100);
+    
+    /* 交互状态 */
+    --bg-hover: rgba(0, 0, 0, 0.04);
+    --bg-active: rgba(0, 0, 0, 0.06);
+    --bg-disabled: rgba(0, 0, 0, 0.04);
+    
+    /* 覆盖层 */
+    --bg-overlay: rgba(0, 0, 0, 0.5);
+    --bg-modal: rgba(0, 0, 0, 0.3);
+    
+    /* 文字色 - 清晰的层级 */
+    --text-primary: var(--color-gray-900);
+    --text-secondary: var(--color-gray-600);
+    --text-tertiary: var(--color-gray-500);
+    --text-placeholder: var(--color-gray-400);
+    --text-disabled: var(--color-gray-300);
+    --text-inverse: #ffffff;
+    
+    /* 链接色 */
+    --text-link: var(--color-primary-600);
+    --text-link-hover: var(--color-primary-700);
+    
+    /* 边框色 */
+    --border-default: var(--color-gray-200);
+    --border-muted: var(--color-gray-100);
+    --border-strong: var(--color-gray-300);
+    --border-focus: var(--color-primary-500);
+    --border-error: var(--color-error-500);
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 5. 组件专用色彩
+     * ═══════════════════════════════════════════════════════════════ */
+    
+    /* 消息气泡 */
+    --message-user-bg: var(--color-primary-600);
+    --message-user-text: #ffffff;
+    --message-user-hover: var(--color-primary-700);
+    --message-assistant-bg: var(--bg-surface);
+    --message-assistant-text: var(--text-primary);
+    --message-code-bg: var(--color-gray-100);
+    
+    /* 按钮 */
+    --btn-primary-bg: var(--color-primary-600);
+    --btn-primary-text: #ffffff;
+    --btn-primary-hover: var(--color-primary-700);
+    --btn-primary-active: var(--color-primary-800);
+    --btn-secondary-bg: transparent;
+    --btn-secondary-text: var(--color-primary-600);
+    --btn-secondary-border: var(--color-primary-600);
+    --btn-ghost-bg: transparent;
+    --btn-ghost-text: var(--text-secondary);
+    --btn-ghost-hover: var(--bg-hover);
+    
+    /* 输入框 */
+    --input-bg: #ffffff;
+    --input-border: var(--border-default);
+    --input-border-hover: var(--color-gray-400);
+    --input-focus: var(--color-primary-500);
+    --input-placeholder: var(--text-placeholder);
+    --input-disabled-bg: var(--color-gray-100);
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 6. 字体系统 - 现代简洁专业
+     * ═══════════════════════════════════════════════════════════════ */
+    
+    /* ─────────────────────────────────────────────────────────────────
+     * 6.1 字体栈 - 重新评估
+     * 优先使用系统字体，确保快速加载和一致性
+     * ───────────────────────────────────────────────────────────────── */
+    
+    /* 正文字体 - 现代简洁
+     * 优先级：Inter（现代） > 系统默认（快速）
+     * 中文字体：Noto Sans SC（Google）> 苹方 > 微软雅黑 */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+    
+    /* 显示字体 - 用于大标题 */
+    --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    
+    /* 等宽字体 - 用于代码 */
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+    
+    /* ─────────────────────────────────────────────────────────────────
+     * 6.2 字号层级 - 10级系统
+     * 基于4px网格，确保视觉节奏感
+     * ───────────────────────────────────────────────────────────────── */
+    /* 10. 页面/品牌标题 - 极少使用 */
+    --text-5xl: 3rem;        /* 48px */
+    
+    /* 9. 大屏标题 - 极少使用 */
+    --text-4xl: 2.25rem;     /* 36px */
+    
+    /* 8. 页面主标题 */
+    --text-3xl: 1.875rem;    /* 30px */
+    
+    /* 7. 区块标题 / Section Header */
+    --text-2xl: 1.5rem;      /* 24px */
+    
+    /* 6. 卡片标题 / 小标题 */
+    --text-xl: 1.25rem;      /* 20px */
+    
+    /* 5. 强调文字 / Lead Paragraph */
+    --text-lg: 1.125rem;     /* 18px */
+    
+    /* 4. 正文 / Body（默认） */
+    --text-base: 1rem;       /* 16px */
+    
+    /* 3. 次要文字 / 辅助说明 */
+    --text-sm: 0.875rem;     /* 14px */
+    
+    /* 2. 标签 / Badge / 极小文字 */
+    --text-xs: 0.75rem;      /* 12px */
+    
+    /* 1. 脚注 / Copyright */
+    --text-2xs: 0.6875rem;   /* 11px */
+    
+    /* ─────────────────────────────────────────────────────────────────
+     * 6.3 字重层级 - 4级系统
+     * 控制视觉重量，建立信息层级
+     * ───────────────────────────────────────────────────────────────── */
+    --font-light: 300;       /* 细体 - 极少使用 */
+    --font-normal: 400;      /* 常规 - 正文默认 */
+    --font-medium: 500;      /* 中等 - 按钮、标签 */
+    --font-semibold: 600;   /* 半粗 - 小标题、强调 */
+    --font-bold: 700;        /* 粗体 - 大标题、警示 */
+    
+    /* ─────────────────────────────────────────────────────────────────
+     * 6.4 行高 - 与字号对应
+     * 大字号用紧凑行高，小字号用宽松行高
+     * ───────────────────────────────────────────────────────────────── */
+    --leading-none: 1;              /* 紧凑 - 按钮、标签 */
+    --leading-tight: 1.25;           /* 紧凑 - 大标题 */
+    --leading-snug: 1.375;          /* 略密 - 中标题 */
+    --leading-normal: 1.5;          /* 常规 - 正文（默认） */
+    --leading-relaxed: 1.625;       /* 宽松 - 长文本 */
+    --leading-loose: 1.75;          /* 更宽松 - 辅助说明 */
+    
+    /* 字号-行高映射 */
+    --lh-xs: 1;                      /* 12-14px */
+    --lh-sm: 1.4;                    /* 14px */
+    --lh-base: 1.5;                  /* 16px */
+    --lh-lg: 1.4;                    /* 18-20px */
+    --lh-xl: 1.25;                   /* 24px+ */
+    
+    /* ─────────────────────────────────────────────────────────────────
+     * 6.5 字间距 - 精细控制
+     * 用于调整字符间距
+     * ───────────────────────────────────────────────────────────────── */
+    --tracking-tighter: -0.05em;    /* 更紧凑 - 大标题 */
+    --tracking-tight: -0.025em;     /* 略紧凑 - 小标题 */
+    --tracking-normal: 0;            /* 常规 - 正文 */
+    --tracking-wide: 0.025em;       /* 略宽松 - 辅助文字 */
+    --tracking-wider: 0.05em;       /* 宽松 - 标签 */
+    --tracking-widest: 0.1em;        /* 最宽松 - 大写字母 */
+    
+    /* ─────────────────────────────────────────────────────────────────
+     * 6.6 段落间距 - 基于间距系统
+     * ───────────────────────────────────────────────────────────────── */
+    --paragraph-spacing: 1.5rem;     /* 段落间距 */
+    --paragraph-indent: 0;          /* 首行缩进 - 默认0 */
+    
+    /* ─────────────────────────────────────────────────────────────────
+     * 6.7 内容宽度 - 确保可读性
+     * 英文60-75字符，中文35-45字符为最佳阅读宽度
+     * ───────────────────────────────────────────────────────────────── */
+    --prose-max-width: 65ch;         /* 65字符 - 长文本 */
+    --prose-optimal: 50ch;          /* 50字符 - 最佳阅读 */
+    --content-max-width: 720px;      /* 720px - 内容区 */
+    --message-max-width: 85%;        /* 85% - 对话气泡 */
+    --input-max-width: 600px;        /* 600px - 输入框 */
+    
+    /* ─────────────────────────────────────────────────────────────────
+     * 6.8 标题排版规范
+     * ───────────────────────────────────────────────────────────────── */
+    --h1-size: var(--text-3xl);
+    --h1-weight: var(--font-bold);
+    --h1-leading: var(--leading-tight);
+    --h1-tracking: var(--tracking-tight);
+    --h1-margin: 0 0 var(--space-6);
+    
+    --h2-size: var(--text-2xl);
+    --h2-weight: var(--font-semibold);
+    --h2-leading: var(--leading-tight);
+    --h2-tracking: var(--tracking-tight);
+    --h2-margin: 0 0 var(--space-5);
+    
+    --h3-size: var(--text-xl);
+    --h3-weight: var(--font-semibold);
+    --h3-leading: var(--leading-snug);
+    --h3-tracking: var(--tracking-normal);
+    --h3-margin: 0 0 var(--space-4);
+    
+    --h4-size: var(--text-lg);
+    --h4-weight: var(--font-medium);
+    --h4-leading: var(--leading-snug);
+    --h4-tracking: var(--tracking-normal);
+    --h4-margin: 0 0 var(--space-3);
+    
+    /* ─────────────────────────────────────────────────────────────────
+     * 6.9 正文排版规范
+     * ───────────────────────────────────────────────────────────────── */
+    --body-size: var(--text-base);
+    --body-weight: var(--font-normal);
+    --body-leading: var(--leading-normal);
+    --body-tracking: var(--tracking-normal);
+    
+    /* ─────────────────────────────────────────────────────────────────
+     * 6.10 辅助文字排版
+     * ───────────────────────────────────────────────────────────────── */
+    --caption-size: var(--text-sm);
+    --caption-weight: var(--font-normal);
+    --caption-leading: var(--leading-normal);
+    --caption-tracking: var(--tracking-wide);
+    
+    --label-size: var(--text-xs);
+    --label-weight: var(--font-medium);
+    --label-leading: var(--leading-none);
+    --label-tracking: var(--tracking-wider);
+    --label-transform: uppercase;    /* 大写 */
+    
+    /* ─────────────────────────────────────────────────────────────────
+     * 6.11 代码块排版
+     * ───────────────────────────────────────────────────────────────── */
+    --code-size: var(--text-sm);           /* 14px */
+    --code-weight: var(--font-normal);
+    --code-leading: 1.6;                     /* 较宽松 */
+    --code-padding: var(--space-3) var(--space-4);
+    --code-radius: var(--radius-md);
+    --code-font: var(--font-mono);
+    --code-bg: var(--color-gray-100);
+    --code-border: 1px solid var(--color-gray-200);
+    --code-inline-padding: 0.2em 0.4em;
+    --code-inline-radius: var(--radius-sm);
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 7. 间距系统 - 基于4px网格
+     * ═══════════════════════════════════════════════════════════════ */
+    --space-0: 0;
+    --space-1: 0.25rem;      /* 4px */
+    --space-2: 0.5rem;       /* 8px */
+    --space-3: 0.75rem;      /* 12px */
+    --space-4: 1rem;         /* 16px */
+    --space-5: 1.25rem;      /* 20px */
+    --space-6: 1.5rem;       /* 24px */
+    --space-8: 2rem;         /* 32px */
+    --space-10: 2.5rem;      /* 40px */
+    --space-12: 3rem;        /* 48px */
+    --space-16: 4rem;        /* 64px */
+    --space-20: 5rem;        /* 80px */
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 8. 圆角系统
+     * ═══════════════════════════════════════════════════════════════ */
+    --radius-none: 0;
+    --radius-sm: 0.25rem;     /* 4px */
+    --radius-md: 0.375rem;    /* 6px */
+    --radius-lg: 0.5rem;      /* 8px */
+    --radius-xl: 0.75rem;     /* 12px */
+    --radius-2xl: 1rem;      /* 16px */
+    --radius-full: 9999px;
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 9. 阴影系统 - 简洁克制
+     * ═══════════════════════════════════════════════════════════════ */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --shadow-focus: 0 0 0 3px rgba(13, 148, 136, 0.2);
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 10. 动画系统
+     * ═══════════════════════════════════════════════════════════════ */
+    
+    /* 时长 */
+    --duration-fast: 150ms;
+    --duration-normal: 200ms;
+    --duration-slow: 300ms;
+    
+    /* 缓动函数 */
+    --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* 过渡 */
+    --transition-fast: all var(--duration-fast) var(--ease-default);
+    --transition-normal: all var(--duration-normal) var(--ease-default);
+    --transition-slow: all var(--duration-slow) var(--ease-default);
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 11. 布局尺寸
+     * ═══════════════════════════════════════════════════════════════ */
+    --header-height: 56px;
+    --sidebar-width: 280px;
+    --sidebar-collapsed-width: 64px;
+    --input-height: 48px;
+    --message-max-width: 75%;
+    --content-max-width: 800px;
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 12. Z-Index层级
+     * ═══════════════════════════════════════════════════════════════ */
+    --z-base: 0;
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-fixed: 300;
+    --z-backdrop: 400;
+    --z-modal: 500;
+    --z-popover: 600;
+    --z-tooltip: 700;
+    --z-toast: 800;
+}
+
+/* ==================== 深色主题 ==================== */
+[data-theme="dark"] {
+    /* ═══════════════════════════════════════════════════════════════
+     * 1. 深色模式灰阶 - 偏蓝的深灰，更现代
+     * ═══════════════════════════════════════════════════════════════ */
+    --color-gray-50: #fafaf9;
+    --color-gray-100: #f5f5f4;
+    --color-gray-200: #e7e5e4;
+    --color-gray-300: #d6d3d1;
+    --color-gray-400: #a8a29e;
+    --color-gray-500: #78716c;
+    --color-gray-600: #57534e;
+    --color-gray-700: #44403c;
+    --color-gray-800: #292524;
+    --color-gray-900: #1c1917;
+    --color-gray-950: #0c0a09;
+    
+    /* 暗色模式专有灰阶 */
+    --dark-gray-50: #09090b;
+    --dark-gray-100: #18181b;
+    --dark-gray-200: #27272a;
+    --dark-gray-300: #3f3f46;
+    --dark-gray-400: #52525b;
+    --dark-gray-500: #71717a;
+    --dark-gray-600: #a1a1aa;
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 2. 深色模式背景
+     * ═══════════════════════════════════════════════════════════════ */
+    --bg-body: #000000;
+    --bg-surface: var(--dark-gray-100);
+    --bg-elevated: var(--dark-gray-200);
+    --bg-subtle: var(--dark-gray-300);
+    
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --bg-active: rgba(255, 255, 255, 0.09);
+    --bg-disabled: rgba(255, 255, 255, 0.04);
+    
+    --bg-overlay: rgba(0, 0, 0, 0.7);
+    --bg-modal: rgba(0, 0, 0, 0.5);
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 3. 深色模式文字
+     * ═══════════════════════════════════════════════════════════════ */
+    --text-primary: var(--dark-gray-100);
+    --text-secondary: var(--dark-gray-400);
+    --text-tertiary: var(--dark-gray-500);
+    --text-placeholder: var(--dark-gray-500);
+    --text-disabled: var(--dark-gray-600);
+    --text-inverse: #000000;
+    
+    --text-link: var(--color-primary-400);
+    --text-link-hover: var(--color-primary-300);
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 4. 深色模式边框
+     * ═══════════════════════════════════════════════════════════════ */
+    --border-default: var(--dark-gray-300);
+    --border-muted: var(--dark-gray-200);
+    --border-strong: var(--dark-gray-400);
+    --border-focus: var(--color-primary-500);
+    --border-error: var(--color-error-500);
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 5. 深色模式组件
+     * ═══════════════════════════════════════════════════════════════ */
+    --message-user-bg: var(--color-primary-600);
+    --message-user-text: #ffffff;
+    --message-user-hover: var(--color-primary-500);
+    --message-assistant-bg: var(--dark-gray-200);
+    --message-assistant-text: var(--text-primary);
+    --message-code-bg: var(--dark-gray-300);
+    
+    --btn-primary-bg: var(--color-primary-600);
+    --btn-primary-text: #ffffff;
+    --btn-primary-hover: var(--color-primary-500);
+    --btn-primary-active: var(--color-primary-700);
+    --btn-secondary-bg: transparent;
+    --btn-secondary-text: var(--color-primary-400);
+    --btn-secondary-border: var(--color-primary-400);
+    --btn-ghost-bg: transparent;
+    --btn-ghost-text: var(--text-secondary);
+    --btn-ghost-hover: var(--bg-hover);
+    
+    --input-bg: var(--dark-gray-100);
+    --input-border: var(--border-default);
+    --input-border-hover: var(--dark-gray-400);
+    --input-focus: var(--color-primary-500);
+    --input-placeholder: var(--text-placeholder);
+    --input-disabled-bg: var(--dark-gray-200);
+    
+    /* ═══════════════════════════════════════════════════════════════
+     * 6. 深色模式阴影
+     * ═══════════════════════════════════════════════════════════════ */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+    --shadow-focus: 0 0 0 3px rgba(13, 148, 136, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 响应式排版 - 移动端优先
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────
+ * 响应式字号 - 根据屏幕尺寸调整
+ * ───────────────────────────────────────────────────────────────────── */
+
+/* 小屏设备移动 (< 640px) */
+@media (max-width: 639px) {
+    :root {
+        /* 字号缩减 - 适应小屏幕 */
+        --text-5xl: 2.25rem;    /* 36px */
+        --text-4xl: 1.875rem;   /* 30px */
+        --text-3xl: 1.5rem;     /* 24px */
+        --text-2xl: 1.25rem;    /* 20px */
+        --text-xl: 1.125rem;    /* 18px */
+        --text-lg: 1rem;         /* 16px */
+        --text-base: 0.9375rem;  /* 15px - 略小 */
+        --text-sm: 0.8125rem;    /* 13px */
+        --text-xs: 0.6875rem;    /* 11px */
+        
+        /* 间距缩减 */
+        --space-4: 0.875rem;
+        --space-5: 1rem;
+        --space-6: 1.25rem;
+        --space-8: 1.5rem;
+        
+        /* 内容宽度调整 */
+        --content-max-width: 100%;
+        --message-max-width: 90%;
+    }
+}
+
+/* 中等屏幕 (640px - 1024px) */
+@media (min-width: 640px) and (max-width: 1023px) {
+    :root {
+        /* 保持默认，略微调整 */
+        --text-5xl: 2.75rem;
+        --text-4xl: 2rem;
+        
+        --content-max-width: 640px;
+    }
+}
+
+/* 大屏幕 (> 1024px) */
+@media (min-width: 1024px) {
+    :root {
+        /* 保持默认字号，可选增大 */
+        --content-max-width: 720px;
+    }
+}
+
+/* 超大屏幕 (> 1440px) */
+@media (min-width: 1440px) {
+    :root {
+        /* 可选：超大屏幕使用更大的字号 */
+        /* --text-base: 1.0625rem;  17px */
+        
+        --content-max-width: 800px;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+ * 响应式行高 - 大屏可用更宽松的行高
+ * ───────────────────────────────────────────────────────────────────── */
+@media (min-width: 1024px) {
+    :root {
+        --leading-normal: 1.6;        /* 更宽松的正文行高 */
+        --leading-relaxed: 1.75;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+ * 响应式内容宽度
+ * ───────────────────────────────────────────────────────────────────── */
+@media (max-width: 639px) {
+    .prose,
+    .message-content,
+    .chat-message {
+        max-width: var(--message-max-width, 90%);
+    }
+}
+
+/* ==================== 品牌色使用规范 ==================== */
+/*
+ * 品牌色使用场景和比例规范：
+ * 
+ * 主色 (--color-primary-600):
+ * - 主要按钮背景 (80%使用场景)
+ * - 链接文字 (90%使用场景)
+ * - 激活状态指示
+ * - 焦点边框
+ * - 重要图标
+ * 
+ * 辅助色 (--color-accent-500):
+ * - 新功能提示徽标
+ * - 重要通知标记
+ * - 节日/特殊活动点缀
+ * - 禁用，不超过整体色彩的5%
+ * 
+ * 灰阶使用比例:
+ * - 主要文字: gray-900 (浅色) / dark-gray-100 (深色) - 60%
+ * - 次要文字: gray-600 (浅色) / dark-gray-400 (深色) - 30%
+ * - 辅助文字: gray-500 (浅色) / dark-gray-500 (深色) - 10%
+ * 
+ * 禁止使用:
+ * - 任何形式的渐变背景用于装饰
+ * - 彩色边框或阴影作为装饰
+ * - 超过3种颜色的彩色元素同时出现
+ * - 任何形式的纹理图案（噪点、波浪等）
+ */
+
+/* ==================== 工具类 ==================== */
+
+/* 背景 */
+.bg-surface { background-color: var(--bg-surface); }
+.bg-elevated { background-color: var(--bg-elevated); }
+.bg-subtle { background-color: var(--bg-subtle); }
+
+/* 文字 */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.text-disabled { color: var(--text-disabled); }
+
+/* 边框 */
+.border-default { border-color: var(--border-default); }
+.border-muted { border-color: var(--border-muted); }
+
+/* 圆角 */
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-full { border-radius: var(--radius-full); }
+
+/* 阴影 */
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-focus { box-shadow: var(--shadow-focus); }
+
+/* 过渡 */
+.transition { transition: var(--transition-normal); }

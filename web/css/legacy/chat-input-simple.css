@@ -1,0 +1,225 @@
+/**
+ * Ollama Hub - 简洁对话输入框样式
+ * 
+ * 移除了过度装饰：
+ * - 油画纹理
+ * - 复杂渐变
+ * - 过度阴影
+ * - 装饰性边框
+ * 
+ * 版本：v2.0 (简化版)
+ * 日期：2026-02-25
+ */
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 1. 输入框容器 - 简洁设计
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.chat-input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-3);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-4);
+    width: 100%;
+    max-width: var(--content-max-width, 800px);
+    margin: 0 auto var(--space-4);
+    min-height: 56px;
+    box-sizing: border-box;
+    transition: border-color var(--transition-fast) var(--ease-default),
+                box-shadow var(--transition-fast) var(--ease-default);
+}
+
+/* 聚焦状态 */
+.chat-input-wrapper:focus-within {
+    border-color: var(--color-primary-500);
+    box-shadow: var(--shadow-focus);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 2. 文本输入区
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.chat-input-wrapper textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--text-primary);
+    min-height: 24px;
+    max-height: 200px;
+    padding: 0;
+    margin: 0;
+}
+
+.chat-input-wrapper textarea::placeholder {
+    color: var(--text-placeholder);
+}
+
+.chat-input-wrapper textarea:disabled {
+    color: var(--text-disabled);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 3. 按钮 - 图标按钮
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.chat-input-wrapper .clear-chat-btn,
+.chat-input-wrapper .image-upload-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast) var(--ease-default);
+    flex-shrink: 0;
+}
+
+.chat-input-wrapper .clear-chat-btn:hover,
+.chat-input-wrapper .image-upload-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.chat-input-wrapper .clear-chat-btn svg,
+.chat-input-wrapper .image-upload-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 4. 发送按钮
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.chat-input-wrapper .send-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-600);
+    color: #ffffff;
+    cursor: pointer;
+    transition: all var(--transition-fast) var(--ease-default);
+    flex-shrink: 0;
+}
+
+.chat-input-wrapper .send-btn:hover:not(:disabled) {
+    background: var(--color-primary-700);
+}
+
+.chat-input-wrapper .send-btn:disabled {
+    background: var(--color-gray-300);
+    cursor: not-allowed;
+}
+
+.chat-input-wrapper .send-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* 停止生成按钮 */
+.chat-input-wrapper .stop-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-error-500);
+    color: #ffffff;
+    cursor: pointer;
+    transition: all var(--transition-fast) var(--ease-default);
+    flex-shrink: 0;
+}
+
+.chat-input-wrapper .stop-btn:hover {
+    background: var(--color-error-600);
+    transform: scale(1.05);
+}
+
+.chat-input-wrapper .stop-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 5. 图片预览
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.chat-image-preview {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: var(--bg-subtle);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-2);
+}
+
+.chat-image-preview img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+}
+
+.chat-image-preview .remove-chat-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: var(--bg-surface);
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast) var(--ease-default);
+}
+
+.chat-image-preview .remove-chat-image:hover {
+    background: var(--color-error-100);
+    color: var(--color-error-600);
+}
+
+.chat-image-preview .remove-chat-image svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 6. 移动端优化
+ * ═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 639px) {
+    .chat-input-wrapper {
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-md);
+    }
+    
+    .chat-input-wrapper .clear-chat-btn,
+    .chat-input-wrapper .image-upload-btn {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .chat-input-wrapper .send-btn {
+        width: 36px;
+        height: 36px;
+    }
+}

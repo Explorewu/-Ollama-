@@ -16,7 +16,8 @@ const Storage = {
         CURRENT_CONVERSATION: 'ollama_current_conversation',
         CURRENT_GROUP_CONVERSATION: 'ollama_current_group_conversation',
         CHAT_HISTORY: 'ollama_chat_history',
-        DISABLED_MODELS: 'ollama_disabled_models'
+        DISABLED_MODELS: 'ollama_disabled_models',
+        APP_SETTINGS_V2: 'app_settings_v2'
     },
 
     /**
@@ -56,6 +57,16 @@ const Storage = {
         newParagraphChars: 2,
         currentPersonaId: 'default',
         conversationMode: 'standard',
+        thinking: false,
+        showReasoningSummary: true,
+        reasoningSummaryLevel: 'brief',
+        responseDepth: 'standard',
+        personaStrength: 70,
+        systemPromptMode: 'template',
+        systemPromptTemplate: 'assistant_balanced',
+        systemPromptCustom: '',
+        safetyMode: 'balanced',
+        adultToneMode: false
     },
 
     /**
@@ -304,6 +315,24 @@ const Storage = {
     },
 
     /**
+     * 清空对话的所有消息
+     * @param {string} conversationId - 对话ID
+     */
+    clearMessages(conversationId) {
+        try {
+            const conversations = this.getConversations();
+            const conversation = conversations.find(c => c.id === conversationId);
+            if (conversation) {
+                conversation.messages = [];
+                conversation.updatedAt = new Date().toISOString();
+                this.saveConversations(conversations);
+            }
+        } catch (error) {
+            console.error('清空消息失败:', error);
+        }
+    },
+
+    /**
      * 添加消息到对话
      * @param {string} conversationId - 对话ID
      * @param {Object} message - 消息对象
@@ -358,11 +387,15 @@ const Storage = {
      */
     getSettings() {
         try {
-            const data = localStorage.getItem(this.STORAGE_KEYS.SETTINGS);
-            if (!data || data === 'undefined' || data === 'null' || data === '') {
+            const legacy = localStorage.getItem(this.STORAGE_KEYS.SETTINGS);
+            const v2 = localStorage.getItem(this.STORAGE_KEYS.APP_SETTINGS_V2);
+            if ((!legacy || legacy === 'undefined' || legacy === 'null' || legacy === '') &&
+                (!v2 || v2 === 'undefined' || v2 === 'null' || v2 === '')) {
                 return { ...this.DEFAULT_SETTINGS };
             }
-            return { ...this.DEFAULT_SETTINGS, ...JSON.parse(data) };
+            const legacyObj = legacy ? JSON.parse(legacy) : {};
+            const v2Obj = v2 ? JSON.parse(v2) : {};
+            return { ...this.DEFAULT_SETTINGS, ...legacyObj, ...v2Obj };
         } catch (error) {
             console.warn('获取设置失败，使用默认值');
             return { ...this.DEFAULT_SETTINGS };
@@ -376,6 +409,7 @@ const Storage = {
     saveSettings(settings) {
         try {
             localStorage.setItem(this.STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+            localStorage.setItem(this.STORAGE_KEYS.APP_SETTINGS_V2, JSON.stringify(settings));
         } catch (error) {
             console.error('保存设置失败:', error);
         }

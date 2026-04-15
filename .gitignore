@@ -46,9 +46,14 @@ build/
 cache/
 generated_landscape.png
 landscape_result.html
+server/outputs/
+
+# 训练数据
+server/training_data/
 
 # 大型第三方库 - 不推送
 llama.cpp/
+llama/
 lib/
 ollama/
 
@@ -67,3 +72,87 @@ web/build/
 # 系统文件
 .DS_Store
 Thumbs.db
+
+# 临时音频文件
+temp_audio_*.wav
+
+# 测试报告和临时文件
+test_*.json
+test_*.txt
+test_results.*
+model_test_report_*.json
+ollama_health_report.json
+code_quality_report.json
+
+# 临时文件
+test.txt
+nul
+
+# 备份文件
+*.backup
+*.backup2
+web/css/*.backup
+web/css/*.backup2
+
+# Trae IDE 配置
+.trae/
+
+# 个人项目配置
+.opencode/
+
+# Vercel 配置
+.vercel/
+
+# 临时脚本和测试
+sample.py
+analyze_report.py
+chat_with_gguf.py
+check_gguf.py
+download_asr.py
+download_tts.py
+fix_bom.py
+scan_all_files.py
+test_backend.py
+test_complete_system.py
+test_gguf_chat_api.py
+test_gguf_loader.py
+test_gguf_local.py
+test_multiturn.py
+test_ollama.py
+test_system_integration.py
+test_ws.py
+
+# Modelfile 临时文件
+Modelfile
+Modelfile_dasd
+Modelfile_dasd_direct
+Modelfile_qwen3_vl
+Modelfiles/
+
+# 临时报告文件（排除docs目录）
+CODE_QUALITY_FINDINGS.md
+DEEP_SCAN_REPORT.md
+DIAGNOSIS_REPORT.md
+MODELS_STRUCTURE.md
+MODEL_INVENTORY_REPORT.md
+REFACTOR_SUMMARY.md
+SMART_ASSISTANT_COMPLETE_GUIDE.md
+STARTUP_GUIDE.md
+
+# 临时启动脚本
+optimized_launcher.bat
+start.bat
+create_shortcut.bat
+run_tests.bat
+*.bat
+!start_all.bat
+!start_services.bat
+!stop_all.bat
+!scripts/*.bat
+
+# Rust 原型（临时）
+rust-prototype/
+
+# 临时HTML测试页面
+web/test_*.html
+web/smart-assistant-*.html

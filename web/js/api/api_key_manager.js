@@ -155,6 +155,13 @@ const APIKeyManager = (function() {
 
             if (data.success) {
                 newKeyData = data;
+                
+                // 保存 API Key 到 localStorage 供后续认证使用
+                if (data.key) {
+                    localStorage.setItem('api_key', data.key);
+                    console.log('[API Key] 已保存到本地存储');
+                }
+                
                 closeModal();
                 await loadKeys();
                 showSuccessModal(data);

@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  llama-cpp-image-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: llama-cpp-image-service:latest
+    container_name: llama-cpp-image-service
+    ports:
+      - "5005:5004"  # 映射到5005端口避免冲突
+    volumes:
+      - ./models/image_gen/images:/app/models/image_gen/images:ro
+      - ./server/outputs:/app/outputs
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/api/native_llama_cpp_image/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 无GPU版本（CPU-only）
+  llama-cpp-image-service-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    image: llama-cpp-image-service:cpu-latest
+    container_name: llama-cpp-image-service-cpu
+    ports:
+      - "5006:5004"  # CPU版本使用5006端口
+    volumes:
+      - ./models/image_gen/images:/app/models/image_gen/images:ro
+      - ./server/outputs:/app/outputs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/api/native_llama_cpp_image/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  default:
+    name: llama-cpp-network

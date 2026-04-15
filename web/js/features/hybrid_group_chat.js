@@ -29,7 +29,7 @@ const HybridGroupChat = (function() {
         isRunning: false,
         isPaused: false,
         currentTopic: '',
-        maxTurns: 10,
+        maxTurns: 4,
         autoStop: false,
         isVisible: true,
         panels: {
@@ -121,6 +121,10 @@ const HybridGroupChat = (function() {
                 state.isRunning = data.data.state === 'running';
                 state.isPaused = data.data.state === 'paused';
                 state.currentTopic = data.data.topic;
+                if (data.data.config) {
+                    state.maxTurns = data.data.config.max_turns || state.maxTurns;
+                    state.autoStop = Boolean(data.data.config.auto_stop);
+                }
                 
                 if (callbacks.onStatusChange) {
                     callbacks.onStatusChange(data.data);
@@ -368,6 +372,10 @@ const HybridGroupChat = (function() {
             
             if (!state.audioContext) {
                 state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            if (state.audioContext.state === 'suspended') {
+                await state.audioContext.resume();
             }
             
             const audioBuffer = await state.audioContext.decodeAudioData(audioBytes);
@@ -799,7 +807,7 @@ const HybridGroupChat = (function() {
             if (saved) {
                 const data = JSON.parse(saved);
                 state.panels = { ...state.panels, ...data.panels };
-                state.maxTurns = data.maxTurns || 10;
+                state.maxTurns = data.maxTurns || 4;
                 state.autoStop = data.autoStop || false;
             }
         } catch (e) {

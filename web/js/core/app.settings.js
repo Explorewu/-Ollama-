@@ -11,9 +11,12 @@
         loadSettings() {
             const app = this.app;
             const saved = localStorage.getItem('ollamaSettings');
-            if (saved) {
+            const savedV2 = localStorage.getItem('app_settings_v2');
+            if (saved || savedV2) {
                 try {
-                    const settings = JSON.parse(saved);
+                    const legacy = saved ? JSON.parse(saved) : {};
+                    const v2 = savedV2 ? JSON.parse(savedV2) : {};
+                    const settings = { ...legacy, ...v2 };
                     app.state.settings = { ...app.state.settings, ...settings };
                 } catch (e) {
                     console.error('加载设置失败:', e);
@@ -51,7 +54,11 @@
             if (maxTokens) maxTokens.value = settings.maxTokens || 2048;
 
             const temperature = document.getElementById('temperature');
-            if (temperature) temperature.value = settings.temperature || 0.7;
+            if (temperature) {
+                temperature.value = settings.temperature || 0.7;
+                const temperatureValue = document.getElementById('temperatureValue');
+                if (temperatureValue) temperatureValue.textContent = temperature.value;
+            }
 
             const contextLength = document.getElementById('contextLength');
             if (contextLength) contextLength.value = settings.contextLength || 4096;
@@ -60,10 +67,18 @@
             if (topK) topK.value = settings.topK || 40;
 
             const topP = document.getElementById('topP');
-            if (topP) topP.value = settings.topP || 0.9;
+            if (topP) {
+                topP.value = settings.topP || 0.9;
+                const topPValue = document.getElementById('topPValue');
+                if (topPValue) topPValue.textContent = topP.value;
+            }
 
             const repeatPenalty = document.getElementById('repeatPenalty');
-            if (repeatPenalty) repeatPenalty.value = settings.repeatPenalty || 1.1;
+            if (repeatPenalty) {
+                repeatPenalty.value = settings.repeatPenalty || 1.1;
+                const repeatPenaltyValue = document.getElementById('repeatPenaltyValue');
+                if (repeatPenaltyValue) repeatPenaltyValue.textContent = repeatPenalty.value;
+            }
 
             const streamResponse = document.getElementById('streamResponse');
             if (streamResponse) streamResponse.checked = settings.streamResponse !== false;
@@ -79,6 +94,39 @@
 
             const tokenStatsEnabled = document.getElementById('tokenStatsEnabled');
             if (tokenStatsEnabled) tokenStatsEnabled.checked = settings.tokenStatsEnabled || false;
+
+            const showReasoningSummary = document.getElementById('toggleReasoningSummary');
+            if (showReasoningSummary) showReasoningSummary.checked = settings.showReasoningSummary !== false;
+
+            const reasoningLevel = document.getElementById('selectReasoningLevel');
+            if (reasoningLevel) reasoningLevel.value = settings.reasoningSummaryLevel || 'brief';
+
+            const responseDepth = document.getElementById('selectResponseDepth');
+            if (responseDepth) responseDepth.value = settings.responseDepth || 'standard';
+
+            const personaStrength = document.getElementById('sliderPersonaStrength');
+            const personaStrengthValue = document.getElementById('personaStrengthValue');
+            if (personaStrength) {
+                personaStrength.value = typeof settings.personaStrength === 'number' ? settings.personaStrength : 70;
+                if (personaStrengthValue) personaStrengthValue.textContent = personaStrength.value;
+            }
+
+            const promptMode = document.getElementById('selectPromptMode');
+            if (promptMode) promptMode.value = settings.systemPromptMode || 'template';
+
+            const promptTemplate = document.getElementById('selectPromptTemplate');
+            if (promptTemplate) promptTemplate.value = settings.systemPromptTemplate || 'assistant_balanced';
+
+            const customPrompt = document.getElementById('textareaCustomPrompt');
+            if (customPrompt) customPrompt.value = settings.systemPromptCustom || '';
+
+            const safetyMode = document.getElementById('selectSafetyMode');
+            if (safetyMode) safetyMode.value = settings.safetyMode || 'balanced';
+
+            const adultToneMode = document.getElementById('toggleAdultToneMode');
+            if (adultToneMode) adultToneMode.checked = settings.adultToneMode || false;
+
+            this.togglePromptModeUI();
             
             this.renderDisabledModels();
         },
@@ -119,6 +167,15 @@
 
         saveSettings() {
             const app = this.app;
+            const adultToneEl = document.getElementById('toggleAdultToneMode');
+            let adultToneEnabled = adultToneEl?.checked || false;
+            if (adultToneEnabled) {
+                const accepted = window.confirm('成人语气模式仅允许成熟表达（非露骨），并继续遵守安全边界。确认启用？');
+                if (!accepted) {
+                    adultToneEnabled = false;
+                    if (adultToneEl) adultToneEl.checked = false;
+                }
+            }
 
             const settings = {
                 apiUrl: document.getElementById('apiUrl')?.value || `http://${window.location.hostname || 'localhost'}:11434`,
@@ -140,11 +197,37 @@
                 autoTitle: document.getElementById('autoTitle')?.checked !== false,
                 pasteImage: document.getElementById('pasteImage')?.checked !== false,
                 conversationMode: document.getElementById('conversationMode')?.value || 'single',
-                tokenStatsEnabled: document.getElementById('tokenStatsEnabled')?.checked || false
+                tokenStatsEnabled: document.getElementById('tokenStatsEnabled')?.checked || false,
+                showReasoningSummary: document.getElementById('toggleReasoningSummary')?.checked !== false,
+                reasoningSummaryLevel: document.getElementById('selectReasoningLevel')?.value || 'brief',
+                responseDepth: document.getElementById('selectResponseDepth')?.value || 'standard',
+                personaStrength: parseInt(document.getElementById('sliderPersonaStrength')?.value) || 70,
+                systemPromptMode: document.getElementById('selectPromptMode')?.value || 'template',
+                systemPromptTemplate: document.getElementById('selectPromptTemplate')?.value || 'assistant_balanced',
+                systemPromptCustom: document.getElementById('textareaCustomPrompt')?.value || '',
+                safetyMode: document.getElementById('selectSafetyMode')?.value || 'balanced',
+                adultToneMode: adultToneEnabled
             };
 
             app.state.settings = settings;
             localStorage.setItem('ollamaSettings', JSON.stringify(settings));
+            localStorage.setItem('app_settings_v2', JSON.stringify(settings));
+
+            if (window.ContextService && typeof ContextService.saveConfig === 'function') {
+                ContextService.saveConfig({
+                    thinking: settings.thinking === true,
+                    show_reasoning_summary: settings.showReasoningSummary,
+                    reasoning_summary_level: settings.reasoningSummaryLevel,
+                    response_depth: settings.responseDepth,
+                    persona_strength: settings.personaStrength,
+                    system_prompt_mode: settings.systemPromptMode,
+                    system_prompt_template: settings.systemPromptTemplate,
+                    system_prompt_custom: settings.systemPromptCustom,
+                    safety_mode: settings.safetyMode,
+                    adult_tone_mode: settings.adultToneMode,
+                    adult_tone_acknowledged: settings.adultToneMode
+                }).catch(() => {});
+            }
 
             this.applySettings();
             app.showToast('设置已保存', 'success');
@@ -167,20 +250,38 @@
                 codeHighlight: false,
                 codeWrap: false,
                 markdownAnchor: true,
-                thinking: true,
+                thinking: false,
                 streamResponse: true,
                 autoTitle: true,
                 pasteImage: true,
                 conversationMode: 'single',
-                tokenStatsEnabled: false
+                tokenStatsEnabled: false,
+                showReasoningSummary: true,
+                reasoningSummaryLevel: 'brief',
+                responseDepth: 'standard',
+                personaStrength: 70,
+                systemPromptMode: 'template',
+                systemPromptTemplate: 'assistant_balanced',
+                systemPromptCustom: '',
+                safetyMode: 'balanced',
+                adultToneMode: false
             };
 
             app.state.settings = defaultSettings;
             localStorage.setItem('ollamaSettings', JSON.stringify(defaultSettings));
+            localStorage.setItem('app_settings_v2', JSON.stringify(defaultSettings));
 
             this.populateSettingsForm();
             this.applySettings();
             app.showToast('设置已重置', 'success');
+        },
+
+        togglePromptModeUI() {
+            const mode = document.getElementById('selectPromptMode')?.value || 'template';
+            const template = document.getElementById('selectPromptTemplate');
+            const custom = document.getElementById('textareaCustomPrompt');
+            if (template) template.disabled = mode !== 'template';
+            if (custom) custom.disabled = mode !== 'custom';
         },
 
         showSettingsModal() {
@@ -322,6 +423,68 @@
                                             <option value="group">群组对话</option>
                                         </select>
                                     </div>
+                                    <div class="settings-divider"></div>
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="toggleReasoningSummary" checked>
+                                            显示思路摘要（不显示完整推理链）
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="selectReasoningLevel">思路摘要级别</label>
+                                        <select id="selectReasoningLevel">
+                                            <option value="off">关闭</option>
+                                            <option value="brief" selected>简短</option>
+                                            <option value="standard">标准</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="selectResponseDepth">回复深度</label>
+                                        <select id="selectResponseDepth">
+                                            <option value="brief">简短</option>
+                                            <option value="standard" selected>标准</option>
+                                            <option value="deep">深入</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="sliderPersonaStrength">角色注入强度</label>
+                                        <input type="range" id="sliderPersonaStrength" min="0" max="100" step="1" value="70">
+                                        <span class="range-value" id="personaStrengthValue">70</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="selectPromptMode">系统提示词模式</label>
+                                        <select id="selectPromptMode">
+                                            <option value="template" selected>模板</option>
+                                            <option value="custom">自定义</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="selectPromptTemplate">系统提示词模板</label>
+                                        <select id="selectPromptTemplate">
+                                            <option value="assistant_balanced" selected>平衡助手</option>
+                                            <option value="assistant_brief">简洁助手</option>
+                                            <option value="assistant_deep">深度助手</option>
+                                            <option value="roleplay_immersive">沉浸角色</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="textareaCustomPrompt">自定义系统提示词</label>
+                                        <textarea id="textareaCustomPrompt" rows="4" placeholder="请输入自定义系统提示词"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="selectSafetyMode">安全策略级别</label>
+                                        <select id="selectSafetyMode">
+                                            <option value="strict">严格</option>
+                                            <option value="balanced" selected>平衡</option>
+                                            <option value="relaxed">宽松</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="toggleAdultToneMode">
+                                            成人语气模式（非露骨，需遵守安全边界）
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -384,6 +547,19 @@
                     repeatPenaltySlider.addEventListener('input', () => {
                         repeatPenaltyValue.textContent = repeatPenaltySlider.value;
                     });
+                }
+
+                const personaStrength = document.getElementById('sliderPersonaStrength');
+                const personaStrengthValue = document.getElementById('personaStrengthValue');
+                if (personaStrength && personaStrengthValue) {
+                    personaStrength.addEventListener('input', () => {
+                        personaStrengthValue.textContent = personaStrength.value;
+                    });
+                }
+
+                const promptMode = document.getElementById('selectPromptMode');
+                if (promptMode) {
+                    promptMode.addEventListener('change', () => this.togglePromptModeUI());
                 }
             }
 

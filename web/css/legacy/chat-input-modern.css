@@ -1,0 +1,280 @@
+/* ============================================
+   极简现代输入框 - Claude 浅色系风格
+   ============================================ */
+
+/* 输入框外层容器 - Claude 风格浅色 */
+.chat-input-container {
+    padding: 16px 20px 24px;
+    background: linear-gradient(to top, 
+        rgba(255, 255, 255, 1) 0%, 
+        rgba(255, 255, 255, 0.95) 60%, 
+        rgba(255, 255, 255, 0) 100%
+    );
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* 主对话框容器 - Claude 浅色风格 */
+.chat-input-wrapper {
+    display: flex;
+    align-items: center; /* 改为垂直居中对齐 */
+    gap: 12px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    padding: 14px 16px;
+    transition: all 0.2s ease;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto 24px;
+    box-sizing: border-box;
+    min-height: 64px; /* 增加最小高度：32px 按钮 + 14px*2 内边距 = 60px，留点余量 */
+    box-shadow: 
+        0 1px 3px rgba(0, 0, 0, 0.02),
+        0 4px 12px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: visible;
+}
+
+/* 聚焦状态 - Claude 风格 */
+.chat-input-wrapper:focus-within {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.15);
+    box-shadow: 
+        0 1px 3px rgba(0, 0, 0, 0.02),
+        0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* 文本输入区 - Claude 风格 */
+.chat-input-wrapper textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    color: #1a1a1a;
+    line-height: 1.5;
+    max-height: 200px;
+    font-size: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    min-height: 28px;
+    height: auto;
+    display: block;
+    overflow-y: auto;
+    padding: 4px 0;
+    margin: 0;
+    position: relative;
+    z-index: 2;
+}
+
+/* 占位符文字 - Claude 风格 */
+.chat-input-wrapper textarea::placeholder {
+    color: #9ca3af;
+    font-style: normal;
+    opacity: 1;
+}
+
+/* 工具按钮 - 左侧 */
+.chat-input-wrapper .image-upload-btn,
+.chat-input-wrapper .clear-chat-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+    align-self: center; /* 垂直居中 */
+}
+
+.chat-input-wrapper .image-upload-btn:hover,
+.chat-input-wrapper .clear-chat-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #1a1a1a;
+}
+
+.chat-input-wrapper .image-upload-btn:active,
+.chat-input-wrapper .clear-chat-btn:active {
+    background: rgba(0, 0, 0, 0.08);
+    transform: scale(0.95);
+}
+
+.chat-input-wrapper .image-upload-btn svg,
+.chat-input-wrapper .clear-chat-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+}
+
+/* 发送按钮 - Claude 风格深色圆形 */
+.chat-input-wrapper .send-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    border: none;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+    align-self: center; /* 垂直居中 */
+}
+
+.chat-input-wrapper .send-btn:hover {
+    background: #374151;
+    transform: scale(1.05);
+}
+
+.chat-input-wrapper .send-btn:active {
+    transform: scale(0.95);
+    background: #4b5563;
+}
+
+.chat-input-wrapper .send-btn:disabled {
+    background: #d1d5db;
+    color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.chat-input-wrapper .send-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2.5;
+    margin-left: 1px;
+}
+
+/* 图片预览 - 已删除小输入框设计 */
+.chat-image-preview {
+    display: none !important;
+}
+
+/* 底部操作栏 - Claude 风格 */
+.chat-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 0 16px 16px;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.chat-actions:hover {
+    opacity: 0.9;
+}
+
+.chat-actions .action-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.chat-actions .action-link:hover {
+    color: #1a1a1a;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.chat-actions .action-link svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* 全屏模式输入框 - 更宽 */
+.chat-overlay .chat-input-wrapper,
+.group-chat-overlay .chat-input-wrapper {
+    background: #ffffff;
+    max-width: 80vw;
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.chat-overlay .chat-input-wrapper:focus-within,
+.group-chat-overlay .chat-input-wrapper:focus-within {
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+    .chat-input-wrapper {
+        margin: 0 12px 16px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        gap: 10px;
+        min-height: 56px;
+    }
+    
+    .chat-input-wrapper textarea {
+        font-size: 16px;
+    }
+    
+    .chat-input-wrapper .image-upload-btn,
+    .chat-input-wrapper .clear-chat-btn,
+    .chat-input-wrapper .send-btn {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .chat-input-wrapper .image-upload-btn svg,
+    .chat-input-wrapper .clear-chat-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .chat-input-wrapper .send-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .chat-actions {
+        gap: 12px;
+        padding: 0 12px 12px;
+    }
+    
+    .chat-actions .action-link {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+}
+
+/* 滚动条样式 - 极简 */
+.chat-input-wrapper textarea::-webkit-scrollbar {
+    width: 4px;
+}
+
+.chat-input-wrapper textarea::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-input-wrapper textarea::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 2px;
+}
+
+.chat-input-wrapper textarea::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25);
+}

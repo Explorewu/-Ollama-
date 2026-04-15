@@ -1,0 +1,742 @@
+/**
+ * Ollama Hub - 单页对话布局样式 v3.0
+ * 
+ * 特性：
+ * - 单页对话布局（对话区域 + 输入框）
+ * - 重新定义消息气泡样式
+ * - 优化AI与用户消息视觉区分
+ * - 时间戳显示
+ * - 消息操作菜单
+ * - 代码块优化
+ * - Markdown样式统一
+ * - 图片消息展示
+ * - 文件上传展示
+ * - 长消息折叠/展开
+ * - 消息搜索
+ * - 消息置顶
+ * 
+ * 版本：v3.0
+ * 日期：2026-02-25
+ */
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 1. 单页对话布局
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 对话页面容器 */
+.chat-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: var(--bg-body);
+}
+
+/* 对话头部 */
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.chat-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.chat-header-title {
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+}
+
+.chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* 对话主体区域 */
+.chat-main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* 对话历史区域 */
+.chat-history {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-4);
+    scroll-behavior: smooth;
+}
+
+/* 输入框区域 */
+.chat-input-area {
+    flex-shrink: 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 2. 消息气泡样式（重新定义）
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 消息容器 */
+.message {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    position: relative;
+}
+
+/* 消息头像 */
+.message-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    flex-shrink: 0;
+}
+
+.message-avatar.user {
+    background: var(--primary-color);
+    color: white;
+}
+
+.message-avatar.assistant {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+/* 消息内容区 */
+.message-content {
+    flex: 1;
+    max-width: calc(100% - 60px);
+}
+
+/* 消息头部（名称 + 时间） */
+.message-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-1);
+}
+
+.message-author {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+}
+
+.message-time {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+/* 消息气泡 */
+.message-bubble {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    position: relative;
+}
+
+/* 用户消息 */
+.message.user {
+    flex-direction: row-reverse;
+}
+
+.message.user .message-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.message.user .message-header {
+    flex-direction: row-reverse;
+}
+
+.message.user .message-bubble {
+    background: var(--primary-color);
+    color: white;
+    border-bottom-right-radius: var(--radius-sm);
+}
+
+/* AI消息 */
+.message.assistant .message-bubble {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-bottom-left-radius: var(--radius-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 3. 消息操作菜单
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.message-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.message:hover .message-actions {
+    opacity: 1;
+}
+
+/* 用户消息的操作菜单右对齐 */
+.message.user .message-actions {
+    justify-content: flex-end;
+}
+
+.message-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.message-action-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.message-action-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* 置顶按钮特殊样式 */
+.message-action-btn.pin-btn {
+    color: var(--text-muted);
+}
+
+.message-action-btn.pin-btn:hover,
+.message-action-btn.pin-btn.active {
+    color: #d97706;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 4. Markdown渲染样式统一
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.message-bubble h1,
+.message-bubble h2,
+.message-bubble h3,
+.message-bubble h4 {
+    margin: var(--space-3) 0 var(--space-2);
+    font-weight: var(--font-semibold);
+    color: inherit;
+}
+
+.message-bubble h1 { font-size: var(--text-xl); }
+.message-bubble h2 { font-size: var(--text-lg); }
+.message-bubble h3 { font-size: var(--text-base); }
+.message-bubble h4 { font-size: var(--text-sm); }
+
+.message-bubble p {
+    margin: 0 0 var(--space-2);
+    line-height: var(--leading-relaxed);
+}
+
+.message-bubble p:last-child {
+    margin-bottom: 0;
+}
+
+.message-bubble ul,
+.message-bubble ol {
+    margin: var(--space-2) 0;
+    padding-left: var(--space-5);
+}
+
+.message-bubble li {
+    margin-bottom: var(--space-1);
+}
+
+.message-bubble code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-sm);
+}
+
+.message.user .message-bubble code {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 5. 代码块样式
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.code-block {
+    margin: var(--space-3) 0;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: #1e1e1e;
+}
+
+.code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-3);
+    background: #2d2d2d;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+.code-language {
+    font-size: var(--text-xs);
+    color: #888;
+    text-transform: uppercase;
+}
+
+.code-copy-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: #888;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.code-copy-btn:hover {
+    background: #3d3d3d;
+    color: #fff;
+}
+
+.code-block pre {
+    margin: 0;
+    padding: var(--space-3);
+    overflow-x: auto;
+}
+
+.code-block code {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    color: #d4d4d4;
+    background: transparent;
+    padding: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 6. 图片消息展示
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.message-image {
+    max-width: 100%;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin: var(--space-2) 0;
+}
+
+.message-image img {
+    width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    display: block;
+}
+
+/* 图片网格（多张图片） */
+.message-image-grid {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-2) 0;
+}
+
+.message-image-grid[data-count="2"],
+.message-image-grid[data-count="4"] {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.message-image-grid[data-count="3"],
+.message-image-grid[data-count="5"],
+.message-image-grid[data-count="6"] {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.message-image-grid img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.message-image-grid img:hover {
+    transform: scale(1.02);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 7. 文件上传展示
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.file-attachment {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-lg);
+    margin: var(--space-2) 0;
+}
+
+.file-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    font-size: var(--text-xl);
+}
+
+.file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-name {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-size {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.file-download {
+    padding: var(--space-2);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.file-download:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 8. 长消息折叠/展开
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.message-bubble.collapsible {
+    max-height: 300px;
+    overflow: hidden;
+    position: relative;
+}
+
+.message-bubble.collapsible::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(transparent, var(--bg-secondary));
+    pointer-events: none;
+}
+
+.message.user .message-bubble.collapsible::after {
+    background: linear-gradient(transparent, var(--primary-color));
+}
+
+.message-bubble.expanded {
+    max-height: none;
+}
+
+.message-bubble.expanded::after {
+    display: none;
+}
+
+.expand-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    width: 100%;
+    padding: var(--space-2);
+    margin-top: var(--space-2);
+    background: var(--bg-tertiary);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.expand-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 9. 消息搜索
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.message-search {
+    position: relative;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.message-search-input {
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    padding-left: 36px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    outline: none;
+    transition: var(--transition-fast);
+}
+
+.message-search-input:focus {
+    border-color: var(--primary-color);
+}
+
+.message-search-icon {
+    position: absolute;
+    left: calc(var(--space-4) + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+/* 搜索结果高亮 */
+.message.highlighted {
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: var(--radius-lg);
+}
+
+.search-highlight {
+    background: rgba(255, 215, 0, 0.3);
+    padding: 0 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 10. 消息置顶（可选功能）
+ * 通过添加 .enable-pinned 类到父容器启用
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 默认隐藏置顶功能 */
+.pinned-messages {
+    display: none;
+}
+
+/* 启用置顶功能时显示 */
+.chat-page.enable-pinned .pinned-messages {
+    display: block;
+    padding: var(--space-3) var(--space-4);
+    background: rgba(254, 243, 199, 0.2);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.chat-page.enable-pinned .message.pinned {
+    background: rgba(254, 243, 199, 0.3);
+    border-radius: var(--radius-lg);
+    padding: var(--space-2);
+    margin-left: calc(-1 * var(--space-2));
+    margin-right: calc(-1 * var(--space-2));
+}
+
+.chat-page.enable-pinned .pinned-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    color: #d97706;
+    margin-bottom: var(--space-2);
+}
+
+.chat-page.enable-pinned .pinned-badge svg {
+    width: 12px;
+    height: 12px;
+}
+
+.chat-page.enable-pinned .pinned-messages-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: #d97706;
+    margin-bottom: var(--space-2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 11. 输入框样式
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.chat-input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-color);
+}
+
+.chat-input-wrapper:focus-within {
+    border-color: var(--primary-color);
+}
+
+.chat-input {
+    flex: 1;
+    min-height: 24px;
+    max-height: 200px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    font-size: var(--text-base);
+    line-height: var(--leading-relaxed);
+    color: var(--text-primary);
+    resize: none;
+    outline: none;
+}
+
+.chat-input::placeholder {
+    color: var(--text-muted);
+}
+
+.chat-input-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.chat-input-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.chat-input-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.chat-send-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--primary-color);
+    border: none;
+    border-radius: var(--radius-md);
+    color: white;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.chat-send-btn:hover {
+    background: var(--primary-hover);
+}
+
+.chat-send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 12. 移动端优化
+ * ═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    .chat-header {
+        padding: var(--space-2) var(--space-3);
+    }
+    
+    .chat-history {
+        padding: var(--space-3);
+    }
+    
+    .message {
+        gap: var(--space-2);
+    }
+    
+    .message-avatar {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .message-content {
+        max-width: calc(100% - 48px);
+    }
+    
+    .message-bubble {
+        padding: var(--space-2) var(--space-3);
+    }
+    
+    .message-actions {
+        opacity: 1;
+    }
+    
+    .chat-input-area {
+        padding: var(--space-2) var(--space-3);
+    }
+    
+    .code-block {
+        margin: var(--space-2) 0;
+    }
+    
+    .message-image-grid img {
+        height: 80px;
+    }
+}

@@ -199,5 +199,111 @@
         }
     };
 
+    /**
+     * 模型搜索建议功能
+     */
+    const ModelSearch = {
+        init() {
+            this.searchInput = document.getElementById('modelSearch');
+            this.suggestionsContainer = document.getElementById('searchSuggestions');
+            
+            if (!this.searchInput || !this.suggestionsContainer) return;
+            
+            this.setupEventListeners();
+        },
+        
+        setupEventListeners() {
+            // 输入时显示建议
+            this.searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                if (query.length > 0) {
+                    this.showSuggestions(query);
+                } else {
+                    this.hideSuggestions();
+                }
+            });
+            
+            // 点击外部关闭建议
+            document.addEventListener('click', (e) => {
+                if (!this.searchInput.contains(e.target) && 
+                    !this.suggestionsContainer.contains(e.target)) {
+                    this.hideSuggestions();
+                }
+            });
+            
+            // 键盘导航
+            this.searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.hideSuggestions();
+                }
+            });
+        },
+        
+        showSuggestions(query) {
+            // 获取所有模型
+            const allModels = window.App?.state?.models || [];
+            if (!allModels || allModels.length === 0) return;
+            
+            // 过滤匹配的模型
+            const matches = allModels.filter(model => 
+                model.name.toLowerCase().includes(query.toLowerCase()) ||
+                (model.details?.family && model.details.family.toLowerCase().includes(query.toLowerCase()))
+            ).slice(0, 5); // 最多显示 5 个建议
+            
+            if (matches.length === 0) {
+                this.hideSuggestions();
+                return;
+            }
+            
+            // 生成建议 HTML
+            this.suggestionsContainer.innerHTML = matches.map(model => `
+                <div class="suggestion-item" data-model="${model.name}">
+                    <svg class="suggestion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                    <span class="suggestion-text">${this.highlightMatch(model.name, query)}</span>
+                    <span class="suggestion-hint">${model.details?.family || '模型'}</span>
+                </div>
+            `).join('');
+            
+            // 添加点击事件
+            this.suggestionsContainer.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const modelName = item.dataset.model;
+                    this.searchInput.value = modelName;
+                    this.hideSuggestions();
+                    
+                    // 触发模型选择
+                    if (window.App) {
+                        window.App.selectModel(modelName);
+                    }
+                });
+            });
+        },
+        
+        hideSuggestions() {
+            this.suggestionsContainer.innerHTML = '';
+        },
+        
+        highlightMatch(text, query) {
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<strong>$1</strong>');
+        }
+    };
+    
+    // 初始化模型搜索
+    if (typeof window !== 'undefined') {
+        window.ModelSearch = ModelSearch;
+        
+        // DOM 加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => ModelSearch.init());
+        } else {
+            ModelSearch.init();
+        }
+    }
+
     window.AppSearch = Search;
 })();

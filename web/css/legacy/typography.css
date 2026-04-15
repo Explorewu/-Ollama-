@@ -1,0 +1,527 @@
+/**
+ * Ollama Hub - 完整排版样式系统
+ * 
+ * 基于 variables.css 中的排版变量
+ * 提供可直接使用的排版类
+ * 
+ * 版本：v1.0
+ * 日期：2026-02-25
+ */
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 1. 基础文字样式
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────
+ * 字号类 - 直接使用CSS变量
+ * ───────────────────────────────────────────────────────────────── */
+
+/* 5xl - 页面主标题 */
+.text-5xl {
+    font-size: var(--text-5xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tighter);
+    font-weight: var(--font-bold);
+}
+
+/* 4xl - 大屏标题 */
+.text-4xl {
+    font-size: var(--text-4xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tighter);
+    font-weight: var(--font-bold);
+}
+
+/* 3xl - 区块标题 */
+.text-3xl {
+    font-size: var(--text-3xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    font-weight: var(--font-bold);
+}
+
+/* 2xl - 卡片标题 */
+.text-2xl {
+    font-size: var(--text-2xl);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    font-weight: var(--font-semibold);
+}
+
+/* xl - 小标题 */
+.text-xl {
+    font-size: var(--text-xl);
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-normal);
+    font-weight: var(--font-semibold);
+}
+
+/* lg - 强调文字 */
+.text-lg {
+    font-size: var(--text-lg);
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-normal);
+    font-weight: var(--font-normal);
+}
+
+/* base - 正文（默认） */
+.text-base {
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    letter-spacing: var(--tracking-normal);
+    font-weight: var(--font-normal);
+}
+
+/* sm - 次要文字 */
+.text-sm {
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+    letter-spacing: var(--tracking-wide);
+    font-weight: var(--font-normal);
+}
+
+/* xs - 标签/辅助 */
+.text-xs {
+    font-size: var(--text-xs);
+    line-height: var(--leading-none);
+    letter-spacing: var(--tracking-wider);
+    font-weight: var(--font-medium);
+}
+
+/* 2xs - 脚注 */
+.text-2xs {
+    font-size: var(--text-2xs);
+    line-height: var(--leading-none);
+    letter-spacing: var(--tracking-wider);
+    font-weight: var(--font-normal);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 2. 字重类
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.font-light { font-weight: var(--font-light); }
+.font-normal { font-weight: var(--font-normal); }
+.font-medium { font-weight: var(--font-medium); }
+.font-semibold { font-weight: var(--font-semibold); }
+.font-bold { font-weight: var(--font-bold); }
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 3. 行高类
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.leading-none { line-height: var(--leading-none); }
+.leading-tight { line-height: var(--leading-tight); }
+.leading-snug { line-height: var(--leading-snug); }
+.leading-normal { line-height: var(--leading-normal); }
+.leading-relaxed { line-height: var(--leading-relaxed); }
+.leading-loose { line-height: var(--leading-loose); }
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 4. 字间距类
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.tracking-tighter { letter-spacing: var(--tracking-tighter); }
+.tracking-tight { letter-spacing: var(--tracking-tight); }
+.tracking-normal { letter-spacing: var(--tracking-normal); }
+.tracking-wide { letter-spacing: var(--tracking-wide); }
+.tracking-wider { letter-spacing: var(--tracking-wider); }
+.tracking-widest { letter-spacing: var(--tracking-widest); }
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 5. 标题组件 - 完整样式
+ * ═══════════════════════════════════════════════════════════════════ */
+
+h1, .h1 {
+    font-size: var(--h1-size);
+    font-weight: var(--h1-weight);
+    line-height: var(--h1-leading);
+    letter-spacing: var(--h1-tracking);
+    margin: var(--h1-margin);
+    color: var(--text-primary);
+}
+
+h2, .h2 {
+    font-size: var(--h2-size);
+    font-weight: var(--h2-weight);
+    line-height: var(--h2-leading);
+    letter-spacing: var(--h2-tracking);
+    margin: var(--h2-margin);
+    color: var(--text-primary);
+}
+
+h3, .h3 {
+    font-size: var(--h3-size);
+    font-weight: var(--h3-weight);
+    line-height: var(--h3-leading);
+    letter-spacing: var(--h3-tracking);
+    margin: var(--h3-margin);
+    color: var(--text-primary);
+}
+
+h4, .h4 {
+    font-size: var(--h4-size);
+    font-weight: var(--h4-weight);
+    line-height: var(--h4-leading);
+    letter-spacing: var(--h4-tracking);
+    margin: var(--h4-margin);
+    color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 6. 正文组件 - 完整样式
+ * ═══════════════════════════════════════════════════════════════════ */
+
+p {
+    font-size: var(--body-size);
+    font-weight: var(--body-weight);
+    line-height: var(--body-leading);
+    letter-spacing: var(--body-tracking);
+    margin: 0 0 var(--paragraph-spacing);
+    color: var(--text-primary);
+}
+
+p:last-child {
+    margin-bottom: 0;
+}
+
+/* 段落变体 */
+.lead {
+    font-size: var(--text-lg);
+    font-weight: var(--font-normal);
+    line-height: var(--leading-relaxed);
+    color: var(--text-secondary);
+}
+
+.small {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 7. 辅助文字
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.caption {
+    font-size: var(--caption-size);
+    font-weight: var(--caption-weight);
+    line-height: var(--caption-leading);
+    letter-spacing: var(--caption-tracking);
+    color: var(--text-tertiary);
+}
+
+.label {
+    font-size: var(--label-size);
+    font-weight: var(--label-weight);
+    line-height: var(--label-leading);
+    letter-spacing: var(--label-tracking);
+    text-transform: var(--label-transform);
+    color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 8. 代码块样式
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 行内代码 */
+code {
+    font-family: var(--code-font);
+    font-size: var(--code-size);
+    padding: var(--code-inline-padding);
+    background: var(--code-bg);
+    border-radius: var(--code-inline-radius);
+    color: var(--color-primary-700);
+    font-weight: var(--font-normal);
+}
+
+/* 深色模式 */
+[data-theme="dark"] code {
+    background: var(--dark-gray-300);
+    color: var(--color-primary-300);
+}
+
+/* 代码块 */
+pre {
+    font-family: var(--code-font);
+    font-size: var(--code-size);
+    line-height: var(--code-leading);
+    padding: var(--code-padding);
+    background: var(--code-bg);
+    border: var(--code-border);
+    border-radius: var(--code-radius);
+    overflow-x: auto;
+    margin: 0 0 var(--space-4);
+    color: var(--text-primary);
+}
+
+pre code {
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
+/* 深色模式代码块 */
+[data-theme="dark"] pre {
+    background: var(--dark-gray-300);
+    border-color: var(--dark-gray-400);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 9. 链接样式
+ * ═══════════════════════════════════════════════════════════════════ */
+
+a {
+    color: var(--text-link);
+    text-decoration: none;
+    transition: color var(--duration-fast) var(--ease-default);
+}
+
+a:hover {
+    color: var(--text-link-hover);
+    text-decoration: underline;
+}
+
+a:focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 10. 列表样式
+ * ═══════════════════════════════════════════════════════════════════ */
+
+ul, ol {
+    padding-left: var(--space-6);
+    margin: 0 0 var(--paragraph-spacing);
+}
+
+li {
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    margin-bottom: var(--space-2);
+    color: var(--text-primary);
+}
+
+li:last-child {
+    margin-bottom: 0;
+}
+
+/* 无序列表标记 */
+ul {
+    list-style-type: disc;
+}
+
+ul ul {
+    list-style-type: circle;
+}
+
+ul ul ul {
+    list-style-type: square;
+}
+
+/* 有序列表标记 */
+ol {
+    list-style-type: decimal;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 11. 长文本容器（可读性优化）
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 适合阅读的正文容器 */
+.prose {
+    max-width: var(--prose-max-width);
+    font-size: var(--text-base);
+    line-height: var(--leading-relaxed);
+}
+
+.prose p {
+    margin-bottom: var(--space-5);
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+    margin-top: var(--space-8);
+    margin-bottom: var(--space-4);
+}
+
+.prose h1:first-child,
+.prose h2:first-child,
+.prose h3:first-child,
+.prose h4:first-child {
+    margin-top: 0;
+}
+
+.prose ul,
+.prose ol {
+    margin-bottom: var(--space-5);
+}
+
+.prose li {
+    margin-bottom: var(--space-2);
+}
+
+.prose code {
+    font-size: 0.9em;
+}
+
+.prose pre {
+    margin-bottom: var(--space-5);
+}
+
+/* 禁用长文本的下划线装饰 */
+.prose a:not(.btn):not([class*="button"]) {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 12. 对话消息样式
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.message-content {
+    font-size: var(--text-base);
+    line-height: var(--leading-relaxed);
+    overflow-wrap: break-word;
+}
+
+.message-content p {
+    margin-bottom: var(--space-3);
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
+.message-content code {
+    font-size: 0.9em;
+}
+
+.message-content pre {
+    font-size: var(--text-sm);
+    margin: var(--space-3) 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 13. 表单文字样式
+ * ═══════════════════════════════════════════════════════════════════ */
+
+input, textarea, select {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--text-primary);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-placeholder);
+}
+
+input:disabled,
+textarea:disabled {
+    color: var(--text-disabled);
+}
+
+/* 标签文字 */
+.form-label {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.form-help {
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+    margin-top: var(--space-1);
+}
+
+.form-error {
+    font-size: var(--text-xs);
+    color: var(--color-error-600);
+    margin-top: var(--space-1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 14. 按钮文字样式
+ * ═══════════════════════════════════════════════════════════════════ */
+
+.btn {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    line-height: 1;
+    letter-spacing: var(--tracking-normal);
+}
+
+.btn-sm {
+    font-size: var(--text-xs);
+    padding: var(--space-2) var(--space-3);
+}
+
+.btn-lg {
+    font-size: var(--text-base);
+    padding: var(--space-3) var(--space-5);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * 15. 实用工具类
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* 文字截断 */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 多行截断 */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 禁止选中 */
+.select-none {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* 允许换行 */
+.whitespace-normal {
+    white-space: normal;
+}
+
+/* 保持空格 */
+.whitespace-pre {
+    white-space: pre;
+}
+
+.whitespace-pre-wrap {
+    white-space: pre-wrap;
+}
+
+/* 单词断行 */
+.break-words {
+    overflow-wrap: break-word;
+}
+
+.break-all {
+    word-break: break-all;
+}
