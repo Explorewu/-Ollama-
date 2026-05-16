@@ -56,12 +56,15 @@ llama.cpp/
 llama/
 lib/
 ollama/
+llama_backup_old/
+llama_cpu_backup/
 
 # Agent 相关
 .agent/
 
 # 大数据文件 - 使用 Git LFS 或本地存储
 data/rag_index/
+data/
 
 # Node.js
 node_modules/
