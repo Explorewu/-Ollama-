@@ -188,7 +188,7 @@ const SmartGreeting = {
 
     init(app) {
         this._app = app;
-        console.log('💡 智能问候系统已初始化');
+        console.log('[EmotionalDesign] 智能问候系统已初始化');
 
         this._bindActivityTracking();
         this._cleanupExpired();
@@ -282,7 +282,7 @@ const SmartGreeting = {
             if (data.success && data.data) {
                 const greeting = data.data;
                 this._addToCache(greeting);
-                console.log(`💡 智能问候已生成: ${greeting.content}`);
+                console.log(`[EmotionalDesign] 智能问候已生成: ${greeting.content}`);
                 return greeting;
             }
         } catch (e) {
@@ -372,7 +372,7 @@ const SmartGreeting = {
         }).catch(() => {});
 
         // 更新聊天页欢迎消息
-        const welcomeBubble = document.querySelector('#chatHistory .message-bubble');
+        const welcomeBubble = document.querySelector('#chatHistory .message-bubble') || document.querySelector('#chatHistory .bubble-group');
         if (welcomeBubble) {
             welcomeBubble.textContent = greeting.content;
         }

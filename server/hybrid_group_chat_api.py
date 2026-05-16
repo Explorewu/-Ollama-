@@ -530,11 +530,11 @@ def stream_chat():
                                         if sentence_end > 0:
                                             sentence = sentence_buffer[:sentence_end]
                                             sentence_buffer = sentence_buffer[sentence_end:]
-                                            yield f"data: {json.dumps({'chunk': sentence, 'is_sentence': True})}\n\n"
+                                            yield f"data: {json.dumps({'chunk': sentence, 'is_sentence': True}, ensure_ascii=False)}\n\n"
                                         else:
                                             # 没有完整句子，检查是否积累了足够多的内容
                                             if len(sentence_buffer) >= 30:
-                                                yield f"data: {json.dumps({'chunk': sentence_buffer, 'is_sentence': False})}\n\n"
+                                                yield f"data: {json.dumps({'chunk': sentence_buffer, 'is_sentence': False}, ensure_ascii=False)}\n\n"
                                                 sentence_buffer = ""
                                             break
                             except json.JSONDecodeError:
@@ -542,7 +542,7 @@ def stream_chat():
                     
                     # 处理剩余内容
                     if sentence_buffer.strip():
-                        yield f"data: {json.dumps({'chunk': sentence_buffer.strip(), 'is_sentence': True})}\n\n"
+                        yield f"data: {json.dumps({'chunk': sentence_buffer.strip(), 'is_sentence': True}, ensure_ascii=False)}\n\n"
                 else:
                     # 原有逻辑：逐token输出
                     for line in response.iter_lines():
@@ -550,14 +550,14 @@ def stream_chat():
                             try:
                                 data_chunk = json.loads(line.decode('utf-8'))
                                 if data_chunk.get("message", {}).get("content"):
-                                    yield f"data: {json.dumps({'chunk': data_chunk['message']['content'], 'is_sentence': False})}\n\n"
+                                    yield f"data: {json.dumps({'chunk': data_chunk['message']['content'], 'is_sentence': False}, ensure_ascii=False)}\n\n"
                             except:
                                 pass
                 
-                yield f"data: {json.dumps({'done': True})}\n\n"
+                yield f"data: {json.dumps({'done': True}, ensure_ascii=False)}\n\n"
                 
             except Exception as e:
-                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
         
         return Response(
             generate(),

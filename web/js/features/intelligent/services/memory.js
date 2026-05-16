@@ -15,12 +15,12 @@ const MemoryService = (function() {
     
     // 记忆分类
     const MEMORY_CATEGORIES = [
-        { id: 'general', name: '通用', icon: '📝' },
-        { id: 'personal', name: '个人', icon: '👤' },
-        { id: 'work', name: '工作', icon: '💼' },
-        { id: 'learning', name: '学习', icon: '📚' },
-        { id: 'idea', name: '想法', icon: '💡' },
-        { id: 'important', name: '重要', icon: '⭐' }
+        { id: 'general', name: '通用', icon: 'summary' },
+        { id: 'personal', name: '个人', icon: 'user' },
+        { id: 'work', name: '工作', icon: 'briefcase' },
+        { id: 'learning', name: '学习', icon: 'book' },
+        { id: 'idea', name: '想法', icon: 'tip' },
+        { id: 'important', name: '重要', icon: 'star' }
     ];
     
     /**

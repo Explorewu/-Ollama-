@@ -203,7 +203,7 @@ const ImageGen = {
         try {
             const response = await fetch(`${this.serverUrl}/api/health`);
             const result = await response.json();
-            const isHealthy = result.status === "ok" || result.success;
+            const isHealthy = result.success === true || result.status === "healthy";
             this.state.serverHealthy = isHealthy;
             return isHealthy;
         } catch (error) {

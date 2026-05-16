@@ -161,8 +161,6 @@ class ConnectionPool:
         self._connections: Dict[str, deque] = {}
         self._lock = threading.Lock()
         self._ssl_context = ssl.create_default_context()
-        self._ssl_context.check_hostname = False
-        self._ssl_context.verify_mode = ssl.CERT_NONE
     
     def get_connection(self, host: str) -> Optional[urllib.request.OpenerDirector]:
         """获取连接"""
@@ -393,6 +391,12 @@ class ServiceConnectionManager:
                 else:
                     logger.error(f"服务 {service_name} 请求最终失败: {e}")
                     return None
+                    
+            except ssl.SSLError as e:
+                metrics.record_failure()
+                circuit_breaker.record_failure()
+                logger.error(f"服务 {service_name} SSL验证失败: {e}")
+                return None
                     
             except Exception as e:
                 metrics.record_failure()

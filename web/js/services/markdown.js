@@ -204,6 +204,40 @@ const MarkdownRenderer = (function() {
         return text.replace(/[&<>"']/g, char => htmlEscapes[char]);
     }
 
+    // HTML消毒 - 移除危险的HTML标签和属性（XSS防护）
+    function sanitizeHtml(html) {
+        if (typeof DOMPurify !== 'undefined') {
+            return DOMPurify.sanitize(html, {
+                ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'code', 'pre', 'blockquote', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span'],
+                ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target', 'rel', 'class', 'id', 'loading']
+            });
+        }
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const dangerousTags = ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select'];
+        dangerousTags.forEach(tag => {
+            const elements = tempDiv.querySelectorAll(tag);
+            elements.forEach(el => el.remove());
+        });
+        const allElements = tempDiv.querySelectorAll('*');
+        allElements.forEach(el => {
+            const attrs = el.attributes;
+            for (let i = attrs.length - 1; i >= 0; i--) {
+                const attrName = attrs[i].name.toLowerCase();
+                if (attrName.startsWith('on') || attrName === 'style' || attrName === 'srcdoc') {
+                    el.removeAttribute(attrs[i].name);
+                }
+                if (attrName === 'href' || attrName === 'src') {
+                    const value = attrs[i].value.trim().toLowerCase();
+                    if (value.startsWith('javascript:') || value.startsWith('data:') || value.startsWith('vbscript:')) {
+                        el.removeAttribute(attrs[i].name);
+                    }
+                }
+            }
+        });
+        return tempDiv.innerHTML;
+    }
+
     // 代码语法高亮
     function highlightCode(code, language) {
         let highlighted = escapeHtml(code);
@@ -1081,7 +1115,7 @@ const MarkdownRenderer = (function() {
                 <div class="thinking-chain" id="${thinkingId}">
                     <div class="thinking-header" onclick="window.toggleThinking && window.toggleThinking('${thinkingId}')">
                         <div class="thinking-icon-container">
-                            <span class="thinking-icon">💭</span>
+                            <span class="thinking-icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('thinking', 16) : '💭'}</span>
                         </div>
                         <span class="thinking-title">思考过程</span>
                         <span class="thinking-toggle" id="${thinkingId}-toggle">▼</span>
@@ -1096,10 +1130,11 @@ const MarkdownRenderer = (function() {
             html = thinkingHtml + html;
         }
         
-        // 存入缓存
-        setToCache(cacheKey, html);
+        // 存入缓存前进行XSS消毒
+        const sanitizedHtml = sanitizeHtml(html);
+        setToCache(cacheKey, sanitizedHtml);
         
-        return html;
+        return sanitizedHtml;
     }
 
     // 检测文本是否包含Markdown语法
@@ -1158,6 +1193,27 @@ window.toggleThinking = function(thinkingId) {
     }
     
     // 阻止事件冒泡
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+};
+
+window.toggleToolCall = function(toolCallId) {
+    const content = document.getElementById(toolCallId + '-content');
+    const toggle = document.getElementById(toolCallId + '-toggle');
+    
+    if (content && toggle) {
+        const isCollapsed = content.classList.contains('collapsed');
+        if (isCollapsed) {
+            content.classList.remove('collapsed');
+            toggle.style.transform = 'rotate(0deg)';
+        } else {
+            content.classList.add('collapsed');
+            toggle.style.transform = 'rotate(-90deg)';
+        }
+    }
+    
     if (event) {
         event.stopPropagation();
         event.preventDefault();

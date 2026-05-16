@@ -28,7 +28,6 @@ ALLOWED_ENUMS = {
     "reasoning_summary_level": {"off", "brief", "standard"},
     "response_depth": {"brief", "standard", "deep"},
     "system_prompt_mode": {"template", "custom"},
-    "safety_mode": {"strict", "balanced", "relaxed"}
 }
 
 _context_store = {

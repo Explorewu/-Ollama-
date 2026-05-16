@@ -107,6 +107,21 @@
             color: #fff;
         }
 
+        .voice-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            margin: 4px 12px;
+        }
+
+        .voice-clone-entry {
+            color: #4ade80;
+            font-weight: 500;
+        }
+
+        .voice-clone-entry:hover {
+            background: rgba(74, 222, 128, 0.15);
+        }
+
         .voice-icon {
             flex-shrink: 0;
         }
@@ -220,6 +235,344 @@
         .conversation-history::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.2);
             border-radius: 2px;
+        }
+
+        /* 音色克隆模态框 */
+        .clone-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .clone-modal.show {
+            display: flex;
+        }
+
+        .clone-modal-content {
+            width: 90%;
+            max-width: 480px;
+            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .clone-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .clone-modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .clone-modal-close {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .clone-modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .clone-tabs {
+            display: flex;
+            padding: 0 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .clone-tab {
+            flex: 1;
+            padding: 16px 12px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+
+        .clone-tab.active {
+            color: #4ade80;
+            border-bottom-color: #4ade80;
+        }
+
+        .clone-tab:hover:not(.active) {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .clone-panel {
+            display: none;
+            padding: 24px;
+        }
+
+        .clone-panel.active {
+            display: block;
+        }
+
+        /* 录音区域 */
+        .record-section {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .record-hint {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .record-waveform {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            height: 60px;
+            margin-bottom: 12px;
+        }
+
+        .record-bar {
+            width: 4px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            transition: all 0.1s;
+        }
+
+        .record-bar.active {
+            background: #4ade80;
+        }
+
+        .record-time {
+            font-size: 24px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 20px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .record-btn {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.3);
+        }
+
+        .record-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 24px rgba(74, 222, 128, 0.4);
+        }
+
+        .record-btn.recording {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .record-status {
+            margin-top: 16px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* 上传区域 */
+        .upload-section {
+            padding: 20px 0;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 40px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-area:hover {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .upload-text {
+            color: #fff;
+            font-size: 15px;
+            margin-top: 12px;
+        }
+
+        .upload-hint {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .upload-file-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(74, 222, 128, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(74, 222, 128, 0.3);
+        }
+
+        .upload-clear-btn {
+            margin-left: auto;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-clear-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* 表单 */
+        .clone-form {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4ade80;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .clone-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clone-submit-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(74, 222, 128, 0.3);
+        }
+
+        .clone-submit-btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.4);
+            cursor: not-allowed;
+        }
+
+        /* 进度 */
+        .clone-progress {
+            text-align: center;
+            padding: 60px 40px;
+        }
+
+        .progress-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #4ade80;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .progress-hint {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            margin-top: 8px;
         }
 
         .conv-item {
@@ -398,38 +751,50 @@
                     <line x1="12" y1="19" x2="12" y2="23"/>
                     <line x1="8" y1="23" x2="16" y2="23"/>
                 </svg>
-                默认
+                Vivian
             </span>
         </button>
         <div class="voice-dropdown" id="voiceDropdown">
-            <div class="voice-option active" data-voice="default">
+            <div class="voice-option active" data-voice="vivian">
                 <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                     <line x1="12" y1="19" x2="12" y2="23"/>
                     <line x1="8" y1="23" x2="16" y2="23"/>
                 </svg>
-                <span>默认音色</span>
-            </div>
-            <div class="voice-option" data-voice="vivian">
-                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="8" r="5"/>
-                    <path d="M3 21v-2a7 7 0 0 1 7-7h4a7 7 0 0 1 7 7v2"/>
-                </svg>
-                <span>Vivian - 明亮女声</span>
+                <span>Vivian · 明亮自然女声</span>
             </div>
             <div class="voice-option" data-voice="serena">
                 <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
-                <span>Serena - 温暖女声</span>
+                <span>Serena · 温柔知性女声</span>
             </div>
+            <div class="voice-option" data-voice="chelsie">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <span>Chelsie · 优雅从容女声</span>
+            </div>
+            <div class="voice-option" data-voice="ethel">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <span>Ethel · 甜美可爱少女</span>
+            </div>
+            <div class="voice-option" data-voice="vivian_warm">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <span>Vivian暖音 · 邻家姐姐声</span>
+            </div>
+            <div class="voice-divider"></div>
             <div class="voice-option" data-voice="uncle_fu">
                 <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
                 </svg>
-                <span>Uncle Fu - 成熟男声</span>
+                <span>Uncle Fu · 醇厚成熟男声</span>
             </div>
             <div class="voice-option" data-voice="dylan">
                 <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -437,7 +802,77 @@
                     <circle cx="6" cy="18" r="3"/>
                     <circle cx="18" cy="16" r="3"/>
                 </svg>
-                <span>Dylan - 活力男声</span>
+                <span>Dylan · 阳光活力男声</span>
+            </div>
+            <div class="voice-option" data-voice="eric">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                    <line x1="9" y1="9" x2="9.01" y2="9"/>
+                    <line x1="15" y1="9" x2="15.01" y2="9"/>
+                </svg>
+                <span>Eric · 沉稳磁性男声</span>
+            </div>
+            <div class="voice-option" data-voice="uncle_fu_warm">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span>Uncle Fu暖叔 · 温柔大叔声</span>
+            </div>
+            <div class="voice-option" data-voice="dylan_calm">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18V5l12-2v13"/>
+                    <circle cx="6" cy="18" r="3"/>
+                    <circle cx="18" cy="16" r="3"/>
+                </svg>
+                <span>Dylan清朗 · 清爽少年音</span>
+            </div>
+            <div class="voice-divider"></div>
+            <div class="voice-option" data-voice="ryan">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+                <span>Ryan · 英伦绅士男声</span>
+            </div>
+            <div class="voice-option" data-voice="aiden">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>Aiden · 阳光美式男声</span>
+            </div>
+            <div class="voice-option" data-voice="jessica">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <span>Jessica · 优雅英式女声</span>
+            </div>
+            <div class="voice-option" data-voice="ono_anna">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="8" r="5"/>
+                    <path d="M3 21v-2a7 7 0 0 1 7-7h4a7 7 0 0 1 7 7v2"/>
+                </svg>
+                <span>Ono Anna · 元气日语女声</span>
+            </div>
+            <div class="voice-option" data-voice="sohee">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+                <span>Sohee · 温柔韩语女声</span>
+            </div>
+            <div class="voice-divider"></div>
+            <div class="voice-option voice-clone-entry" id="cloneVoiceEntry">
+                <svg class="voice-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                    <circle cx="17" cy="7" r="3" fill="currentColor" stroke="none"/>
+                    <path d="M17 5v4M15 7h4" stroke="white" stroke-width="1.5"/>
+                </svg>
+                <span>克隆新音色</span>
             </div>
         </div>
     </div>
@@ -484,12 +919,121 @@
         <div class="error-details" id="errorDetails"></div>
     </div>
 
-    <script src="js/features/voice_call.js?v=2026041301"></script>
+    <!-- 音色克隆模态框 -->
+    <div class="clone-modal" id="cloneModal">
+        <div class="clone-modal-content">
+            <div class="clone-modal-header">
+                <h3>克隆新音色</h3>
+                <button class="clone-modal-close" id="cloneModalClose">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="clone-tabs">
+                <button class="clone-tab active" data-tab="record">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="23"/>
+                        <line x1="8" y1="23" x2="16" y2="23"/>
+                    </svg>
+                    录音克隆
+                </button>
+                <button class="clone-tab" data-tab="upload">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    文件克隆
+                </button>
+            </div>
+            
+            <!-- 录音模式 -->
+            <div class="clone-panel active" id="recordPanel">
+                <div class="record-section">
+                    <div class="record-hint">录制 3-10 秒的音频来克隆音色</div>
+                    <div class="record-waveform" id="recordWaveform">
+                        <div class="record-bar"></div>
+                        <div class="record-bar"></div>
+                        <div class="record-bar"></div>
+                        <div class="record-bar"></div>
+                        <div class="record-bar"></div>
+                    </div>
+                    <div class="record-time" id="recordTime">00:00</div>
+                    <button class="record-btn" id="recordBtn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="6"/>
+                        </svg>
+                    </button>
+                    <div class="record-status" id="recordStatus">点击开始录音</div>
+                </div>
+                <div class="clone-form">
+                    <div class="form-group">
+                        <label>音色名称</label>
+                        <input type="text" id="recordVoiceName" placeholder="例如：我的声音" maxlength="20">
+                    </div>
+                    <div class="form-group">
+                        <label>参考文本（可选，提高克隆质量）</label>
+                        <textarea id="recordRefText" placeholder="请输入录音内容的文字，例如：今天天气真不错，适合出去走走。" rows="2"></textarea>
+                    </div>
+                    <button class="clone-submit-btn" id="recordSubmitBtn" disabled>开始克隆</button>
+                </div>
+            </div>
+            
+            <!-- 文件上传模式 -->
+            <div class="clone-panel" id="uploadPanel">
+                <div class="upload-section">
+                    <div class="upload-area" id="uploadArea">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <div class="upload-text">点击或拖拽上传音频文件</div>
+                        <div class="upload-hint">支持 WAV、MP3 格式，3-10 秒</div>
+                        <input type="file" id="audioFileInput" accept="audio/wav,audio/mpeg,audio/mp3" hidden>
+                    </div>
+                    <div class="upload-file-info" id="uploadFileInfo" style="display: none;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        <span id="uploadFileName"></span>
+                        <button class="upload-clear-btn" id="uploadClearBtn">更换</button>
+                    </div>
+                </div>
+                <div class="clone-form">
+                    <div class="form-group">
+                        <label>音色名称</label>
+                        <input type="text" id="uploadVoiceName" placeholder="例如：我的声音" maxlength="20">
+                    </div>
+                    <div class="form-group">
+                        <label>参考文本（可选，提高克隆质量）</label>
+                        <textarea id="uploadRefText" placeholder="请输入音频内容的文字，例如：今天天气真不错，适合出去走走。" rows="2"></textarea>
+                    </div>
+                    <button class="clone-submit-btn" id="uploadSubmitBtn" disabled>开始克隆</button>
+                </div>
+            </div>
+            
+            <!-- 克隆进度 -->
+            <div class="clone-progress" id="cloneProgress" style="display: none;">
+                <div class="progress-spinner"></div>
+                <div class="progress-text">正在克隆音色...</div>
+                <div class="progress-hint">这可能需要几秒钟</div>
+            </div>
+        </div>
+    </div>
+
+    <script defer src="js/features/voice_call.js?v=2026041301"></script>
     <script>
         let voiceCall = null;
         let isCalling = false;
-        let currentVoice = 'default';
-        let selectedVoiceName = '🎤 默认';
+        let currentVoice = 'vivian';
+        let selectedVoiceName = 'Vivian';
         let visualizerFrame = null;
         let reconnectCount = 0;
         const dots = document.querySelectorAll('.dot');
@@ -578,7 +1122,7 @@
                 e.stopPropagation();
                 const voice = option.dataset.voice;
                 currentVoice = voice;
-                const voiceText = option.querySelector('span:last-child').textContent.split(' - ')[0];
+                const voiceText = option.querySelector('span:last-child').textContent.split(' · ')[0];
                 const voiceIcon = option.querySelector('.voice-icon');
                 currentVoiceName.innerHTML = voiceIcon.outerHTML + ' ' + voiceText;
 

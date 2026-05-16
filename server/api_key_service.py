@@ -98,15 +98,6 @@ class APIKeyService:
         return hashlib.sha256(key.encode()).hexdigest()
 
     def verify_key(self, key: str) -> Optional[Dict]:
-        """
-        验证 API Key 是否有效
-
-        Args:
-            key: 完整的 API Key
-
-        Returns:
-            Dict: Key 信息，如果无效返回 None
-        """
         if not key or not key.startswith('oll_'):
             return None
 
@@ -114,6 +105,7 @@ class APIKeyService:
 
         for key_id, key_info in self.keys.items():
             if key_info['key_hash'] == key_hash and key_info['is_active']:
+                self.use_key(key_id)
                 return key_info
 
         return None
@@ -209,12 +201,17 @@ class APIKeyService:
             }
         }
 
+    _pending_writes = 0
+    _WRITE_THRESHOLD = 10
+
     def use_key(self, key_id: str):
-        """记录 Key 使用"""
         if key_id in self.keys:
             self.keys[key_id]['last_used_at'] = datetime.now().isoformat()
             self.keys[key_id]['usage_count'] += 1
-            self._save_keys()
+            self._pending_writes += 1
+            if self._pending_writes >= self._WRITE_THRESHOLD:
+                self._save_keys()
+                self._pending_writes = 0
 
 
 _api_key_service = None

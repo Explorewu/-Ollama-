@@ -6,68 +6,6 @@
  */
 
 const API = {
-    // 语义分段器实例
-    semanticSegmenter: SemanticSegmenter,
-    
-    // 语义连贯性状态
-    _segmentState: {
-        lastSentences: [],
-        pendingSentences: [],
-        lastSegmentTime: Date.now(),
-        coherenceHistory: []
-    },
-    
-    // 重置语义状态
-    resetSemanticState() {
-        this._segmentState = {
-            lastSentences: [],
-            pendingSentences: [],
-            lastSegmentTime: Date.now(),
-            coherenceHistory: []
-        };
-    },
-    // 辅助函数：查找最后一个句子结束位置
-    findLastSentenceEnd(text, startPos = 0) {
-        if (startPos >= text.length) return -1;
-        
-        const substr = text.slice(startPos);
-        let lastEnd = -1;
-        
-        // 检测各种句子结束标记
-        const patterns = [
-            /[。！？!?][\s　]*$/m,
-            /[。！？!?](?=\s*[A-ZА-Я])/g,
-            /\n{2,}/g,
-        ];
-        
-        for (const pattern of patterns) {
-            const matches = [...substr.matchAll(pattern)];
-            if (matches.length > 0) {
-                const lastMatch = matches[matches.length - 1];
-                const pos = startPos + lastMatch.index + lastMatch[0].length;
-                if (pos > lastEnd) {
-                    lastEnd = pos;
-                }
-            }
-        }
-        
-        // 如果找不到句子结束，尝试在合适的位置截断
-        if (lastEnd <= startPos) {
-            // 尝试在空格后截断
-            const spaceMatch = substr.match(/\s+(?=\S)/);
-            if (spaceMatch) {
-                lastEnd = startPos + spaceMatch.index + 1;
-            } else {
-                // 强制在中间截断（每100个字符）
-                if (substr.length > 50) {
-                    lastEnd = startPos + Math.min(100, Math.floor(substr.length * 0.8));
-                }
-            }
-        }
-        
-        return lastEnd > startPos ? lastEnd : -1;
-    },
-
     /**
      * 构建增强的系统提示词
      * 通过添加角色背景、行为准则和对话格式指导来增强沉浸感
@@ -75,6 +13,25 @@ const API = {
      * @returns {string} 增强后的系统提示词
      */
     buildEnhancedSystemPrompt(persona) {
+        // 添加空值检查，避免空指针错误
+        if (!persona) {
+            return '';
+        }
+
+        if (typeof PersonaV2 !== 'undefined' && typeof FeatureToggle !== 'undefined' && FeatureToggle.isMasterEnabled()) {
+            // 确保 persona.id 存在再调用
+            const v2Persona = persona.id ? PersonaV2.getPersona(persona.id) : null;
+            if (v2Persona) {
+                const compiled = PersonaV2.compilePrompt(v2Persona, {
+                    timeline: FeatureToggle.isEnabled('timeline'),
+                    growth: FeatureToggle.isEnabled('growthSystem'),
+                    dialogues: FeatureToggle.isEnabled('dialogueEngine'),
+                    conversationId: this._lastConversationId
+                });
+                if (compiled) return compiled;
+            }
+        }
+
         const parts = [];
 
         // 1. 添加角色身份定义（强化版）
@@ -150,7 +107,6 @@ const API = {
     
     // API 基础配置
     config: {
-        baseUrl: `http://${window.location.hostname || 'localhost'}:11434`,
         apiBaseUrl: `http://${window.location.hostname || 'localhost'}:5001`,
         timeout: 120000,
         headers: {
@@ -166,7 +122,6 @@ const API = {
      */
     init() {
         const settings = Storage.getSettings();
-        this.config.baseUrl = settings.apiUrl;
         this.config.timeout = settings.requestTimeout * 1000;
     },
 
@@ -193,14 +148,8 @@ const API = {
             }
 
             try {
-                // 使用 UnifiedAPIClient 发起请求
-                // 根据 endpoint 自动选择服务 (backend/ollama)
-                let service = 'backend';
-                if (endpoint.startsWith('/api/tags') || endpoint.startsWith('/api/generate')) {
-                    service = 'ollama';
-                }
-
-                const response = await UnifiedAPIClient.request(service, endpoint, {
+                // 使用 UnifiedAPIClient 发起请求，全部走后端代理
+                const response = await UnifiedAPIClient.request('backend', endpoint, {
                     method,
                     headers,
                     body
@@ -257,7 +206,7 @@ const API = {
      */
     async checkHealth() {
         try {
-            await this.request('/api/tags');
+            await this.request('/api/health');
             return true;
         } catch (error) {
             console.warn('服务健康检查失败:', error.message);
@@ -339,7 +288,7 @@ const API = {
         } catch (error) {
             console.error('获取所有模型列表失败:', error);
             try {
-                const fallbackResponse = await fetch(`${this.config.baseUrl}/api/tags`, {
+                const fallbackResponse = await fetch(`${this.config.apiBaseUrl}/api/tags`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -427,7 +376,7 @@ const API = {
     async pullModel(modelName, onProgress = () => {}) {
         this.init();
 
-        const url = `${this.config.baseUrl}/api/pull`;
+        const url = `${this.config.apiBaseUrl}/api/pull`;
         
         const response = await fetch(url, {
             method: 'POST',
@@ -444,43 +393,52 @@ const API = {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        let pullBuffer = '';
 
         while (true) {
             const { done, value } = await reader.read();
             
             if (done) {
+                if (pullBuffer.trim()) {
+                    _parsePullLine(pullBuffer);
+                }
                 break;
             }
             
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
+            pullBuffer += decoder.decode(value, { stream: true });
+            const lines = pullBuffer.split('\n');
+            pullBuffer = lines.pop() || '';
             
             for (const line of lines) {
-                if (!line.trim()) continue;  // 跳过空行
-                try {
-                    const data = JSON.parse(line);
-                    
-                    if (data.status) {
-                        let percent = 0;
-                        if (data.total && data.completed) {
-                            percent = Math.round((data.completed / data.total) * 100);
-                        }
-                        
-                        onProgress({
-                            status: data.status,
-                            progress: data.completed || 0,
-                            total: data.total || 0,
-                            percent: percent,
-                            digest: data.digest || ''
-                        });
+                _parsePullLine(line);
+            }
+        }
+
+        function _parsePullLine(line) {
+            if (!line.trim()) return;
+            try {
+                const data = JSON.parse(line);
+                
+                if (data.status) {
+                    let percent = 0;
+                    if (data.total && data.completed) {
+                        percent = Math.round((data.completed / data.total) * 100);
                     }
                     
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                } catch (e) {
-                    // 忽略解析错误
+                    onProgress({
+                        status: data.status,
+                        progress: data.completed || 0,
+                        total: data.total || 0,
+                        percent: percent,
+                        digest: data.digest || ''
+                    });
                 }
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
             }
         }
     },
@@ -525,8 +483,7 @@ const API = {
     async chat(params, onChunk = () => {}) {
         this.init();
         
-        // 重置语义分段状态
-        this.resetSemanticState();
+        this._lastConversationId = params.conversationId || null;
 
         const settings = Storage.getSettings();
         const currentPersona = Storage.getCurrentPersona();
@@ -538,237 +495,443 @@ const API = {
             content: msg.content
         }));
 
-        // 构建增强的系统提示词
+        // 构建系统提示词：优先使用行为契约，其次使用角色卡
+        let systemPrompt = '';
+
+        // 尝试使用行为契约编译的提示词
+        if (typeof BehaviorContractManager !== 'undefined') {
+            systemPrompt = BehaviorContractManager.getCompiledPrompt();
+        }
+
+        // 如果有角色卡且启用了角色增强，追加角色卡内容
         if (currentPersona && currentPersona.systemPrompt) {
-            let enhancedSystemPrompt = this.buildEnhancedSystemPrompt(currentPersona);
-            
-            // 添加角色状态描述
+            if (systemPrompt) {
+                systemPrompt += '\n\n';
+            }
+            systemPrompt += currentPersona.systemPrompt;
+
             if (typeof PersonaMemory !== 'undefined' && conversationId) {
                 const stateDescription = PersonaMemory.generateStateDescription(currentPersona.id);
                 if (stateDescription) {
-                    enhancedSystemPrompt += `\n\n【当前状态】\n${stateDescription}`;
+                    systemPrompt += `\n\n【当前状态】\n${stateDescription}`;
                 }
-                
-                // 添加相关记忆
+
                 const lastUserMessage = params.messages.filter(m => m.role === 'user').pop();
                 if (lastUserMessage) {
                     const memoryPrompt = PersonaMemory.generateMemoryPrompt(conversationId, lastUserMessage.content);
                     if (memoryPrompt) {
-                        enhancedSystemPrompt += memoryPrompt;
+                        systemPrompt += memoryPrompt;
                     }
                 }
             }
-            
+        }
+
+        // 将编译后的系统提示词插入消息列表
+        if (systemPrompt) {
             messages.unshift({
                 role: 'system',
-                content: enhancedSystemPrompt
+                content: systemPrompt
             });
         }
 
-        // 创建 AbortController 用于取消请求
-        this._currentChatController = new AbortController();
-        const signal = this._currentChatController.signal;
+        // SSE 流式中断重试配置
+        const MAX_RETRIES = 3;
+        const BASE_DELAY = 1000; // 1秒基础延迟
+        let retryCount = 0;
+        let fullResponse = '';
+        let lastError = null;
 
-        // 获取 API 密钥（如果需要）
-        const requestHeaders = {
-            'Content-Type': 'application/json'
-        };
-        
-        // 优先从 localStorage 获取
-        const storedKey = localStorage.getItem('api_key');
-        if (storedKey) {
-            requestHeaders['Authorization'] = `Bearer ${storedKey}`;
-        } else {
-            // 回退：从后端获取
+        // 重试循环
+        while (retryCount <= MAX_RETRIES) {
             try {
-                const keyResponse = await fetch(`${this.config.apiBaseUrl}/api/api-key/list`);
-                const keyData = await keyResponse.json();
-                if (keyData.success && keyData.data && keyData.data.length > 0) {
-                    const activeKey = keyData.data.find(k => k.is_active);
-                    if (activeKey && activeKey.key) {
-                        requestHeaders['Authorization'] = `Bearer ${activeKey.key}`;
+                fullResponse = '';
+                this._currentChatController = new AbortController();
+                const signal = this._currentChatController.signal;
+
+                // 获取 API 密钥
+                const requestHeaders = { 'Content-Type': 'application/json' };
+                const storedKey = sessionStorage.getItem('api_key');
+                if (storedKey) {
+                    requestHeaders['Authorization'] = `Bearer ${storedKey}`;
+                } else {
+                    try {
+                        const keyResponse = await fetch(`${this.config.apiBaseUrl}/api/api-key/list`);
+                        const keyData = await keyResponse.json();
+                        if (keyData.success && keyData.data?.length > 0) {
+                            const activeKey = keyData.data.find(k => k.is_active);
+                            if (activeKey) {
+                                requestHeaders['Authorization'] = `Bearer ${activeKey.key}`;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[API] 无法获取 API Key 列表');
                     }
                 }
-            } catch (e) {
-                // API 密钥获取失败，继续无认证请求
-            }
-        }
 
-        // 使用智能 API 的聊天接口（支持记忆、摘要、上下文管理）
-        const response = await fetch(`${this.config.apiBaseUrl}/api/chat`, {
-            method: 'POST',
-            headers: requestHeaders,
-            body: JSON.stringify({
-                message: messages[messages.length - 1]?.content || '', // 最后一条用户消息
-                conversation_id: conversationId,
-                model: params.model,
-                use_memory: true,
-                use_summary: true,
-                stream: true,
-                persona: currentPersona ? {
-                    name: currentPersona.name,
-                    tone: currentPersona.description || '',
-                    worldview: '',
-                    taboos: [],
-                    signature_style: ''
-                } : null,
-                chat_settings: {
-                    thinking: settings.thinking === true,
-                    show_reasoning_summary: settings.showReasoningSummary !== false,
-                    reasoning_summary_level: settings.reasoningSummaryLevel || 'brief',
-                    response_depth: settings.responseDepth || 'standard',
-                    persona_strength: typeof settings.personaStrength === 'number' ? settings.personaStrength : 70,
-                    system_prompt_mode: settings.systemPromptMode || 'template',
-                    system_prompt_template: settings.systemPromptTemplate || 'assistant_balanced',
-                    system_prompt_custom: settings.systemPromptCustom || '',
-                    safety_mode: settings.safetyMode || 'balanced',
-                    adult_tone_mode: !!settings.adultToneMode,
-                    adult_tone_acknowledged: !!settings.adultToneMode,
-                    temperature: typeof settings.temperature === 'number' ? settings.temperature : 0.7,
-                    repeat_penalty: typeof settings.repeatPenalty === 'number' ? settings.repeatPenalty : 1.1,
-                    top_k: typeof settings.topK === 'number' ? settings.topK : 40,
-                    top_p: typeof settings.topP === 'number' ? settings.topP : 0.9
+                // 提取角色卡增强的系统提示词（如果存在）
+                const personaSystemPrompt = (messages.length > 0 && messages[0].role === 'system')
+                    ? messages[0].content
+                    : '';
+
+                // 构建请求体
+                const requestBody = {
+                    message: messages[messages.length - 1]?.content || '',
+                    messages: messages,
+                    conversation_id: conversationId,
+                    model: params.model,
+                    use_memory: true,
+                    use_summary: true,
+                    stream: true,
+                    system_prompt: personaSystemPrompt || '',
+                    persona: currentPersona ? {
+                        name: currentPersona.name,
+                        tone: currentPersona.description || '',
+                        worldview: '',
+                        taboos: [],
+                        signature_style: '',
+                        systemPrompt: currentPersona.systemPrompt || ''
+                    } : null,
+                    persona_id: currentPersona?.id || null,
+                    chat_settings: (() => {
+                        const cs = {
+                            thinking: settings.thinking === true,
+                            auto_tool_call: settings.autoToolCall !== false,
+                            show_reasoning_summary: settings.showReasoningSummary !== false,
+                            reasoning_summary_level: settings.reasoningSummaryLevel || 'brief',
+                            response_depth: settings.responseDepth || 'standard',
+                            persona_strength: typeof settings.personaStrength === 'number' ? settings.personaStrength : 70,
+                            system_prompt_mode: settings.systemPromptMode || 'template',
+                            system_prompt_template: settings.systemPromptTemplate || 'assistant_balanced',
+                            system_prompt_custom: settings.systemPromptCustom || '',
+                            adult_tone_mode: !!settings.adultToneMode,
+                            adult_tone_acknowledged: !!settings.adultToneMode,
+                            temperature: typeof settings.temperature === 'number' ? settings.temperature : 0.7,
+                            repeat_penalty: typeof settings.repeatPenalty === 'number' ? settings.repeatPenalty : 1.15,
+                            top_k: typeof settings.topK === 'number' ? settings.topK : 40,
+                            top_p: typeof settings.topP === 'number' ? settings.topP : 0.9,
+                            num_ctx: typeof settings.contextLength === 'number' ? settings.contextLength : -1,
+                        };
+                        if (typeof ContextCompressionUI !== 'undefined') {
+                            Object.assign(cs, ContextCompressionUI.getSettings());
+                        }
+                        return cs;
+                    })()
+                };
+
+                // 添加内部调用标记头
+                requestHeaders['X-Internal-Call'] = 'true';
+
+                const response = await fetch(`${this.config.apiBaseUrl}/api/chat`, {
+                    method: 'POST',
+                    headers: requestHeaders,
+                    body: JSON.stringify(requestBody),
+                    signal: signal
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`聊天请求失败 (${response.status}): ${errorText}`);
                 }
-            }),
-            signal: signal
-        });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`聊天请求失败 (${response.status}): ${errorText}`);
-        }
+                // SSE 流式读取（性能优化版）
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8', { fatal: false });
+                let sseBuffer = '';
+                let doneSignalReceived = false;
+                let tokenBatch = [];
+                let lastBatchTime = Date.now();
+                let pendingRender = false;
+                const BATCH_INTERVAL = 32;
+                const MAX_BATCH_SIZE = 80;
+                const MIN_FLUSH_CHARS = 20;
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let fullResponse = '';
-        let sseBuffer = '';
-        let doneSignalReceived = false;
-
-        const processSSEEvent = (eventBlock) => {
-            if (!eventBlock) return;
-            const lines = eventBlock.split('\n');
-            const dataLines = [];
-
-            for (const line of lines) {
-                const trimmed = line.trim();
-                if (trimmed.startsWith('data:')) {
-                    dataLines.push(trimmed.slice(5).trimStart());
+                if (typeof BubbleSegmentManager !== 'undefined') {
+                    BubbleSegmentManager.startStream();
                 }
-            }
 
-            const payload = dataLines.join('\n').trim();
-            if (!payload) return;
+                const SSE_LINE_REGEX = /^(\w+):\s*(.*)$/;
+                
+                const findSentenceBoundary = (text) => {
+                    const boundaries = ['。', '！', '？', '；', '.', '!', '?', ';', '\n\n', '\n'];
+                    for (const boundary of boundaries) {
+                        const idx = text.lastIndexOf(boundary);
+                        if (idx > text.length * 0.5) {
+                            return idx + boundary.length;
+                        }
+                    }
+                    return -1;
+                };
 
-            if (payload === '[DONE]') {
+                const flushTokenBatch = () => {
+                    if (tokenBatch.length === 0) return;
+                    const batchedContent = tokenBatch.join('');
+                    tokenBatch = [];
+                    lastBatchTime = Date.now();
+                    pendingRender = false;
+                    onChunk({
+                        content: batchedContent,
+                        done: false,
+                        isNewSegment: batchedContent.includes('\n\n')
+                    });
+                };
+
+                const scheduleRender = () => {
+                    if (pendingRender) return;
+                    pendingRender = true;
+                    requestAnimationFrame(() => {
+                        const now = Date.now();
+                        const elapsed = now - lastBatchTime;
+                        const totalChars = tokenBatch.reduce((sum, t) => sum + t.length, 0);
+                        if (totalChars >= MIN_FLUSH_CHARS || elapsed >= BATCH_INTERVAL) {
+                            flushTokenBatch();
+                        } else {
+                            pendingRender = false;
+                        }
+                    });
+                };
+
+                const visibilityHandler = () => {
+                    if (!document.hidden && tokenBatch.length > 0) {
+                        flushTokenBatch();
+                    }
+                };
+                document.addEventListener('visibilitychange', visibilityHandler);
+
+                const processSSEEvent = (eventBlock) => {
+                    if (!eventBlock || !eventBlock.trim()) return;
+
+                    const lines = eventBlock.split('\n');
+                    const dataLines = [];
+                    let eventType = 'message';
+
+                    for (const line of lines) {
+                        const match = line.trim().match(SSE_LINE_REGEX);
+                        if (match) {
+                            const [, field, value] = match;
+                            switch (field) {
+                                case 'data':
+                                    dataLines.push(value.trimStart());
+                                    break;
+                                case 'event':
+                                    eventType = value.trim();
+                                    break;
+                                case 'id':
+                                case 'retry':
+                                    break;
+                            }
+                        }
+                    }
+
+                    const payload = dataLines.join('\n').trim();
+                    if (!payload) return;
+
+                    if (payload === '[DONE]') {
+                        flushTokenBatch();
+                        if (!doneSignalReceived) {
+                            doneSignalReceived = true;
+                            onChunk({ content: '', done: true, isNewSegment: false });
+                        }
+                        return;
+                    }
+
+                    let data = null;
+                    try {
+                        data = JSON.parse(payload);
+                    } catch (parseError) {
+                        console.warn('[SSE] JSON 解析失败:', parseError.message, 'payload:', payload.slice(0, 100));
+                        return;
+                    }
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    const event = data.event || eventType;
+
+                    if (event === 'reasoning_summary_chunk') {
+                        onChunk({
+                            content: '',
+                            reasoningSummary: data.content || '',
+                            done: false,
+                            isNewSegment: false
+                        });
+                        return;
+                    }
+
+                    if (event === 'thinking_start') {
+                        onChunk({
+                            content: '',
+                            thinkingStart: true,
+                            done: false,
+                            isNewSegment: false
+                        });
+                        return;
+                    }
+
+                    if (event === 'thinking_chunk') {
+                        const thinkingContent = data.content || '';
+                        if (thinkingContent) {
+                            onChunk({
+                                content: '',
+                                thinkingContent: thinkingContent,
+                                done: false,
+                                isNewSegment: false
+                            });
+                        }
+                        return;
+                    }
+
+                    if (event === 'tool_call_start') {
+                        onChunk({
+                            content: '',
+                            toolCallStart: true,
+                            toolCalls: data.calls || [],
+                            iteration: data.iteration || 0,
+                            done: false,
+                            isNewSegment: false
+                        });
+                        return;
+                    }
+
+                    if (event === 'tool_call_result') {
+                        onChunk({
+                            content: '',
+                            toolCallResult: true,
+                            toolName: data.name || '',
+                            toolSuccess: data.success || false,
+                            toolContent: data.content || '',
+                            executionTimeMs: data.execution_time_ms || 0,
+                            done: false,
+                            isNewSegment: false
+                        });
+                        return;
+                    }
+
+                    if (event === 'tool_call_end') {
+                        onChunk({
+                            content: '',
+                            toolCallEnd: true,
+                            iteration: data.iteration || 0,
+                            done: false,
+                            isNewSegment: false
+                        });
+                        return;
+                    }
+
+                    if (data.repeat_detected) {
+                        onChunk({
+                            content: '',
+                            repeatDetected: true,
+                            suggestedTemperature: data.suggested_temperature,
+                            done: false,
+                            isNewSegment: false
+                        });
+                        return;
+                    }
+
+                    const content = typeof data.content === 'string' ? data.content : '';
+                    if (content) {
+                        fullResponse += content;
+                        tokenBatch.push(content);
+
+                        if (tokenBatch.length >= MAX_BATCH_SIZE || content.includes('\n\n')) {
+                            flushTokenBatch();
+                        } else {
+                            scheduleRender();
+                        }
+                    }
+
+                    if (data.done && !doneSignalReceived) {
+                        flushTokenBatch();
+                        doneSignalReceived = true;
+                        onChunk({
+                            content: '',
+                            done: true,
+                            isNewSegment: false,
+                            repeatDetected: !!data.repeat_detected,
+                            suggestedTemperature: data.suggested_temperature
+                        });
+                    }
+                };
+
+                try {
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        sseBuffer += decoder.decode(value, { stream: true });
+                        if (sseBuffer.length > 1048576) {
+                            sseBuffer = sseBuffer.slice(-8192);
+                        }
+                        const eventBlocks = sseBuffer.split('\n\n');
+                        sseBuffer = eventBlocks.pop() || '';
+
+                        for (const eventBlock of eventBlocks) {
+                            processSSEEvent(eventBlock);
+                        }
+
+                        if (tokenBatch.length > 0 && Date.now() - lastBatchTime >= BATCH_INTERVAL * 2) {
+                            flushTokenBatch();
+                        }
+                    }
+                } finally {
+                    flushTokenBatch();
+                    sseBuffer += decoder.decode();
+                    if (sseBuffer.trim()) {
+                        processSSEEvent(sseBuffer);
+                    }
+                    this._currentChatController = null;
+                    document.removeEventListener('visibilitychange', visibilityHandler);
+                }
+
                 if (!doneSignalReceived) {
-                    doneSignalReceived = true;
+                    if (typeof BubbleSegmentManager !== 'undefined') {
+                        BubbleSegmentManager.flush((segChunk) => {
+                            onChunk(segChunk);
+                        });
+                    }
                     onChunk({ content: '', done: true, isNewSegment: false });
                 }
-                return;
-            }
 
-            let data = null;
-            try {
-                data = JSON.parse(payload);
-            } catch {
-                return;
-            }
+                // 成功完成，退出重试循环
+                return fullResponse;
 
-            if (data.error) {
-                throw new Error(data.error);
-            }
+            } catch (error) {
+                lastError = error;
+                
+                // 用户主动取消，不重试
+                if (error.name === 'AbortError') {
+                    console.log('[CANCEL] 用户取消了请求');
+                    onChunk({ content: '', done: true, isNewSegment: false });
+                    return fullResponse;
+                }
 
-            if (data.event === 'reasoning_summary_chunk') {
-                onChunk({
-                    content: '',
-                    reasoningSummary: data.content || '',
-                    done: false,
-                    isNewSegment: false
-                });
-                return;
-            }
+                // 网络错误或连接中断，尝试重试
+                retryCount++;
+                if (retryCount <= MAX_RETRIES) {
+                    const delay = BASE_DELAY * Math.pow(2, retryCount - 1); // 指数退避
+                    console.warn(`[SSE] 流式中断，第 ${retryCount}/${MAX_RETRIES} 次重试，延迟 ${delay}ms:`, error.message);
+                    
+                    // 通知用户正在重试
+                    onChunk({
+                        content: '',
+                        retryAttempt: retryCount,
+                        maxRetries: MAX_RETRIES,
+                        retryClear: true,
+                        done: false,
+                        isNewSegment: false
+                    });
 
-            if (data.event === 'thinking_start') {
-                onChunk({
-                    content: '',
-                    thinkingStart: true,
-                    done: false,
-                    isNewSegment: false
-                });
-                return;
-            }
-
-            // 处理重复检测信号
-            if (data.repeat_detected) {
-                onChunk({
-                    content: '',
-                    repeatDetected: true,
-                    suggestedTemperature: data.suggested_temperature,
-                    done: false,
-                    isNewSegment: false
-                });
-                return;
-            }
-
-            const content = typeof data.content === 'string' ? data.content : '';
-            if (content) {
-                fullResponse += content;
-                onChunk({
-                    content: content,
-                    done: false,
-                    isNewSegment: false
-                });
-            }
-
-            if (data.done && !doneSignalReceived) {
-                doneSignalReceived = true;
-                onChunk({
-                    content: '',
-                    done: true,
-                    isNewSegment: false,
-                    repeatDetected: !!data.repeat_detected,
-                    suggestedTemperature: data.suggested_temperature
-                });
-            }
-        };
-
-        try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                sseBuffer += decoder.decode(value, { stream: true });
-                const eventBlocks = sseBuffer.split('\n\n');
-                sseBuffer = eventBlocks.pop() || '';
-
-                for (const eventBlock of eventBlocks) {
-                    processSSEEvent(eventBlock);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } else {
+                    console.error('[SSE] 所有重试均失败:', error);
+                    throw new Error(`流式响应失败，已重试 ${MAX_RETRIES} 次: ${error.message}`);
                 }
             }
-        } catch (error) {
-            // 处理用户主动取消
-            if (error.name === 'AbortError') {
-                console.log('🛑 用户取消了请求');
-                onChunk({ content: '', done: true, isNewSegment: false });
-                return fullResponse;
-            }
-            if (!error.message.includes('closed')) {
-                console.error('SSE 读取错误:', error);
-            }
-        } finally {
-            sseBuffer += decoder.decode();
-            if (sseBuffer.trim()) {
-                processSSEEvent(sseBuffer);
-            }
-            // 清理 AbortController
-            this._currentChatController = null;
         }
 
-        if (!doneSignalReceived) {
-            onChunk({ content: '', done: true, isNewSegment: false });
-        }
-
-        return fullResponse;
+        // 理论上不会到达这里
+        throw lastError || new Error('未知错误');
     },
     
     /**
@@ -778,7 +941,7 @@ const API = {
         if (this._currentChatController) {
             this._currentChatController.abort();
             this._currentChatController = null;
-            console.log('✅ 已中止当前聊天请求');
+            console.log('[ABORT] 已中止当前聊天请求');
         }
     },
 
@@ -796,7 +959,7 @@ const API = {
 
         const settings = Storage.getSettings();
         
-        const response = await fetch(`${this.config.baseUrl}/api/generate`, {
+        const response = await fetch(`${this.config.apiBaseUrl}/api/generate`, {
             method: 'POST',
             headers: this.config.headers,
             body: JSON.stringify({

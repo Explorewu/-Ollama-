@@ -16,11 +16,13 @@ PORT_API = 5001
 PORT_SUMMARY = 5002
 PORT_VISION = 5003
 PORT_NATIVE_IMAGE = 5004
+PORT_LAUNCHER = 5010
 PORT_OLLAMA = 11434
 
-DEFAULT_CHAT_MODEL = os.environ.get("DEFAULT_CHAT_MODEL", "qwen3.5:0.8b")
+DEFAULT_CHAT_MODEL = os.environ.get("DEFAULT_CHAT_MODEL", "qwen3.5-9b-uncensored")
 DEFAULT_OPENAI_COMPAT_MODEL = os.environ.get("DEFAULT_OPENAI_COMPAT_MODEL", DEFAULT_CHAT_MODEL)
-DEFAULT_GROUP_CHAT_MODEL = os.environ.get("DEFAULT_GROUP_CHAT_MODEL", "qwen3.5:0.8b")
+DEFAULT_GROUP_CHAT_MODEL = os.environ.get("DEFAULT_GROUP_CHAT_MODEL", "qwen3.5-9b-uncensored")
+GREETING_MODEL = os.environ.get("GREETING_MODEL", "qwen35-2b")
 
 IMAGE_MODEL_PATH = os.path.join(PROJECT_DIR, "models", "image")
 IMAGE_OUTPUT_PATH = os.path.join(SERVER_DIR, "outputs")
@@ -49,36 +51,36 @@ CONVERSATION_MODE_CONFIG = {
 
 SAMPLING_PRESETS = {
     "fast": {
-        "temperature": 0.5,
-        "top_k": 20,
-        "top_p": 0.85,
-        "repeat_penalty": 1.05,
-        "num_predict": 256,
-        "num_ctx": 1536,
-    },
-    "balanced": {
         "temperature": 0.6,
-        "top_k": 30,
+        "top_k": 25,
         "top_p": 0.9,
-        "repeat_penalty": 1.1,
+        "repeat_penalty": 1.2,
         "num_predict": 512,
         "num_ctx": 2048,
     },
-    "creative": {
-        "temperature": 0.8,
-        "top_k": 50,
-        "top_p": 0.95,
-        "repeat_penalty": 1.05,
+    "balanced": {
+        "temperature": 0.7,
+        "top_k": 35,
+        "top_p": 0.92,
+        "repeat_penalty": 1.15,
         "num_predict": 768,
         "num_ctx": 3072,
     },
+    "creative": {
+        "temperature": 0.85,
+        "top_k": 50,
+        "top_p": 0.95,
+        "repeat_penalty": 1.1,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+    },
     "code": {
-        "temperature": 0.35,
-        "top_k": 25,
-        "top_p": 0.85,
-        "repeat_penalty": 1.12,
-        "num_predict": 640,
-        "num_ctx": 3072,
+        "temperature": 0.6,
+        "top_k": 30,
+        "top_p": 0.88,
+        "repeat_penalty": 1.18,
+        "num_predict": 768,
+        "num_ctx": 4096,
     },
 }
 
@@ -104,32 +106,36 @@ DEFAULT_CHAT_RUNTIME_CONFIG = {
     "system_prompt_mode": "template",
     "system_prompt_template": "assistant_brief",
     "system_prompt_custom": "",
-    "safety_mode": "balanced",
     "adult_tone_mode": False,
     "adult_tone_acknowledged": False,
-    "max_response_tokens": 384,
+    "max_response_tokens": -1,
     "temperature": 0.55,
-    "repeat_penalty": 1.08,
+    "repeat_penalty": 1.15,
     "top_k": 40,
     "top_p": 0.9,
-    "num_ctx": 2048,
-    "num_threads": 8,
+    "num_ctx": 8192,
+    "num_threads": 16,
     "keep_alive": "10m",
     "sampling_preset": "fast",
+    "auto_tool_call": True,
+    "auto_tool_call_max_iterations": 5,
+    # 超时配置（秒）
+    "api_timeout": 3600,  # 增加到1小时
+    "ollama_timeout": 3600,  # 增加到1小时
 }
 
 DEFAULT_GROUP_CHAT_RUNTIME_CONFIG = {
     "max_turns": 4,
     "history_messages": 4,
-    "num_predict": 192,
-    "num_ctx": 1536,
+    "num_predict": 512,
+    "num_ctx": 2048,
     "num_threads": 8,
-    "temperature": 0.55,
-    "repeat_penalty": 1.08,
-    "top_k": 20,
-    "top_p": 0.85,
+    "temperature": 0.6,
+    "repeat_penalty": 1.15,
+    "top_k": 25,
+    "top_p": 0.9,
     "keep_alive": "10m",
-    "stream_chunk_chars": 80,
+    "stream_chunk_chars": 150,
 }
 
 SYSTEM_PROMPT_TEMPLATES = {
@@ -137,12 +143,6 @@ SYSTEM_PROMPT_TEMPLATES = {
     "assistant_brief": "You are a fast assistant. Give the answer first and keep it short. 回复时要自然流畅，像和朋友聊天一样。长短句交替使用，偶尔用个比喻或举个例子，让表达更生动。段落之间衔接自然，不要用生硬的标记或固定开头。",
     "assistant_deep": "You are a detailed assistant. Explain steps, tradeoffs, and risks only when helpful. 回复时要自然流畅，像和朋友聊天一样。长短句交替使用，偶尔用个比喻或举个例子，让表达更生动。段落之间衔接自然，不要用生硬的标记或固定开头。",
     "roleplay_immersive": "Stay in character while remaining safe and coherent. 回复时要自然流畅，像和朋友聊天一样。长短句交替使用，偶尔用个比喻或举个例子，让表达更生动。段落之间衔接自然，不要用生硬的标记或固定开头。",
-}
-
-SAFETY_POLICY_BLOCKS = {
-    "strict": "Decline unsafe or high-risk requests and offer safe alternatives.",
-    "balanced": "Decline high-risk requests and provide safe, reduced-risk help when possible.",
-    "relaxed": "Provide maximum lawful help while still refusing clearly unsafe requests.",
 }
 
 IMAGE_MODEL_CONFIG = {
@@ -190,25 +190,49 @@ IMAGE_MODEL_CONFIG = {
 
 
 GGUF_MODEL_CONFIG = {
+    "qwen35-2b": {
+        "id": "qwen35-2b",
+        "name": "Qwen3.5-2B-Uncensored",
+        "path": str(PROJECT_DIR / "models" / "gguf" / "Qwen3.5-2B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf"),
+        "format": "gguf",
+        "quantization": "Q4_K_M",
+        "n_ctx": 8192,
+        "n_threads": 16,
+        "n_gpu_layers": 40,
+        "description": "Qwen3.5 2B 无审查版本，轻量快速",
+    },
     "qwen3.5-9b-uncensored": {
         "id": "qwen3.5-9b-uncensored",
         "name": "Qwen3.5-9B-Uncensored",
-        "path": r"D:\Etertainment\Qwen3.5-9B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf",
+        "path": str(PROJECT_DIR / "models" / "llm" / "gguf" / "qwen3.5-9b-uncensored.gguf"),
         "format": "gguf",
         "quantization": "Q4_K_M",
-        "n_ctx": 4096,
-        "n_threads": 8,
+        "n_ctx": 8192,
+        "n_threads": 16,
+        "n_gpu_layers": 40,
         "description": "Qwen3.5 9B 无审查版本，适合自由对话",
     },
     "qwen3.5-uncensored": {
         "id": "qwen3.5-uncensored",
         "name": "Qwen3.5-Uncensored (Alias)",
-        "path": r"D:\Etertainment\Qwen3.5-9B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf",
+        "path": str(PROJECT_DIR / "models" / "llm" / "gguf" / "qwen3.5-9b-uncensored.gguf"),
         "format": "gguf",
         "quantization": "Q4_K_M",
-        "n_ctx": 4096,
-        "n_threads": 8,
+        "n_ctx": 8192,
+        "n_threads": 16,
+        "n_gpu_layers": 40,
         "description": "Qwen3.5 无审查版本别名",
+    },
+    "dasd-4b-thinking": {
+        "id": "dasd-4b-thinking",
+        "name": "DASD-4B-Thinking",
+        "path": str(PROJECT_DIR / "models" / "llm" / "gguf" / "dasd-4b-thinking.gguf"),
+        "format": "gguf",
+        "quantization": "F16",
+        "n_ctx": 8192,
+        "n_threads": 16,
+        "n_gpu_layers": 40,
+        "description": "DASD 4B 推理模型，支持视觉与深度思考",
     },
 }
 
@@ -231,7 +255,11 @@ def build_ollama_options(runtime_cfg: Dict[str, Any], preset_name: str = None) -
         "repeat_penalty": runtime_cfg.get("repeat_penalty", preset.get("repeat_penalty", 1.08)),
         "top_k": runtime_cfg.get("top_k", preset.get("top_k", 20)),
         "top_p": runtime_cfg.get("top_p", preset.get("top_p", 0.85)),
-        "num_predict": runtime_cfg.get("max_response_tokens", runtime_cfg.get("num_predict", preset.get("num_predict", 256))),
-        "num_ctx": runtime_cfg.get("num_ctx", preset.get("num_ctx", 2048)),
     }
+    num_ctx = runtime_cfg.get("num_ctx", preset.get("num_ctx", 2048))
+    if num_ctx is not None and num_ctx > 0:
+        options["num_ctx"] = num_ctx
+    max_tokens = runtime_cfg.get("max_response_tokens", runtime_cfg.get("num_predict"))
+    if max_tokens is not None and max_tokens > 0:
+        options["num_predict"] = max_tokens
     return {key: value for key, value in options.items() if value is not None}

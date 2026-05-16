@@ -204,7 +204,8 @@ const NativeImageGen = {
         try {
             const response = await fetch(`${this.serverUrl}/api/native_llama_cpp_image/health`);
             const result = await response.json();
-            const isHealthy = result.status === "ok" || result.success;
+            const serviceData = result.data || result;
+            const isHealthy = serviceData.loaded === true;
             this.state.serverHealthy = isHealthy;
             return isHealthy;
         } catch (error) {
@@ -309,7 +310,8 @@ const NativeImageGen = {
     async getStats() {
         try {
             const response = await fetch(`${this.serverUrl}/api/native_llama_cpp_image/health`);
-            return await response.json();
+            const result = await response.json();
+            return result.data || result;
         } catch (error) {
             console.error("获取统计失败:", error);
             return null;

@@ -41,7 +41,8 @@ const HybridGroupChat = (function() {
         emotionHistory: [],
         viewpointClusters: [],
         audioContext: null,
-        backendAvailable: false
+        backendAvailable: false,
+        pollingIntervalId: null
     };
     
     const callbacks = {
@@ -58,7 +59,7 @@ const HybridGroupChat = (function() {
             state.backendAvailable = await checkBackendAvailability();
             
             if (!state.backendAvailable) {
-                console.warn(`⚠️ 混合群聊后端服务未启动 (${window.location.hostname || 'localhost'}:5001)，仅提供基础界面`);
+                console.warn(`[WARN] 混合群聊后端服务未启动 (${window.location.hostname || 'localhost'}:5001)，仅提供基础界面`);
                 // showBackendUnavailableWarning(); // 不再阻塞 UI
                 showNotification('后端服务未连接，部分功能受限', 'warning');
             } else {
@@ -74,9 +75,9 @@ const HybridGroupChat = (function() {
                 startPolling();
             }
             
-            console.log('✅ HybridGroupChat 初始化完成');
+            console.log('[INIT] HybridGroupChat 初始化完成');
         } catch (e) {
-            console.error('❌ HybridGroupChat 初始化失败:', e);
+            console.error('[ERROR] HybridGroupChat 初始化失败:', e);
             renderPanels(); // 出错也尝试渲染
         }
     }
@@ -102,7 +103,7 @@ const HybridGroupChat = (function() {
         if (container) {
             container.innerHTML = `
                 <div class="hybrid-unavailable-warning">
-                    <div class="warning-icon">⚠️</div>
+                    <div class="warning-icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('warning', 32) : '⚠️'}</div>
                     <div class="warning-text">
                         <p>混合群聊控制面板需要后端服务支持</p>
                         <p class="warning-hint">请运行: python hybrid_group_chat_api.py</p>
@@ -178,13 +179,21 @@ const HybridGroupChat = (function() {
     }
     
     function startPolling() {
-        setInterval(() => {
+        if (state.pollingIntervalId !== null) return;
+        state.pollingIntervalId = setInterval(() => {
             if (state.isRunning && !state.isPaused) {
                 loadStatus();
                 loadEmotions();
                 loadViewpoints();
             }
         }, 3000);
+    }
+
+    function stopPolling() {
+        if (state.pollingIntervalId !== null) {
+            clearInterval(state.pollingIntervalId);
+            state.pollingIntervalId = null;
+        }
     }
     
     async function startAutoChat(topic = null) {
@@ -283,6 +292,7 @@ const HybridGroupChat = (function() {
             if (data.success) {
                 state.isRunning = false;
                 state.isPaused = false;
+                stopPolling();
                 showNotification('自动讨论已停止', 'info');
                 
                 await loadStatus();
@@ -433,7 +443,7 @@ const HybridGroupChat = (function() {
         return `
             <div class="hybrid-control-panel" id="hybridControlPanel">
                 <div class="control-header">
-                    <h3>🤖 混合智能控制</h3>
+                    <h3>${typeof SVGIcons !== 'undefined' ? SVGIcons.get('brain', 16) : SVGIcons.get('brain', 16)} 混合智能控制</h3>
                     <div class="control-status">
                         ${state.isRunning ? 
                             `<span class="status-badge running">运行中</span>` : 
@@ -486,19 +496,19 @@ const HybridGroupChat = (function() {
                 <div class="panel-toggles">
                     <button class="panel-toggle ${state.panels.emotion ? 'active' : ''}" 
                             onclick="HybridGroupChat.togglePanel('emotion')">
-                        💭 情感
+                        ${typeof SVGIcons !== 'undefined' ? SVGIcons.get('emotion', 14) : '💭'} 情感
                     </button>
                     <button class="panel-toggle ${state.panels.viewpoint ? 'active' : ''}" 
                             onclick="HybridGroupChat.togglePanel('viewpoint')">
-                        💡 观点
+                        ${typeof SVGIcons !== 'undefined' ? SVGIcons.get('tip', 14) : SVGIcons.get('tip', 14)} 观点
                     </button>
                     <button class="panel-toggle ${state.panels.world ? 'active' : ''}" 
                             onclick="HybridGroupChat.togglePanel('world')">
-                        🌍 世界
+                        ${typeof SVGIcons !== 'undefined' ? SVGIcons.get('world', 14) : '🌍'} 世界
                     </button>
                     <button class="panel-toggle ${state.panels.voice ? 'active' : ''}" 
                             onclick="HybridGroupChat.togglePanel('voice')">
-                        🔊 语音
+                        ${typeof SVGIcons !== 'undefined' ? SVGIcons.get('speaker', 14) : ''} 语音
                     </button>
                 </div>
             </div>
@@ -538,7 +548,7 @@ const HybridGroupChat = (function() {
         return `
             <div class="emotion-panel ${state.panels.emotion ? 'visible' : ''}" id="emotionPanel">
                 <div class="panel-header">
-                    <h4>💭 情感可视化</h4>
+                    <h4>${typeof SVGIcons !== 'undefined' ? SVGIcons.get('emotion', 14) : '💭'} 情感可视化</h4>
                     <button class="panel-close" onclick="HybridGroupChat.togglePanel('emotion')">×</button>
                 </div>
                 
@@ -593,7 +603,7 @@ const HybridGroupChat = (function() {
         return `
             <div class="viewpoint-panel ${state.panels.viewpoint ? 'visible' : ''}" id="viewpointPanel">
                 <div class="panel-header">
-                    <h4>💡 观点聚类</h4>
+                    <h4>${typeof SVGIcons !== 'undefined' ? SVGIcons.get('quote', 14) : SVGIcons.get('quote', 14)} 观点聚类</h4>
                     <button class="panel-close" onclick="HybridGroupChat.togglePanel('viewpoint')">×</button>
                 </div>
                 
@@ -669,7 +679,7 @@ const HybridGroupChat = (function() {
         const backendWarning = !state.backendAvailable ? 
             `<div class="voice-warning" style="background: #fff3e0; color: #e65100; padding: 12px; margin-bottom: 12px; border-radius: 6px; font-size: 13px; border: 1px solid #ffcc80;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                    <span style="font-size: 16px;">⚠️</span>
+                    <span style="font-size: 16px;">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('warning', 16) : '⚠️'}</span>
                     <strong>后端服务未连接</strong>
                 </div>
                 <div style="margin-bottom: 10px;">语音合成功能暂时不可用，请启动后端服务。</div>
@@ -684,29 +694,29 @@ const HybridGroupChat = (function() {
         return `
             <div class="voice-panel ${state.panels.voice ? 'visible' : ''}" id="hybridVoicePanel">
                 <div class="panel-header">
-                    <h4>🔊 语音合成</h4>
+                    <h4>${typeof SVGIcons !== 'undefined' ? SVGIcons.get('speaker', 16) : ''} 语音合成</h4>
                     <button class="panel-close" onclick="HybridGroupChat.togglePanel('voice')">×</button>
                 </div>
                 
                 <div class="voice-content">
                     ${backendWarning}
                     <p class="voice-info">
-                        根据角色性格自动匹配音色，点击消息旁的🔊按钮播放
+                        根据角色性格自动匹配音色，点击消息旁的${typeof SVGIcons !== 'undefined' ? SVGIcons.get('speaker', 12) : SVGIcons.get('speaker', 12)}按钮播放
                     </p>
                     
                     <div class="voice-profiles">
                         <h5>角色音色配置</h5>
                         <div class="profile-list">
                             <div class="profile-item">
-                                <span>🎭 古代书生</span>
+                                <span>${typeof SVGIcons !== 'undefined' ? SVGIcons.get('persona', 14) : SVGIcons.get('persona', 14)} 古代书生</span>
                                 <span class="profile-detail">音色: basa, 语速: 0.85x, 音调: -2</span>
                             </div>
                             <div class="profile-item">
-                                <span>🔬 科幻AI</span>
+                                <span>${typeof SVGIcons !== 'undefined' ? SVGIcons.get('model', 14) : SVGIcons.get('model', 14)} 科幻AI</span>
                                 <span class="profile-detail">音色: aidar, 语速: 1.1x, 音调: +5</span>
                             </div>
                             <div class="profile-item">
-                                <span>💼 心理咨询师</span>
+                                <span>${typeof SVGIcons !== 'undefined' ? SVGIcons.get('briefcase', 14) : SVGIcons.get('briefcase', 14)} 心理咨询师</span>
                                 <span class="profile-detail">音色: baya, 语速: 0.9x, 音调: +2</span>
                             </div>
                         </div>
@@ -719,7 +729,8 @@ const HybridGroupChat = (function() {
     async function startBackendService() {
         try {
             showNotification('正在启动后端服务...', 'info');
-            const response = await fetch('http://localhost:5001/api/health');
+            const apiBase = window.API?.config?.apiBaseUrl || `http://${window.location.hostname || 'localhost'}:5001`;
+            const response = await fetch(`${apiBase}/api/health`);
             if (response.ok) {
                 showNotification('后端服务已启动！正在重新连接...', 'success');
                 await checkBackendAvailability();
@@ -767,7 +778,22 @@ const HybridGroupChat = (function() {
             skeptical: '🤔',
             analytical: '🧐'
         };
-        return icons[emotion] || '😐';
+        const emoji = icons[emotion] || '😐';
+        // 映射到 SVG 图标
+        const svgMap = {
+            neutral: 'user',
+            happy: 'emotion',
+            sad: 'emotion',
+            angry: 'warning',
+            surprised: 'tip',
+            thoughtful: 'thinking',
+            curious: 'search',
+            enthusiastic: 'emotion',
+            skeptical: 'search',
+            analytical: 'brain'
+        };
+        const svgName = svgMap[emotion] || 'user';
+        return typeof SVGIcons !== 'undefined' ? SVGIcons.get(svgName, 16) : emoji;
     }
     
     function showNotification(message, type = 'info') {
@@ -829,6 +855,7 @@ const HybridGroupChat = (function() {
         pauseAutoChat,
         resumeAutoChat,
         stopAutoChat,
+        stopPolling,
         updateConfig,
         setWorldSetting,
         synthesizeSpeech,

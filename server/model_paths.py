@@ -54,6 +54,13 @@ else:
 # ASR 模型目录 - 使用 HuggingFace 缓存
 ASR_CACHE_DIR = HUGGINGFACE_CACHE_DIR
 
+# MOSS Audio Tokenizer 模型目录
+MOSS_AUDIO_TOKENIZER_DIR = os.path.join(MODELS_DIR, "moss-audio-tokenizer")
+if not os.path.isfile(os.path.join(MOSS_AUDIO_TOKENIZER_DIR, "config.json")):
+    _alt = os.path.join(PROJECT_DIR, "models", "moss-audio-tokenizer")
+    if os.path.isfile(os.path.join(_alt, "config.json")):
+        MOSS_AUDIO_TOKENIZER_DIR = _alt
+
 # 语言模型目录
 LLM_MODELS_DIR = os.path.join(MODELS_DIR, "llm")
 
@@ -98,6 +105,7 @@ def ensure_directories():
         WHISPER_CACHE_DIR,
         ASR_CACHE_DIR,
         IMAGE_MODELS_DIR,
+        MOSS_AUDIO_TOKENIZER_DIR,
     ]
     for directory in directories:
         os.makedirs(directory, exist_ok=True)
@@ -128,3 +136,4 @@ if os.environ.get("MODEL_PATHS_VERBOSE", "0") == "1":
     print(f"  Whisper: {WHISPER_CACHE_DIR}")
     print(f"  ASR: {ASR_CACHE_DIR}")
     print(f"  图片模型: {IMAGE_MODELS_DIR}")
+    print(f"  MOSS Audio Tokenizer: {MOSS_AUDIO_TOKENIZER_DIR}")

@@ -22,6 +22,10 @@ BASE_DIR = str(PROJECT_DIR)
 
 GGUF_META_CACHE = {}
 
+# 模型列表缓存（TTL 30秒）
+_models_cache = {"data": None, "timestamp": 0}
+_MODELS_CACHE_TTL = 30  # 秒
+
 
 def _get_dir_size(path):
     """计算目录总大小"""
@@ -58,6 +62,11 @@ def _scan_local_models():
     local_models = []
     scanned_models = set()
 
+    EXCLUDED_SUBDIRS = {
+        'vocab', 'audio', 'image', 'silero_voices', 'moss-audio-tokenizer',
+    }
+    EXCLUDED_GGUF_PREFIXES = ('ggml-vocab-',)
+
     scan_dirs = [
         os.path.join(BASE_DIR, 'models'),
         os.path.join(BASE_DIR, '.ollama', 'models'),
@@ -73,8 +82,15 @@ def _scan_local_models():
 
         try:
             for root, dirs, files in os.walk(scan_dir):
+                rel = os.path.relpath(root, scan_dir).replace('\\', '/').split('/')
+                if any(p in EXCLUDED_SUBDIRS for p in rel):
+                    dirs.clear()
+                    continue
+
                 for file in files:
                     if not file.endswith('.gguf'):
+                        continue
+                    if any(file.startswith(p) for p in EXCLUDED_GGUF_PREFIXES):
                         continue
                     file_path = os.path.join(root, file)
                     try:
@@ -199,8 +215,15 @@ def register_models_routes(app):
 
     @app.route('/api/models', methods=['GET'])
     def get_models_list():
-        """获取模型列表"""
+        """获取模型列表（带30秒缓存）"""
         try:
+            now = time.time()
+            if _models_cache["data"] is not None and (now - _models_cache["timestamp"]) < _MODELS_CACHE_TTL:
+                return jsonify(success_response(
+                    data=_models_cache["data"],
+                    message='获取模型列表成功(缓存)'
+                ))
+
             all_models = []
 
             try:
@@ -222,15 +245,34 @@ def register_models_routes(app):
 
             try:
                 local_models = _scan_local_models()
-                existing_names = {m['name'] for m in all_models}
+                existing_names = set()
+                for m in all_models:
+                    base = m['name'].replace(':latest', '').lower()
+                    existing_names.add(base)
+                    existing_names.add(m['name'].lower())
                 for local_model in local_models:
-                    if local_model['name'] not in existing_names:
+                    local_base = local_model['name'].replace(':latest', '').lower()
+                    if local_base not in existing_names and local_model['name'].lower() not in existing_names:
                         all_models.append(local_model)
+                        existing_names.add(local_base)
+                        existing_names.add(local_model['name'].lower())
+                    else:
+                        local_copy = dict(local_model)
+                        local_copy['name'] = local_model['name'] + '-local'
+                        local_copy['model'] = local_model.get('model', local_model['name']) + '-local'
+                        local_copy['source'] = 'local_file'
+                        local_copy['provider'] = 'local_fallback'
+                        all_models.append(local_copy)
+                        logger.info(f"添加本地副本模型: {local_copy['name']} (Ollama已有 {local_model['name']})")
             except Exception as e:
                 logger.warning(f"扫描本地模型失败: {e}")
 
+            result = {'models': all_models, 'count': len(all_models)}
+            _models_cache["data"] = result
+            _models_cache["timestamp"] = now
+
             return jsonify(success_response(
-                data={'models': all_models, 'count': len(all_models)},
+                data=result,
                 message='获取模型列表成功'
             ))
         except Exception as e:
@@ -284,23 +326,68 @@ def register_models_routes(app):
     @app.route('/v1/models', methods=['GET'])
     @require_api_key
     def openai_list_models():
-        """OpenAI 兼容模型列表"""
         try:
-            response = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=5)
+            all_model_names = set()
+            models = []
 
-            if response.ok:
-                ollama_models = response.json().get('models', [])
-                models = [{
-                    "id": m.get('name', ''),
-                    "object": "model",
-                    "created": int(time.time()),
-                    "owned_by": "local"
-                } for m in ollama_models]
+            try:
+                response = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=5)
+                if response.ok:
+                    ollama_models = response.json().get('models', [])
+                    for m in ollama_models:
+                        name = m.get('name', '')
+                        if name:
+                            all_model_names.add(name)
+                            models.append({
+                                "id": name,
+                                "object": "model",
+                                "created": int(time.time()),
+                                "owned_by": "local"
+                            })
+            except Exception:
+                pass
 
-                return jsonify(success_response(data={"object": "list", "data": models}))
-            else:
-                return jsonify(error_response("获取模型列表失败", 500)), 500
+            try:
+                local_models = _scan_local_models()
+                for lm in local_models:
+                    lname = lm.get('name', '')
+                    if lname and lname not in all_model_names:
+                        all_model_names.add(lname)
+                        models.append({
+                            "id": lname,
+                            "object": "model",
+                            "created": int(time.time()),
+                            "owned_by": "local"
+                        })
+            except Exception:
+                pass
+
+            return jsonify(success_response(data={"object": "list", "data": models}))
         except Exception as e:
             return jsonify(error_response(str(e), 500)), 500
+
+    @app.route('/api/voice/speakers', methods=['GET'])
+    def get_voice_speakers():
+        try:
+            from qwen3_tts_service import get_tts_service
+            tts = get_tts_service()
+            speakers = tts.get_available_speakers()
+            if isinstance(speakers, dict):
+                speaker_list = [
+                    {"id": k, "name": v.name, "description": v.description}
+                    for k, v in speakers.items()
+                ]
+            else:
+                speaker_list = [{"id": s, "name": s, "description": ""} for s in speakers]
+            return jsonify(success_response(data=speaker_list))
+        except Exception as e:
+            logger.warning(f"获取音色列表失败: {e}")
+            return jsonify(success_response(data=[
+                {"id": "default", "name": "默认", "description": "默认音色"},
+                {"id": "warm", "name": "温暖", "description": "温暖柔和的女声"},
+                {"id": "professional", "name": "专业", "description": "成熟男声"},
+                {"id": "cheerful", "name": "活泼", "description": "青春男声"},
+                {"id": "calm", "name": "冷静", "description": "沉稳男声"},
+            ]))
 
     logger.info("✓ 模型管理 API 路由已注册")

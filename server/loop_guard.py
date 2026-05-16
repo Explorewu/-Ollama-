@@ -144,8 +144,7 @@ class LoopGuard:
         return LoopReport(should_stop=False)
 
     def _extract_last_sentence(self, text: str) -> str:
-        """提取最后一个完整句子"""
-        sentences = re.split(r'[。！？.!?\n]+', text)
+        sentences = re.split(r'[。！？.!?\n]+', self.generated)
         return sentences[-1].strip() if sentences else ""
 
     def _check_char_patterns(self, text: str) -> LoopReport:

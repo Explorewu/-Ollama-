@@ -13,12 +13,6 @@
 const UnifiedAPIClient = (function() {
     
     const ServiceConfig = {
-        ollama: {
-            baseUrl: `http://${window.location.hostname || 'localhost'}:11434`,
-            timeout: 120000,
-            healthEndpoint: '/api/tags',
-            priority: 1
-        },
         backend: {
             baseUrl: `http://${window.location.hostname || 'localhost'}:5001`,
             timeout: 60000,
@@ -76,7 +70,8 @@ const UnifiedAPIClient = (function() {
             avgResponseTime: 0
         },
         responseTimes: [],
-        isInitialized: false
+        isInitialized: false,
+        cacheCleanupTimer: null
     };
 
     function init() {
@@ -117,14 +112,25 @@ const UnifiedAPIClient = (function() {
             state.cache.forEach((value, key) => {
                 data[key] = value;
             });
+            const serialized = JSON.stringify(data);
+            if (serialized.length > 2 * 1024 * 1024) {
+                const keys = Object.keys(data);
+                while (keys.length > CacheConfig.maxSize / 2) {
+                    const oldestKey = keys.shift();
+                    delete data[oldestKey];
+                    state.cache.delete(oldestKey);
+                }
+            }
             localStorage.setItem('api_cache', JSON.stringify(data));
         } catch (e) {
             console.warn('[UnifiedAPIClient] 保存缓存失败:', e);
+            try { localStorage.removeItem('api_cache'); } catch(_) {}
         }
     }
 
     function startCacheCleanup() {
-        setInterval(() => {
+        if (state.cacheCleanupTimer) clearInterval(state.cacheCleanupTimer);
+        state.cacheCleanupTimer = setInterval(() => {
             const now = Date.now();
             let cleaned = 0;
             
@@ -141,8 +147,15 @@ const UnifiedAPIClient = (function() {
         }, 60000);
     }
 
+    function stableStringify(obj) {
+        if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+        if (Array.isArray(obj)) return '[' + obj.map(stableStringify).join(',') + ']';
+        const keys = Object.keys(obj).sort();
+        return '{' + keys.map(k => JSON.stringify(k) + ':' + stableStringify(obj[k])).join(',') + '}';
+    }
+
     function generateCacheKey(service, endpoint, method, data) {
-        const dataHash = data ? JSON.stringify(data) : '';
+        const dataHash = data ? stableStringify(data) : '';
         return `${service}:${method}:${endpoint}:${dataHash}`;
     }
 
@@ -201,7 +214,7 @@ const UnifiedAPIClient = (function() {
 
     async function getApiKey() {
         // 优先从 localStorage 获取
-        const storedKey = localStorage.getItem('api_key');
+        const storedKey = sessionStorage.getItem('api_key');
         if (storedKey) {
             return storedKey;
         }

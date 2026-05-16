@@ -12,12 +12,14 @@
 
 import os
 import re
+import json
+import base64
 import hashlib
 import secrets
+import hmac as _hmac_mod
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-import json
 
 # ==================== 路径遍历防护 ====================
 
@@ -48,6 +50,12 @@ def sanitize_path(user_path: str, allowed_base: str, allowed_extensions: List[st
         # 检查是否在允许的目录内
         allowed_base_abs = os.path.abspath(allowed_base)
         if not full_path.startswith(allowed_base_abs):
+            return None
+        
+        # realpath 二次验证：防止符号链接绕过
+        real_path = os.path.realpath(full_path)
+        real_base = os.path.realpath(allowed_base_abs)
+        if not real_path.startswith(real_base + os.sep) and real_path != real_base:
             return None
         
         # 检查扩展名
@@ -89,6 +97,12 @@ def validate_file_path(file_path: str, allowed_dirs: List[str],
             full_path = os.path.abspath(os.path.join(allowed_dir, normalized))
             
             if full_path.startswith(allowed_abs):
+                # realpath 二次验证：防止符号链接绕过
+                real_path = os.path.realpath(full_path)
+                real_base = os.path.realpath(allowed_abs)
+                if not (real_path.startswith(real_base + os.sep) or real_path == real_base):
+                    continue
+                    
                 # 检查扩展名
                 if allowed_extensions:
                     ext = os.path.splitext(full_path)[1].lower()
@@ -162,6 +176,19 @@ def validate_integer_input(value: Any, min_val: int = None,
 
 # ==================== API Key 加密存储 ====================
 
+_KEY_ENCRYPT_SALT = b"ollama_hub_key_salt_2024"
+
+def _encrypt_key(key: str) -> str:
+    derived = hashlib.pbkdf2_hmac('sha256', key.encode(), _KEY_ENCRYPT_SALT, 100000)
+    return base64.b64encode(derived).decode()
+
+def _verify_key(key: str, encrypted: str) -> bool:
+    derived = hashlib.pbkdf2_hmac('sha256', key.encode(), _KEY_ENCRYPT_SALT, 100000)
+    return _hmac_mod.compare_digest(base64.b64encode(derived).decode(), encrypted)
+
+def _is_legacy_hash(stored: str) -> bool:
+    return len(stored) == 64 and all(c in '0123456789abcdef' for c in stored)
+
 class EncryptedKeyStore:
     """加密的 API Key 存储"""
     
@@ -182,7 +209,7 @@ class EncryptedKeyStore:
             self._keys = {}
     
     def _save_keys(self):
-        """保存密钥（明文，实际应使用加密库）"""
+        """保存密钥（使用 PBKDF2 加密存储）"""
         try:
             os.makedirs(os.path.dirname(self.store_path), exist_ok=True)
             data = {
@@ -205,7 +232,7 @@ class EncryptedKeyStore:
             'id': key_id,
             'name': name or f"API Key #{len(self._keys) + 1}",
             'description': description or '',
-            'key_hash': hashlib.sha256(full_key.encode()).hexdigest(),
+            'key_hash': _encrypt_key(full_key),
             'prefix': key_prefix,
             'created_at': datetime.now().isoformat(),
             'last_used_at': None,
@@ -225,15 +252,24 @@ class EncryptedKeyStore:
         }
     
     def verify_key(self, key: str) -> Optional[Dict]:
-        """验证密钥"""
+        """验证密钥（支持旧格式自动迁移）"""
         if not key or not key.startswith('oll_'):
             return None
         
-        key_hash = hashlib.sha256(key.encode()).hexdigest()
-        
         for key_id, key_info in self._keys.items():
-            if key_info['key_hash'] == key_hash and key_info['is_active']:
-                return key_info
+            if not key_info['is_active']:
+                continue
+            stored_hash = key_info.get('key_hash', '')
+            
+            if _is_legacy_hash(stored_hash):
+                legacy_hash = hashlib.sha256(key.encode()).hexdigest()
+                if legacy_hash == stored_hash:
+                    key_info['key_hash'] = _encrypt_key(key)
+                    self._save_keys()
+                    return key_info
+            else:
+                if _verify_key(key, stored_hash):
+                    return key_info
         
         return None
     

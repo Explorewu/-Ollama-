@@ -665,7 +665,17 @@ class SemanticRetriever:
             try:
                 self._index_cache = faiss.read_index(index_file)
                 self._index_path = index_file
-            except RuntimeError as e:
+                if hasattr(self, 'model') and self.model is not None:
+                    expected_dim = self.model.get_sentence_embedding_dimension()
+                    actual_dim = self._index_cache.d
+                    if expected_dim and actual_dim != expected_dim:
+                        raise RuntimeError(
+                            f"向量维度不匹配: 索引维度={actual_dim}, 模型维度={expected_dim}。"
+                            f"模型配置可能已更改，请使用 --build 重新构建索引。"
+                        )
+            except RuntimeError:
+                raise
+            except Exception as e:
                 logger.error(f"加载faiss索引失败: {e}")
                 raise RuntimeError(f"索引文件不存在或损坏，请重新构建索引: {index_file}")
 
@@ -1300,8 +1310,10 @@ class IndexManager:
         """加载已有索引"""
         if self.retriever.semantic_retriever is not None:
             self.retriever.semantic_retriever.load_model()
+            expected_dim = self.retriever.semantic_retriever.model.get_sentence_embedding_dimension()
         else:
             logger.info("跳过语义模型加载（已禁用）")
+            expected_dim = None
         
         chunks_path = self.path_manager.chunks
         bm25_path = self.path_manager.bm25_docs
@@ -1322,6 +1334,17 @@ class IndexManager:
                 self.retriever.semantic_retriever.chunk_map = {
                     i: chunks[i] for i in range(len(chunks))
                 }
+                faiss_index_path = self.path_manager.faiss_index
+                if faiss_index_path.exists():
+                    temp_index = faiss.read_index(str(faiss_index_path))
+                    actual_dim = temp_index.d
+                    expected_dim = self.retriever.semantic_retriever.model.get_sentence_embedding_dimension()
+                    del temp_index
+                    if actual_dim != expected_dim:
+                        raise RuntimeError(
+                            f"向量维度不匹配: 索引维度={actual_dim}, 模型维度={expected_dim}。"
+                            f"模型 '{self.retriever.semantic_retriever.model_name}' 配置可能已更改，请重新构建索引。"
+                        )
             except (IndexError, KeyError) as e:
                 logger.error(f"索引数据结构异常: {e}")
                 raise RuntimeError("索引数据结构损坏")

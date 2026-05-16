@@ -1,5 +1,157 @@
 # 项目重构记录
 
+## [2026-05-12] 产品侧壁垒 Phase 1: 统一记忆层 + 知识飞轮
+
+**目标**: 构建产品侧壁垒，通过数据沉淀和体验差异化提升迁移成本和技术独占性。
+
+**架构**: 读写分离，读并行，写异步。读路径并行检索TEMG+KG+Memory+RAG四引擎，写路径全部后台线程零阻塞。
+
+**新增模块**:
+1. `server/unified_memory.py` — 统一记忆层，ThreadPoolExecutor并行查询，LRU缓存30sTTL，后台异步写入，200ms超时硬限制
+2. `server/knowledge_flywheel.py` — 知识飞轮，SQLite增量索引，BM25检索，目录轮询监控，自动索引新增/修改文件
+3. `server/api/unified_memory.py` — 统一记忆API蓝图
+4. `server/api/knowledge_flywheel.py` — 知识飞轮API蓝图
+
+**Chat流水线改造**:
+- `_build_chat_messages`中TEMG串行recall→UnifiedMemoryLayer并行query(TEMG+KG+Memory+RAG)
+- 对话结束后分散的`_temg_ingest_turn`+`_kg_extract_if_available`→`_unified_memory_store`统一异步写入
+- 降级保障：UnifiedMemoryLayer不可用时自动回退到原分散调用
+
+**API端点**:
+- `POST /api/unified-memory/query` — 并行记忆查询
+- `GET /api/unified-memory/stats` — 记忆统计
+- `POST /api/unified-memory/search` — 跨引擎搜索
+- `POST /api/flywheel/index` — 索引目录
+- `POST /api/flywheel/search` — 知识搜索
+- `GET /api/flywheel/status` — 飞轮状态
+- `POST/DELETE /api/flywheel/watch` — 目录监控管理
+
+**修改文件**: server/api/chat.py, server/api/__init__.py, server/intelligent_api.py
+
+## [2026-05-12] Phase 2: 基于数据的快速优化 — check_availability合并 + Fast Path
+
+**数据驱动**: Phase 1 采集到真实timing数据，发现两大瓶颈：check_availability 4,117ms（同一接口调2次）+ AutoToolCaller对闲聊请求注入工具定义导致LLM调用慢12,000ms。
+
+**优化内容**:
+1. 合并 check_availability：用 `_get_ollama_model_names()` 一次调用同时判断可用性和模型存在性，省2,200ms
+2. Fast Path：CASC意图分类结果传递到路由层，闲聊/问候/情感类意图跳过AutoToolCaller，省~10,000ms
+3. `_build_chat_messages` 返回值增加 `casc_intent`，供路由层做分流决策
+4. `_handle_auto_tool_call_non_stream` 补全 timing 采集（之前遗漏）
+
+**优化效果**:
+- check_availability: 4,117ms → 2,110ms (-49%)
+- 总耗时: 22,825ms → 11,006ms (-52%)
+- 闲聊请求确认走 Fast Path（无 tool_call_state）
+
+**修改文件**: server/api/chat.py
+
+## [2026-05-11] Phase 1: 请求流水线 Timing 采集中间件
+
+**根因**: 系统无任何性能指标采集，所有优化只能猜测。首Token延迟可能来自Prompt构建阻塞而非推理。
+
+**实现内容**:
+1. 新增 `server/timing_collector.py` — 线程安全的计时采集器，单例模式
+2. 修改 `server/api/chat.py` — 在请求流水线8个关键节点注入计时
+3. 新增 `GET /api/chat/timing` API — 查询聚合统计/最近请求/清除数据
+4. SSE 流末尾输出 `timing` 事件 — 前端可实时获取延迟数据
+
+**采集节点**: input_parse → web_search → pre_enhance → temg_recall → casc_classify → context_compress → build_messages → manage_context → build_payload → check_availability → llm_first_token → stream_tok/s
+
+**API用法**:
+- `GET /api/chat/timing` — 聚合统计(avg/p95/max/min)
+- `GET /api/chat/timing?action=recent&limit=20` — 最近请求明细
+- `GET /api/chat/timing?action=clear` — 清除数据
+
+**修改文件**: server/timing_collector.py(新), server/api/chat.py
+
+## [2026-05-11] GPU加速优化 - 启用Vulkan + CPU/GPU混合加载
+
+**根因**: Ollama日志显示 `Vulkan support disabled`，Intel Arc 140T GPU完全闲置，模型100%在CPU运行。
+
+**修复内容**:
+1. 设置系统环境变量 `OLLAMA_VULKAN=1`，启用Ollama Vulkan GPU加速
+2. start_daemon.py 启动Ollama时注入 `OLLAMA_VULKAN=1`
+3. CPU线程数 8→16（充分利用Ultra 9 285H全部核心）
+4. GPU_LAYERS 99→40（CPU+GPU混合加载，避免集成GPU内存溢出）
+5. GGUF_MODEL_CONFIG 增加 n_gpu_layers=40 配置
+6. SemanticStreamBuffer: min_chunk 80→30, max_delay 120→80ms（减少首Token延迟）
+
+**预期提升**: 首Token延迟 3-5倍，生成速度 3-5倍
+
+**修改文件**: local_model_loader.py, config.py, chat.py, start_daemon.py
+
+## [2026-05-10] 第二轮BUG修复 - 并发与数据处理问题
+
+修复了用户指定的7个BUG，涉及并发安全、数据完整性、算法稳定性：
+
+### 修复的问题
+
+1. **BUG-022: memory_service.py 并发写入内存损坏** (高优先级)
+   - 问题: 定义了 `_write_lock` 但从未使用，高并发时数据损坏
+   - 修复: 添加 `_memory_lock = threading.Lock()`，在 `_load_all()` 和 `_save_all()` 中使用
+   - 删除未使用的 `_write_queue` 和 `_write_lock`
+
+2. **BUG-023: rag_system.py 向量数据库维度不匹配** (高优先级)
+   - 问题: 索引加载时未验证向量维度与模型是否匹配
+   - 修复: 在 `SemanticRetriever._search_index()` 和 `IndexManager.load_index()` 中添加维度验证
+   - 维度不匹配时抛出明确错误，提示重新构建索引
+
+3. **BUG-028: ceee_engine.py 稀疏区域选择逻辑缺陷** (中优先级)
+   - 问题: 当所有邻居密度都>0时，不会选出任何稀疏区域，导致演化搜索多样性不足
+   - 修复: 先检查是否有完全空闲（密度=0）的区域，有则优先返回
+
+4. **BUG-029: context_compressor.py L3策略丢失历史信息** (中优先级)
+   - 问题: 滑动窗口只保留最近轮次，丢弃的历史信息中可能有关键事实
+   - 修复: 添加 `_extract_important_info()` 方法，从即将丢弃的消息中提取重要内容作为摘要
+
+5. **BUG-030: knowledge_graph.py LLM提取失败静默忽略** (中优先级)
+   - 问题: `logger.debug()` 级别太低，生产环境看不到错误信息
+   - 修复: 改为 `logger.warning()`，并区分 HTTP错误、JSON解析失败、ImportError
+
+6. **BUG-031: ciscg_engine.py N-gram模型数据稀疏** (低优先级)
+   - 问题: 语料不足时 N-gram 模型不可靠
+   - 修复: 添加平滑技术（Add-k smoothing），语料<10条时警告，词汇表固定大小
+
+7. **BUG-032: init.js 本地存储键名格式不一致** (低优先级)
+   - 问题: 硬编码字符串分散各处，维护困难
+   - 修复: 定义 `StorageKeys` 常量对象统一管理，所有 localStorage 操作使用常量
+
+**修复文件**:
+- server/memory_service.py
+- rag_system.py
+- server/ceee_engine.py
+- server/context_compressor.py
+- server/knowledge_graph.py
+- server/ciscg_engine.py
+- web/js/app/init.js
+
+## [2026-05-05] SELSS 自进化语言技能系统集成
+
+采用分层扩展方案，在现有function_engine上构建六层SELSS架构：
+
+### 架构
+P1技能注册表(三级tier+生命力+SQLite) → P2语义检索(Ollama/GGUF/TF-IDF三级) → P3执行环路(调用-执行-反馈) → P4自进化(触发/蒸馏/沙箱) → P5治理(去重/淘汰/自适应) → P6前端(技能面板/教学/治理)
+
+### 新增文件
+- `server/skill_retriever.py` - 语义检索引擎
+- `server/skill_execution.py` - 执行环路引擎
+- `server/skill_evolution.py` - 自进化管理器
+- `server/skill_governor.py` - 治理模块
+
+### 修改文件
+- `server/function_engine.py` - 扩展SkillRegistry(三级/生命力/SQLite持久化)
+- `server/api/functions.py` - 新增30+条API路由
+- `web/js/features/function_manager.js` - 新增SkillManager前端
+- `web/js/core/query_loop.js` - 集成SkillExecutionAdapter
+- `web/index.html` - 技能页面/导航/样式
+
+### 关键设计
+- 技能三级: atomic(原子) → logic(逻辑组合) → workflow(工作流)
+- 生命力SVS: 频率×0.4 + 成功率×0.3 + 时效×0.2 + 年龄×0.1
+- 进化触发: 失败补偿/组合成功/直接教学
+- 沙箱验证: 重放测试+变异测试+静态检查
+- 自适应控制: 根据准确率/延迟/Token动态调整检索参数
+
 ## [2026-04-01] 接入 Qwen3.5-9B-Uncensored GGUF 模型
 
 将 D:\Etertainment 目录下的 GGUF 模型接入系统：

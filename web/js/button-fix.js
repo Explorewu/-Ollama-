@@ -166,8 +166,10 @@
             `;
             chatHistory.appendChild(assistantMsg);
             
-            // 滚动到底部
-            chatHistory.scrollTop = chatHistory.scrollHeight;
+            const nearBottom = chatHistory.scrollHeight - chatHistory.scrollTop - chatHistory.clientHeight < 80;
+            if (nearBottom) {
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
             
             // 清空输入框
             const chatInput = document.getElementById('chatInput');

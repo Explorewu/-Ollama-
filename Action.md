@@ -1,284 +1,206 @@
-# 🔄 TTS 无声音问题修复 - Action Log
+# Action Log
 
----
-## 📅 日期
-2026-04-12
+## 2026-05-11: 前端冗余文件清理
 
-## 🎯 任务目标
-修复群聊 TTS 功能无声音输出的问题
+### 问题
+前端存在大量未被引用的文件和重复功能代码，导致代码库混乱、维护困难。
 
-### 🔍 问题分析（根本原因）
-**现象**: TTS 功能无声音输出，后端 API 调用成功但前端没有播放
+### 清理内容
+1. **删除 js/app/ 目录（12个文件）**：avatar.js, behavior-contract.js, chat-background.js, conversation.js, group-chat.js, init.js, message-render.js, message-send.js, settings-ui.js, sidebar.js, stream-recovery.js, tts.js - 功能已在index.html内联实现
+2. **删除 js/core/ 未引用文件（7个）**：app.events.js, app.group.js, app.persona.js, app.search.js, app.settings.js, app.v3.js, query_loop_bridge.js
+3. **保留并重建 js/core/ 被引用文件（3个）**：svg_icons.js, app.feature_toggle.js, query_loop.js - 被index.html引用，误删后重建
+4. **删除 js/services/ 冗余文件（2个）**：health_monitor.js（保留v3）, module_manager.js
+5. **删除 css/legacy/ 未引用文件（36个）**：仅保留被主题变体使用的4个文件（chat-input-artistic.css, chat-input-modern.css, music.css, settings-artistic.css）
 
-**排查过程**:
-1. 检查 silero_tts_service.py 发现 `synthesize_to_result()` 首次调用时序错误
-   - 初始化时 `_use_edge_tts=False`
-   - 调用时先检查 `_use_edge_tts` 再走 `load_model()`
-   - 导致首次调用永远走 Silero 路径，但 `self.model=None`，返回 `None`
-   - 第二次调用才正确走 edge-tts 路径
-2. 检查前端发现 `addGroupMessage()` 渲染消息时没有 TTS 播放按钮
-3. `hybrid_group_chat.js` 虽然定义了 `synthesizeSpeech` 但未被任何 HTML 引用
+### 收益
+- 减少约50个冗余文件
+- 代码库更清晰，避免维护困惑
+- 消除HealthMonitor重复定义冲突
 
-### ✅ 修复方案
-1. **修复 silero_tts_service.py**:
-   - `synthesize()` 和 `synthesize_to_result()` 先调用 `load_model()` 再检查 `_use_edge_tts`
-   - 简化 asyncio 事件循环处理，使用 `asyncio.run()` 避免 Flask 线程问题
+## 2026-05-11: 音乐模块前端API对齐与系统性排查修复
 
-2. **修复 index.html**:
-   - 添加 `playGroupAudio()` 和 `synthesizeGroupSpeech()` 函数
-   - 为 `assistant` 角色消息添加 🔊 播放按钮
-   - 按钮绑定 TTS 合成和播放逻辑
+### 问题
+音乐模块(music_ui.js)与播放器核心(music_player.js)存在严重的API不匹配，导致模块无法初始化和交互。技能模块正常。
 
-### 📊 测试结果
-```
-测试1: silero_tts_service 首次调用 - PASS (rate=24000, dur=1536.0ms)
-测试2: 多角色合成 - PASS
-测试3: API模拟 - PASS
-测试4: qwen3_tts_service - PASS (ch=1 rate=24000 frames=32640)
-```
-✅ 所有测试通过，首次调用即可成功合成语音
+### 修复内容
+1. **service.state→getState()**：music_ui.js访问不存在的state属性，改为调用getState()方法
+2. **事件名对齐**：MusicPlayer发出onPlay/onPause/onTrackChange等，MusicUI监听play/pause/trackChange，7/8事件名不匹配，全部加on前缀
+3. **方法名对齐**：seek(pct)→seekByProgress(pct)、prev()→previous()、setMode()→setPlayMode()、play(trackId)→playTrack(idx)、scan()→scanLibrary()、getPlaylists()→fetchPlaylists()、getLibrary()→fetchLibrary()
+4. **添加toggleMute()**：MusicPlayer新增muted状态和toggleMute()方法
+5. **播放模式名**：repeat→loop、repeat-one→single
+6. **Dock导航**：添加音乐图标入口
+7. **进度数据**：data.current→data.currentTime
 
-### 📝 修改文件
-- [silero_tts_service.py](file:///D:/Explore/ollma/server/silero_tts_service.py) — 修复首次调用时序错误
-- [qwen3_tts_service.py](file:///D:/Explore/ollma/server/qwen3_tts_service.py) — 简化 asyncio 处理
-- [index.html](file:///D:/Explore/ollma/web/index.html) — 添加 TTS 播放按钮和功能
+## 2026-05-11: GGUF调用流程性能优化与Bug修复
 
----
-## 🔧 Voice Call TTS 调试信息添加 - 2026-04-12
+### 问题
+GGUF模型调用存在严重性能问题：单次请求触发4次完整磁盘扫描，llama-server启动阻塞最长300秒。
 
-### 🎯 任务目标
-为 voice_call 模块添加 TTS 调试日志，排查语音通话中 TTS 无声音问题
+### 修复内容（local_model_loader.py）
+1. **发现缓存**：`_discover_gguf_models()`/`_discover_safetensors_models()` 添加30秒TTL缓存，磁盘扫描从每次40ms降至0ms（命中时）
+2. **消除冗余**：`is_local_model_available()` 不再重复调用 `get_gguf_model_path()`
+3. **启动优化**：`STARTUP_TIMEOUT` 从300s降至120s，轮询间隔自适应（0.5s→1s→2s）
+4. **匹配安全**：模糊匹配从 `in` 子串改为分隔符边界匹配，防止 `qwen3` 误匹配 `qwen3.5-9b-uncensored`
+5. **健康检查**：连续2次失败才杀进程，避免长请求时误杀
+6. **并发安全**：`_get_llama_server()` 添加per-model锁，防止重复启动
+7. **搜索目录**：移除 `~/.ollama/models`（blob目录无GGUF文件，扫描极慢）
+8. **卸载精确**：`unload_model()` key匹配要求后缀为纯数字，防止误删
 
-### 📝 修改内容
-1. **voice_call.js**:
-   - `_playAudio()`: 添加 base64长度、解码字节数、AudioContext状态、音频时长等调试信息
-   - `_processAudioQueue()`: 添加队列长度、isPlaying状态等调试信息
-   - `ai_audio`消息处理: 添加音频长度、采样率、时长等调试信息
+## 2026-05-12: 动态Favicon状态管理器 + 启动脚本修复
 
-2. **voice_call_service.py**:
-   - TTS初始化: 添加服务状态和详细错误堆栈
-   - `_synthesize_speech()`: 添加入口参数和TTS服务状态检查
-   - 语音合成过程: 添加合成结果、base64长度、消息发送状态
+### 问题
+1. 浏览器标签页图标是静态emoji，无法反映模型实时状态
+2. 启动脚本端口冲突时无法自动恢复
 
-### 📊 调试日志示例
-```
-[TTS Debug] _synthesize_speech 被调用, text长度=50, interrupted=False
-[TTS Debug] TTS服务可用，开始处理文本: '你好，我是AI助手...'
-[TTS Debug] 开始合成语音: '你好，我是AI助手...' speaker=default
-[TTS Debug] 合成结果: True, interrupted=False
-[TTS Debug] base64转换完成, 长度: 159804
-[TTS Debug] ai_audio 消息已发送, 时长: 2496.0ms, 采样率: 24000
+### 改动
+1. **FaviconManager**（index.html）：根据模型8种状态（idle/thinking/searching/generating/summarizing/answering/done/error/unavailable）动态生成SVG文字图标，每种状态有独立颜色、字体和CSS动画（呼吸/旋转/脉冲/抖动）
+2. **updateStage钩子**：FaviconManager.setState(stage) 接入状态变更事件
+3. **健康监听**：HealthMonitor检测到所有服务不可用时自动切换unavailable状态
+4. **start_all.bat**：添加 `--force` 参数，端口冲突时自动停旧服务重启
 
-[TTS Debug] 收到 ai_audio 消息, audio长度: 159804, sampleRate: 24000, duration: 2496
-[TTS Debug] _processAudioQueue 被调用, isPlaying: false, 队列长度: 1, isInCall: true
-[TTS Debug] _playAudio 被调用, base64长度: 159804
-[TTS Debug] base64解码成功, 字节数: 119808
-[TTS Debug] AudioContext 状态: running
-[TTS Debug] 音频解码成功, 时长: 2.496 秒, 采样率: 24000
-[TTS Debug] 音频已开始播放
-```
+### 修复
+- KnowledgeGraphPanel变量声明被误删导致searchInput未定义：恢复overlay/panel/searchInput等7个DOM引用声明
 
-### 📝 修改文件
-- [voice_call.js](file:///D:/Explore/ollma/web/js/features/voice_call.js) — 添加前端TTS调试日志
-- [voice_call_service.py](file:///D:/Explore/ollma/server/voice_call_service.py) — 添加后端TTS调试日志
+## 2026-05-12: 模型可用性检查统一标准化
 
----
+### 问题
+模型可用性检查逻辑分散在 chat.py 和 voice_call_service.py 中，各自直接调用 local_model_loader 和 model_registry，导致：
+1. 降级逻辑不一致（chat.py 已用 model_availability.py，voice_call_service.py 仍直接调用）
+2. 冗余的 is_gguf 重复检查（generate_response 内部函数中重复获取）
+3. 缺少 Ollama 前置检查（voice_call_service 直接发 HTTP 请求才知道不可用）
 
-# 🔄 启动文件合并与优化 - Action Log
+### 改动
+1. **voice_call_service.py**：`_try_local_model_stream` 改用 `check_model_availability()`，保留 ImportError 降级到旧路径；`_try_ollama_stream` 新增 Ollama 前置可用性检查
+2. **chat.py**：移除 `generate_response` 和 `_handle_chat` 非流式路径中的冗余 `is_gguf = is_gguf_model(model)`（外层已获取）；`_handle_auto_tool_call_stream` 和 `_handle_auto_tool_call_non_stream` 改用 `check_model_availability()`，ImportError 时降级到旧路径
 
----
-## 📅 日期
-2026-04-10
+## 2026-05-12: 对话组标签栏样式重设计 + 初始化时序修复
 
-## 🎯 任务目标
-从根源解决 llama-server 中文输出乱码问题
+### 问题
+1. 对话组标签栏样式简陋，缺乏精致感。
+2. 对话组标签栏始终为空（`<!-- 动态填充 -->`），因为初始化代码在普通 `<script>` 中同步执行，此时 `defer` 加载的 `unified_conv_group.js` 尚未执行，`UnifiedConvGroup` 为 `undefined`，导致 `if` 判断失败，初始化代码从未运行。
 
-### 🔍 问题分析（根本原因）
-**现象**: 通过后端 API 调用 GGUF 模型时，中文输出显示为乱码（如 `浣犲ソ锛?`）
+### 改动
+1. **样式重设计**（"温润精致"风格）：
+   - 标签栏背景改为 `linear-gradient(180deg, var(--bg-primary), var(--bg-secondary))` 渐变
+   - 标签增加 `font-weight: 450` 和 `letter-spacing: 0.01em` 优化字重
+   - 激活标签增加底部细线指示器（`::after` 伪元素）
+   - 颜色圆点 hover 时放大 1.15x，激活时带光晕阴影
+   - "+" 按钮 hover 时 SVG 旋转 90° 动画
+   - 右键菜单增加 `backdrop-filter: blur(12px)` 毛玻璃效果
+   - 所有过渡动画统一为 `cubic-bezier(0.25, 1, 0.5, 1)` 缓动曲线
+2. **初始化时序修复**：将对话组系统初始化代码包裹在 `document.addEventListener('DOMContentLoaded', ...)` 中，确保在 `defer` 脚本执行完毕后再初始化。
 
-**排查过程**:
-1. 初步怀疑 Windows 控制台 GBK 编码导致 llama-server 输出损坏
-2. 尝试 `chcp 65001` 强制 UTF-8、临时 .bat 启动脚本、`_repair_llama_server_encoding()` 修复函数——均无效
-3. **关键测试**: 直接调用 llama-server HTTP API，将响应写入 UTF-8 文件查看 → **内容完全正确**
-4. **结论**: 数据本身始终是正确的 UTF-8，"乱码"是 PowerShell 终端 GBK 显示编码导致的假象
+## 2026-05-14: 前端直连 Ollama 全部改为后端代理
 
-### ✅ 最终方案
-1. **删除错误的 `_repair_llama_server_encoding()` 函数** — 它把正确的 UTF-8 搞坏了
-2. **保留原始 `.bat` 启动方式**（带 chcp 65001）— 虽然对数据无影响，但不影响功能
-3. **验证方式改为写入文件读取**，避免终端显示干扰判断
+### 问题
+前端多处代码直接请求 Ollama 的 11434 端口，导致 CORS 跨域错误。浏览器拦截了跨域请求，但后端代理（5001 端口）配了 CORS 头所以没问题。
 
-### 📊 测试结果
-```
-输入: "你好，简单介绍一下你自己"
-输出: 你好！我是 Qwen3.5，阿里巴巴最新推出的通义千问大语言模型。
-      **核心特点：** 逻辑推理、视觉深度解析、全栈编程...
-```
-✅ 中文输出完全正确，278 字符无乱码
+### 改动
+1. **api.js**：移除 `baseUrl`（11434）配置，`request()` 全部走 `backend` 服务；`checkHealth()` 改用 `/api/health`；`getAllModels()`/`pullModel()`/`generate()` 的 `baseUrl` 全部改为 `apiBaseUrl`
+2. **unified_client.js**：移除 `ServiceConfig.ollama` 服务配置，前端不再维护 Ollama 直连地址
+3. **group_chat_enhanced.js**：`fetch` 从 `localhost:11434/api/chat` 改为 `localhost:5001/api/ollama/chat`
+4.5. **vision-api.js**：`fetch` 从 `localhost:11434/api/generate` 改为 `localhost:5001/api/generate`
+6. **health_monitor.v3.js**：回退配置中 ollama 的 `baseUrl` 从 11434 改为 5001
+7. **ollama_proxy.py**：新增 `/api/ollama/chat` 路由，转发到 Ollama 的 `/api/chat`（避免与后端主聊天路由冲突）
 
-### 📝 修改文件
-- [local_model_loader.py](file:///D:/Explore/ollma/server/local_model_loader.py) — 删除 `_repair_llama_server_encoding` 函数及调用
+## 2026-05-15: 音乐播放器CSS UI重设计
 
----
-## 🔧 一键启动 + 前端降级双保险 - 2026-04-10 (续)
+### 改动（music.css）
+1. **环境光晕**：新增 `.music-ambient-glow`，blur(80px)背景光，播放时4s呼吸脉冲动画，暗色模式独立参数
+2. **封面呼吸**：`.music-cover-frame.playing` 添加 scale(1→1.02→1) 4s呼吸动画
+3. **波形可视化器**：重构为双层结构（bars+reflection），圆角顶部、渐变色、变化宽度、底部倒影遮罩
+4. **简化列表**：6列→4列(36px 1fr 120px 60px)，artist合并为track副标题，hover显示播放按钮替代actions列
+5. **空状态增强**：图标72px、间距加大、新增CTA按钮样式
+6. **曲目切换过渡**：`.transitioning` 类实现淡出+位移（info）和缩放（cover）
+7. **进度条渐变**：fill改为primary→primary-light渐变，thumb添加glow阴影
+8. **MiniBar**：顶部border-image渐变线，进度条渐变填充，thumb发光
+9. **播放列表激活**：`.active` 左侧3px主色边框+背景提升+封面阴影
+10. **搜索框**：focus-within时宽度从220px扩展到280px
+11. 新增 `--music-primary-light` 变量支持渐变效果，响应式断点适配4列
 
-### 🎯 任务目标
-解决"连接失败，请检查服务是否运行"问题，避免用户需要手动启动多个服务
+## 2026-05-15: 技能与音乐模块移入设置页
 
-### 🔍 根因
-前端聊天用 **WebSocket `ws://localhost:5005/chat-stream`**（voice_call_service.py），不是 HTTP 5001。之前只启动了 intelligent_api.py（5001），没启动 WebSocket 服务（5005），导致前端报错。
+### 问题
+技能管理和音乐播放器作为独立页面占据侧边坞导航位，但使用频率低于对话/模型等核心功能，导致导航栏臃肿。
 
-### ✅ 方案 B：后端一键全启
-在 [intelligent_api.py](file:///D:/Explore/ollma/server/intelligent_api.py) 启动时，用 daemon 子线程自动拉起 voice_call_service：
-```
-一个 python 进程 → 同时监听 :5001 (HTTP API) + :5005 (WebSocket)
-```
+### 改动
+1. **侧边坞精简**：移除「技能」和「音乐」两个导航项，坞内仅保留对话/模型/群聊/语音/设置5项
+2. **设置页入口**：新增「技能管理」和「音乐播放器」入口卡片（与CEEE/CISECG等引擎入口风格一致）
+3. **覆盖层面板**：新增 `#skillsOverlay` 和 `#musicOverlay`，点击入口弹出全屏覆盖层，关闭按钮+遮罩点击关闭
+4. **页面容器移除**：删除 `#page-skills` 和 `#page-music` 独立页面容器
+5. **MusicUI适配**：`_createDomStructure`/`_cacheElements`/`show`/`hide` 优先查找 `#musicOverlayContent`，降级到 `#page-music`；minibar展开按钮改为打开overlay
+6. **CSS选择器扩展**：`#page-skills`→`#page-skills, #skillsOverlay`；`#page-music`→`#page-music, #musicOverlayContent`
+7. **事件绑定**：main.js 新增 settingSkillsEntry/settingMusicEntry 点击处理，含SkillManager初始化和MusicUI初始化
 
-### ✅ 方案 C：前端自动降级
-在 [index.html](file:///D:/Explore/ollma/web/index.html) 的 `ws.onerror` 中添加 fallbackToHttp()：
-- WebSocket 失败 → 自动切换到 HTTP `/api/chat` 调用
-- 用户无感知，显示"正在通过备用通道连接..."
+## 2026-05-15: 聊天气泡样式切换无效修复
 
-### 📊 结果
-| 改动前 | 改动后 |
-|--------|--------|
-| 需手动启动 2 个进程 | 1 个命令全部搞定 |
-| WebSocket 断了就报错 | 自动降级到 HTTP |
+### 问题
+设置页中「聊天气泡」下拉框切换（柔和卡片/磨砂玻璃/极简留白/精致描边）无效果。
 
-### 📝 修改文件
-- [intelligent_api.py](file:///D:/Explore/ollma/server/intelligent_api.py) — 添加 WebSocket 子线程启动逻辑
-- [index.html](file:///D:/Explore/ollma/web/index.html) — ws.onerror 添加 HTTP 降级 fallback
+### 原因
+基础样式 `.message-bubble` 直接使用固定值（如 `var(--bg-primary)`），而气泡样式变量选择器 `body[data-bubble-style] .message-bubble` 虽然定义了新变量值，但基础样式中没有使用这些变量，导致变量更新后样式不变。
 
----
+### 修复（main.css）
+1. `.message-bubble` 基础样式改用气泡变量：`background: var(--chat-bubble-ai-bg, var(--bg-primary))`
+2. `.bubble-segment` 同样改用气泡变量
+3. `.message-row.user .message-bubble` 改用 `var(--chat-bubble-user-bg, ...)`
+4. `.message-row.ai .message-bubble` 改用 `var(--chat-bubble-ai-bg, ...)`
+5. `border-radius`/`border-color`/`box-shadow` 同样改用对应变量
 
-## 📋 问题分析
-1. **接口不匹配**: 前端直接调 Ollama 原生接口 (11434)，后端代理缺失
-2. **架构混乱**: 前端混用两种调用方式（Ollama 原生 + 后端 API）
+现在切换气泡样式时，CSS变量值更新，气泡外观会立即响应变化。
 
-## ✅ 解决方案
-1. **创建 Ollama 代理模块** (`server/api/ollama_proxy.py`):
-   - 代理 `/api/tags`, `/api/version`, `/api/show`, `/api/generate` 等接口
-   - 支持流式响应透传
-   - 统一的错误处理（连接失败、超时等）
-2. **注册代理路由**: 在 `intelligent_api.py` 中注册
+## 2026-05-15: CSS变量与设置项一致性修复
 
-## 📊 测试结果
-- ✅ `/api/tags` 代理正常
-- ✅ `/api/version` 代理正常
-- ✅ `/api/health` 正常
-- ✅ 前端可统一走 `localhost:5001/api/xxx`
+### 问题
+检查发现多处CSS变量定义但基础样式未使用、设置项实现不完整等问题。
 
----
-## 📅 日期
-2026-04-08
+### 修复内容
 
-## 🎯 任务目标
-服务启动与代码整理
+**1. 头像样式CSS变量未使用（main.css）**
+- `.message-avatar` 基础样式改用CSS变量：`border-radius: var(--chat-avatar-radius, 50%)`
+- 添加 `border` 和 `box-shadow` 变量支持
 
-## 📋 问题分析
-1. **服务未启动**: API(5001)、前端(8080)、Ollama(11434) 未运行
-2. **image.py 代码混乱**: import 语句散落在函数内部，`__import__('io')` 写法不规范
+**2. 主题基调设置实现不完整（main.js + main.css）**
+- JS: 改用 `document.body.dataset.themeTone = uiSettings.themeTone || 'balanced'`
+- CSS: 新增 `body[data-theme-tone="calm/contrast/balanced"]` 选择器定义 `--text-secondary` 变量
 
-## ✅ 解决方案
-1. **启动服务**: API 服务正常启动，Ollama 已运行（qwen3.5:0.8b, qwen3.5-9b-uncensored）
-2. **整理 image.py**:
-   - 将 `import io`, `import gc`, `import psutil` 移到文件顶部
-   - 创建 `_ensure_torch_and_diffusers()` 延迟加载函数
-   - 移除函数内的重复 import
-   - 修复 `__import__('io').BytesIO()` 为 `io.BytesIO()`
+**3. 气泡样式"soft"缺少显式定义（main.css）**
+- 新增 `body[data-bubble-style="soft"]` 选择器，显式定义默认气泡变量
 
-## 📊 测试结果
-- ✅ API 服务 (5001) 正常响应
-- ✅ Ollama (11434) 连接正常
-- ✅ 前端服务 (8080) 正常
-- ✅ image.py 导入测试通过
+**4. 清理未使用设置项（main.js）**
+- 移除 `uiSettings.reasoningSummary` 默认值（无UI控件且未被使用）
 
----
-## 📅 日期
-2026-03-22
+## 2026-05-15: 模型反馈与字体优化
 
-## 🎯 任务目标
-群聊模块重构 - 完全重构为聊天室模式
+### 问题
+1. 代码块样式完全缺失，Markdown渲染器生成 `.code-block` 等类名但CSS无定义
+2. 流式传输卡顿，渲染频率过高
+3. 字体渲染效果不够优雅，缺少系统级优化
 
-## 📋 问题分析
+### 修复内容
 
-### 原有问题
-1. **交互问题**: 无法指定模型回答问题
-2. **总结问题**: 总结不可控，无法手动触发
-3. **用户无法参与**: 只能设置话题启动，无法发送消息
+**1. 代码块与消息内容样式（main.css）**
+- 新增 `.code-block` 完整样式：圆角边框、语言标签头、复制按钮
+- 新增 `.code-content` 代码内容区：等宽字体、行高、tab-size
+- 新增代码语法高亮色：`.code-keyword`/`.code-string`/`.code-number` 等，支持深色模式
+- 新增 `.answer-content` 消息内容样式：标题/列表/引用/表格/链接
+- 新增 `.inline-code` 内联代码样式
+- 新增 `.thinking-chain` 思考链折叠面板样式
 
-## ✅ 解决方案
+**2. 流式传输优化（api.js）**
+- BATCH_INTERVAL: 16ms → 32ms（降低渲染频率）
+- MAX_BATCH_SIZE: 50 → 80（增大批量大小）
+- 新增 MIN_FLUSH_CHARS: 20（最小刷新字符数）
+- 新增 `scheduleRender()` 使用 requestAnimationFrame 调度渲染
+- 新增 `findSentenceBoundary()` 智能句子边界检测
 
-### 新增功能
-1. **用户消息发送**: 用户可以参与讨论
-2. **指定模型回答**: 选择模型后点击"指定回答"
-3. **手动总结**: 三种总结类型(full/brief/keypoints)
-4. **本地模型回退**: Ollama不可用时自动使用本地模型
-
-### 新增API接口
-| 接口 | 方法 | 功能 |
-|------|------|------|
-| /api/group_chat/message | POST | 用户发送消息 |
-| /api/group_chat/ask | POST | 指定模型回答 |
-| /api/group_chat/summarize | POST | 手动触发总结 |
-| /api/group_chat/models | GET | 获取可用模型列表 |
-
-### 修改文件
-- server/hybrid_group_chat_controller.py: 新增方法
-- server/api/group_chat.py: 新增API路由
-- web/index.html: 重构群聊页面UI
-
-## 📊 测试结果
-- ✅ 发送消息功能正常
-- ✅ 指定模型回答功能正常
-- ✅ 手动总结功能正常
-- ✅ 本地模型回退机制正常
-- ✅ UI显示正确
-
----
-## 📅 日期
-2026-03-05
-
-## 🎯 任务目标
-将多个分散的启动文件合并为一个统一的、功能完整的启动管理系统。
-
-## 📋 问题分析
-
-### 原有问题
-1. **启动文件过多**: 存在 7+ 个不同的启动文件
-   - `start_all_services.bat` - 启动所有服务
-   - `launch.bat` - 统一启动器 v6.0
-   - `启动全部服务.bat` - 一键启动
-   - `start_fun.bat` / `start_fun2.bat` - 趣味功能
-   - `optimized_launcher.bat` - 优化版
-   - `start.bat` - 基础版
-
-2. **功能重复**: 多个文件实现类似功能
-3. **维护困难**: 修改需要同步到多个文件
-4. **用户体验差**: 用户不知道选择哪个
-
-## ✅ 解决方案
-
-### 新建文件结构
-
-#### 1. **start.bat** - 主启动器（带菜单）
-- 交互式菜单界面
-- 7 个启动选项
-- 服务状态检查
-- 配置管理
-- 完整的错误处理
-
-#### 2. **快速启动.bat** - 一键启动
-- 无菜单，直接启动
-- 适合日常快速使用
-- 自动打开浏览器
-
-#### 3. **stop.bat** - 停止服务
-- 一键停止所有服务
-- 显示停止进度
-- 跳过未运行的服务
-
-#### 4. **status.bat** - 状态检查
-- 检查所有服务状态
-- 显示进程 PID
-- 健康检查
-- 显示访问地址
+**3. 字体系统优化（main.css）**
+- 新增字体变量：`--font-sans`/`--font-mono`/`--font-display`
+- 新增字体大小层级：`--text-xs` 到 `--text-3xl`
+- 新增行高/字重/字间距层级变量
+- body 新增字体渲染优化：
+  - `-webkit-font-smoothing: antialiased`
+  - `-moz-osx-font-smoothing: grayscale`
+  - `text-rendering: optimizeLegibility`
+  - `font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1`
+- 代码字体禁用连字：`font-feature-settings: 'liga' 0`

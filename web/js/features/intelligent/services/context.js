@@ -28,7 +28,6 @@ const ContextService = (function() {
         system_prompt_mode: 'template',
         system_prompt_template: 'assistant_balanced',
         system_prompt_custom: '',
-        safety_mode: 'balanced',
         adult_tone_mode: false,
         adult_tone_acknowledged: false
     };

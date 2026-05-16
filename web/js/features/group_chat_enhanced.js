@@ -45,7 +45,7 @@ const GroupChatEnhanced = (function() {
         'gemma2:2b': {
             id: 'gemma2-2b',
             name: 'Gemma',
-            avatar: '🔬',
+            avatar: 'model',
             personality: '理性、严谨、善于分析',
             style: '简洁、准确、有条理'
         },
@@ -66,7 +66,7 @@ const GroupChatEnhanced = (function() {
         'qwen2.5:0.5b': {
             id: 'qwen2-5-0-5b',
             name: 'Qwen',
-            avatar: '✨',
+            avatar: 'sparkle',
             personality: '高效、实用、反应迅速',
             style: '简洁有力，侧重实际应用'
         },
@@ -115,13 +115,15 @@ const GroupChatEnhanced = (function() {
     
     async function loadModels() {
         try {
-            const response = await fetch(`http://${window.location.hostname || 'localhost'}:11434/api/tags`);
-            const data = await response.json();
+            const apiBase = `http://${window.location.hostname || 'localhost'}:5001`;
+            const response = await fetch(`${apiBase}/api/models`, { signal: AbortSignal.timeout(8000) });
+            const json = await response.json();
+            const models = json?.data?.models || json?.models || [];
             
-            state.models = (data.models || []).map(m => ({
-                name: m.name,
-                size: m.size,
-                modified: m.modified_at
+            state.models = (Array.isArray(models) ? models : []).map(m => ({
+                name: m.name || m.model,
+                size: m.size || 0,
+                modified: m.modified_at || ''
             }));
             
             renderModelSelector();
@@ -641,7 +643,7 @@ const GroupChatEnhanced = (function() {
             persona = {
                 id: modelName.replace(/[:.]/g, '-'),
                 name: modelName.split(':')[0] || 'AI',
-                avatar: '🤖',
+                avatar: 'robot',
                 personality: '智能助手',
                 style: '专业、友好'
             };
@@ -658,7 +660,8 @@ const GroupChatEnhanced = (function() {
         let messageId = generateId();
         
         try {
-            const response = await fetch(`http://${window.location.hostname || 'localhost'}:11434/api/chat`, {
+            const apiBase = `http://${window.location.hostname || 'localhost'}:5001`;
+            const response = await fetch(`${apiBase}/api/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -684,10 +687,14 @@ const GroupChatEnhanced = (function() {
                 const lines = chunk.split('\n').filter(line => line.trim());
                 
                 for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
                     try {
-                        const data = JSON.parse(line);
-                        if (data.message && data.message.content) {
-                            fullContent += data.message.content;
+                        const jsonStr = line.slice(6).trim();
+                        if (jsonStr === '[DONE]') break;
+                        const data = JSON.parse(jsonStr);
+                        const content = data.content || (data.choices && data.choices[0]?.delta?.content) || '';
+                        if (content) {
+                            fullContent += content;
                             
                             // 通知 app.js 更新流式消息
                             if (window.GroupChatCallbacks && window.GroupChatCallbacks.onStream) {
@@ -797,7 +804,7 @@ const GroupChatEnhanced = (function() {
                 setTimeout(() => reject(new Error('请求超时')), 60000)
             );
 
-            const fetchPromise = fetch(`http://${window.location.hostname || 'localhost'}:11434/api/chat`, {
+            const fetchPromise = fetch(`http://${window.location.hostname || 'localhost'}:5001/api/ollama/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -895,7 +902,7 @@ const GroupChatEnhanced = (function() {
         try {
             const modelName = message.model || '';
             const displayName = persona?.name || getCharacterName(modelName);
-            const avatar = persona?.name?.charAt(0) || (message.role === 'user' ? '👤' : '🤖');
+            const avatar = persona?.name?.charAt(0) || (message.role === 'user' ? 'U' : 'A');
 
             // 创建消息HTML
             const messageHtml = `
@@ -1094,7 +1101,11 @@ const GroupChatEnhanced = (function() {
     }
     
     function scrollToBottom(element) {
-        element.scrollTop = element.scrollHeight;
+        if (!element) return;
+        const nearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 80;
+        if (nearBottom) {
+            element.scrollTop = element.scrollHeight;
+        }
     }
     
     function showToast(message, type = 'info') {

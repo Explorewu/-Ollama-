@@ -23,15 +23,11 @@ const ThemeManager = {
     /**
      * 初始化主题系统
      */
-    init() {
-        // 优先使用存储的主题设置
-        const savedTheme = Storage.getTheme();
-        this.applyTheme(savedTheme, false); // 初始化时不使用动画
+    async init() {
+        const savedTheme = await Storage.getTheme();
+        this.applyTheme(savedTheme, false);
 
-        // 监听系统主题变化（仅在自动模式下）
         this.watchSystemTheme();
-
-        // 监听存储变化（多标签页同步）
         this.watchStorageChanges();
     },
 
@@ -118,8 +114,8 @@ const ThemeManager = {
     watchSystemTheme() {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         
-        mediaQuery.addEventListener('change', (e) => {
-            const currentTheme = Storage.getTheme();
+        mediaQuery.addEventListener('change', async (e) => {
+            const currentTheme = await Storage.getTheme();
             if (currentTheme === this.THEMES.AUTO) {
                 this.applyTheme(this.THEMES.AUTO);
             }
@@ -132,7 +128,10 @@ const ThemeManager = {
     watchStorageChanges() {
         window.addEventListener('storage', (e) => {
             if (e.key === Storage.STORAGE_KEYS.THEME) {
-                const newTheme = e.newValue || this.THEMES.LIGHT;
+                let newTheme = this.THEMES.LIGHT;
+                if (e.newValue) {
+                    try { newTheme = JSON.parse(e.newValue); } catch(_) { newTheme = e.newValue; }
+                }
                 this.applyTheme(newTheme);
             }
         });
@@ -152,8 +151,8 @@ const ThemeManager = {
     /**
      * 切换到下一个主题
      */
-    toggleTheme() {
-        const currentTheme = Storage.getTheme();
+    async toggleTheme() {
+        const currentTheme = await Storage.getTheme();
         const themeOrder = [this.THEMES.LIGHT, this.THEMES.DARK, this.THEMES.AUTO];
         const currentIndex = themeOrder.indexOf(currentTheme);
         const nextIndex = (currentIndex + 1) % themeOrder.length;
@@ -162,22 +161,27 @@ const ThemeManager = {
         // 使用带过渡效果的主题切换
         this.applyThemeWithTransition(nextTheme);
         
-        // 显示Toast提示
+        // 显示Toast提示（安全调用）
         const themeNames = {
             [this.THEMES.LIGHT]: '浅色主题',
             [this.THEMES.DARK]: '深色主题',
             [this.THEMES.AUTO]: '跟随系统'
         };
         
-        App.showToast(`已切换到 ${themeNames[nextTheme]}`, 'success');
+        const msg = `已切换到 ${themeNames[nextTheme]}`;
+        if (typeof App !== 'undefined' && App.showToast) {
+            App.showToast(msg, 'success');
+        } else if (typeof showToast === 'function') {
+            showToast(msg, 'success');
+        }
     },
 
     /**
      * 获取当前主题名称
-     * @returns {string}
+     * @returns {Promise<string>}
      */
-    getCurrentTheme() {
-        return Storage.getTheme();
+    async getCurrentTheme() {
+        return await Storage.getTheme();
     },
 
     /**

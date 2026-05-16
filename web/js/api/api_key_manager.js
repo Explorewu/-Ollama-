@@ -82,13 +82,13 @@ const APIKeyManager = (function() {
                     ${key.is_active ? '活跃' : '已禁用'}
                 </div>
                 <div class="api-key-actions">
-                    <button class="btn btn-secondary" onclick="APIKeyManager.showKeyInfo('${key.id}')" title="查看详情">
+                    <button class="btn btn-secondary" data-action="show" data-key-id="${escapeHtml(key.id)}" title="查看详情">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                             <circle cx="12" cy="12" r="3"/>
                         </svg>
                     </button>
-                    <button class="btn btn-danger" onclick="APIKeyManager.revokeKey('${key.id}')" title="撤销">
+                    <button class="btn btn-danger" data-action="revoke" data-key-id="${escapeHtml(key.id)}" title="撤销">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                             <polyline points="3 6 5 6 21 6"/>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -103,6 +103,8 @@ const APIKeyManager = (function() {
      * 显示生成 Key 的模态框
      */
     function showGenerateModal() {
+        const existing = document.getElementById('generateKeyModal');
+        if (existing) existing.remove();
         const modalHtml = `
             <div class="modal-overlay active" id="generateKeyModal">
                 <div class="modal-container">
@@ -158,8 +160,7 @@ const APIKeyManager = (function() {
                 
                 // 保存 API Key 到 localStorage 供后续认证使用
                 if (data.key) {
-                    localStorage.setItem('api_key', data.key);
-                    console.log('[API Key] 已保存到本地存储');
+                    sessionStorage.setItem('api_key', data.key);
                 }
                 
                 closeModal();
@@ -178,6 +179,8 @@ const APIKeyManager = (function() {
      * 显示成功弹窗（显示完整的 Key）
      */
     function showSuccessModal(data) {
+        const existing = document.getElementById('successKeyModal');
+        if (existing) existing.remove();
         const modalHtml = `
             <div class="modal-overlay active" id="successKeyModal">
                 <div class="modal-container success-modal">
@@ -259,6 +262,9 @@ const APIKeyManager = (function() {
     function showKeyInfo(keyId) {
         const key = keys.find(k => k.id === keyId);
         if (!key) return;
+
+        const existing = document.getElementById('keyInfoModal');
+        if (existing) existing.remove();
 
         const lastUsed = key.last_used_at ? formatDate(key.last_used_at) : '从未使用';
 
@@ -404,6 +410,18 @@ const APIKeyManager = (function() {
                 closeSuccessModal();
             }
         });
+
+        const listEl = document.getElementById('apiKeyList');
+        if (listEl) {
+            listEl.addEventListener('click', function(e) {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+                const action = btn.dataset.action;
+                const keyId = btn.dataset.keyId;
+                if (action === 'show' && keyId) showKeyInfo(keyId);
+                if (action === 'revoke' && keyId) revokeKey(keyId);
+            });
+        }
     }
 
     /**

@@ -13,7 +13,7 @@ const HealthMonitor = (function() {
     
     const Config = {
         // 禁用自动监控：将检查间隔设置为极大值（1 小时）
-        checkInterval: 3600000,
+        checkInterval: 30000,
         alertThreshold: {
             responseTime: 5000,
             consecutiveFailures: 3
@@ -63,7 +63,7 @@ const HealthMonitor = (function() {
             };
             state.services['ollama'] = {
                 name: 'ollama',
-                baseUrl: 'http://localhost:11434',
+                baseUrl: 'http://localhost:5001',
                 status: 'unknown',
                 lastCheck: 0,
                 responseTime: 0,

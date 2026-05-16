@@ -33,6 +33,7 @@ from utils.config import (
     DEFAULT_GROUP_CHAT_RUNTIME_CONFIG,
     build_ollama_options,
 )
+from api.chat import SemanticStreamBuffer
 
 logging.basicConfig(
     level=logging.INFO,
@@ -775,9 +776,13 @@ class HybridGroupChatController:
             )
             
             if response.status_code == 200:
-                # 流式处理
+                # 流式处理（使用语义缓冲器优化）
                 full_content = ""
-                sentence_buffer = ""
+                semantic_buffer = SemanticStreamBuffer(
+                    min_chunk_size=100,
+                    max_chunk_size=500,
+                    max_delay_ms=150
+                )
                 
                 if stream:
                     for line in response.iter_lines():
@@ -787,49 +792,28 @@ class HybridGroupChatController:
                                 content = chunk.get('message', {}).get('content', '')
                                 if content:
                                     full_content += content
-                                    sentence_buffer += content
+                                    semantic_buffer.add_content(content)
                                     
-                                    # 检测句子边界并发送事件
-                                    while True:
-                                        sentence_end = -1
-                                        for i, char in enumerate(sentence_buffer):
-                                            if char in '。！？.!?':
-                                                sentence_end = i + 1
-                                                break
-                                        
-                                        if sentence_end > 0:
-                                            # 有完整句子，发送增量事件
-                                            sentence = sentence_buffer[:sentence_end]
-                                            sentence_buffer = sentence_buffer[sentence_end:]
-                                            
-                                            self._emit("stream_chunk", {
-                                                "model": model_name,
-                                                "character": char_name,
-                                                "content": sentence,
-                                                "is_sentence": True,
-                                                "done": False
-                                            })
-                                        else:
-                                            # 没有完整句子，检查是否积累了足够多的内容
-                                            if len(sentence_buffer) >= self.stream_chunk_chars:
-                                                self._emit("stream_chunk", {
-                                                    "model": model_name,
-                                                    "character": char_name,
-                                                    "content": sentence_buffer,
-                                                    "is_sentence": False,
-                                                    "done": False
-                                                })
-                                                sentence_buffer = ""
-                                            break
+                                    # 使用语义缓冲器智能分段
+                                    if semantic_buffer.should_flush(chunk.get('done', False)):
+                                        buffered_content = semantic_buffer.flush()
+                                        self._emit("stream_chunk", {
+                                            "model": model_name,
+                                            "character": char_name,
+                                            "content": buffered_content,
+                                            "is_sentence": True,
+                                            "done": False
+                                        })
                             except json.JSONDecodeError:
                                 continue
                     
                     # 处理剩余的缓冲区内容
-                    if sentence_buffer.strip():
+                    if semantic_buffer.get_buffer_length() > 0:
+                        final_content = semantic_buffer.flush()
                         self._emit("stream_chunk", {
                             "model": model_name,
                             "character": char_name,
-                            "content": sentence_buffer.strip(),
+                            "content": final_content,
                             "is_sentence": True,
                             "done": False
                         })
@@ -1280,12 +1264,15 @@ class HybridGroupChatController:
         
         Args:
             content: 消息内容
-            target_model: 指定回复的模型（可选）
+            target_model: 指定回复的模型（可选，不指定则所有模型依次回复）
             
         Returns:
             用户消息对象
         """
         with self._lock:
+            if not self.characters:
+                self.ensure_default_characters()
+
             msg = Message(
                 id=self._generate_id(),
                 role="user",
@@ -1299,6 +1286,15 @@ class HybridGroupChatController:
             current_turn = self.discussion_turns[-1] if self.discussion_turns else None
             if current_turn:
                 current_turn.messages.append(msg)
+            else:
+                self.current_turn += 1
+                new_turn = DiscussionTurn(
+                    turn_number=self.current_turn,
+                    topic=content[:60],
+                    participants=list(self.characters.keys()),
+                    start_time=int(time.time() * 1000)
+                )
+                self.discussion_turns.append(new_turn)
             
             self._maybe_save_state()
             self._emit("user_message", {"message": asdict(msg)})
@@ -1311,8 +1307,22 @@ class HybridGroupChatController:
                     args=(target_model,),
                     daemon=True
                 ).start()
+            else:
+                threading.Thread(
+                    target=self._generate_all_responses,
+                    daemon=True
+                ).start()
             
             return msg
+
+    def _generate_all_responses(self):
+        """让所有角色依次回复"""
+        participants = list(self.characters.keys())
+        for model_name in participants:
+            try:
+                self._generate_response(model_name)
+            except Exception as e:
+                logger.error(f"模型 {model_name} 回复失败: {e}")
 
     def ask_model(self, model_name: str, question: str = None) -> Optional[Message]:
         """

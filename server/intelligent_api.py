@@ -13,6 +13,7 @@
 
 import os
 import sys
+import warnings
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -24,9 +25,14 @@ sys.path.insert(0, str(SERVER_DIR))
 
 from utils.helpers import error_response, success_response
 
+warnings.filterwarnings('ignore', category=FutureWarning, message='.*TRANSFORMERS_CACHE.*')
+
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(open(sys.stdout.fileno(), mode='w', encoding='utf-8', buffering=1, closefd=False))
+    ]
 )
 logger = logging.getLogger(__name__)
 
@@ -35,8 +41,9 @@ OPTIONAL_SERVICES = ['summary_service', 'asr_service', 'smart_cache']
 
 
 def get_allowed_origins() -> list:
-    """获取允许的 CORS 来源"""
-    origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080")
+    origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:8080,http://127.0.0.1:8080")
+    if origins_str == "*":
+        return ["*"]
     return [origin.strip() for origin in origins_str.split(",") if origin.strip()]
 
 
@@ -138,6 +145,12 @@ def init_api_services(services: Dict[str, Any]):
         init_functions_service()
     except Exception as e:
         logger.warning(f"⚠ functions API 初始化失败: {e}")
+    
+    try:
+        from api.audio_codec import init_audio_codec_services
+        init_audio_codec_services()
+    except Exception as e:
+        logger.warning(f"⚠ audio_codec API 初始化失败: {e}")
 
 
 def register_routes(app: Flask, services: Dict[str, Any]):
@@ -159,7 +172,24 @@ def register_routes(app: Flask, services: Dict[str, Any]):
         register_context_routes,
         register_ollama_proxy_routes,
         register_greeting_routes,
+        register_audio_codec_routes,
+        model_eval_bp,
+        storage_bp,
+        ceee_bp,
+        elpe_bp,
+        lsmpe_bp,
+        ciscg_bp,
+        temg_bp,
+        unified_engine_bp,
+        knowledge_graph_bp,
+        v2_bp,
+        openai_bp,
+        proactive_bp,
+        music_bp,
+        unified_memory_bp,
+        knowledge_flywheel_bp,
     )
+    from api.theater import theater_bp
     
     register_health_routes(app, services)
     register_chat_routes(app)
@@ -177,6 +207,59 @@ def register_routes(app: Flask, services: Dict[str, Any]):
     register_functions_routes(app)
     register_context_routes(app, services)
     register_greeting_routes(app)
+    register_audio_codec_routes(app)
+    
+    # 注册模型评估蓝图
+    app.register_blueprint(model_eval_bp)
+    
+    # 注册存储API蓝图
+    app.register_blueprint(storage_bp)
+    
+    # 注册CEEE角色进化探索器蓝图
+    app.register_blueprint(ceee_bp)
+    
+    # 注册ELPE轻量级主动交互策略蓝图
+    app.register_blueprint(elpe_bp)
+    
+    # 注册LSMPE轻量流式消息存储引擎蓝图
+    app.register_blueprint(lsmpe_bp)
+    
+    # 注册CISECG角色风格抽取与可控生成器蓝图
+    app.register_blueprint(ciscg_bp)
+    
+    # 注册TEMG拓扑情景记忆网格蓝图
+    app.register_blueprint(temg_bp)
+    
+    # 注册统一对话增强引擎蓝图
+    app.register_blueprint(unified_engine_bp)
+
+    # 注册知识图谱蓝图
+    app.register_blueprint(knowledge_graph_bp)
+    
+    # 注册 API V2 统一网关蓝图
+    app.register_blueprint(v2_bp)
+    
+    # 注册 OpenAI 兼容层蓝图
+    app.register_blueprint(openai_bp)
+    
+    # 注册主动交互引擎蓝图
+    app.register_blueprint(proactive_bp)
+    
+    # 注册音乐服务蓝图
+    app.register_blueprint(music_bp)
+    
+    # 注册统一记忆层蓝图
+    app.register_blueprint(unified_memory_bp)
+    
+    # 注册知识飞轮蓝图
+    app.register_blueprint(knowledge_flywheel_bp)
+    
+    # 注册模型预热服务路由
+    from model_warmer import register_warmer_routes
+    register_warmer_routes(app)
+    
+    # 注册剧场模式蓝图
+    app.register_blueprint(theater_bp)
     
     logger.info("✓ 所有 API 路由已注册")
 
@@ -203,7 +286,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> Flask:
         r"/api/*": {
             "origins": allowed_origins,
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "X-Internal-Call"],
             "supports_credentials": True,
             "max_age": 3600
         }
@@ -232,6 +315,10 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> Flask:
                 if not isinstance(enabled, bool):
                     return jsonify(error_response("enabled must be boolean", 400)), 400
                 set_reasoning_mode(enabled)
+                if enabled:
+                    from local_model_loader import clear_llama_server_cache
+                    clear_llama_server_cache()
+                    logger.info("已清除 llama-server 缓存，下次请求将重启模型")
                 logger.info(f"推理模式已设置为: {'开启' if enabled else '关闭'}")
                 return jsonify(success_response({
                     "reasoning_enabled": enabled,
@@ -242,6 +329,14 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> Flask:
             return jsonify(error_response(str(e), 500)), 500
     
     app.services = services
+    
+    try:
+        from model_warmer import ModelWarmer
+        warmer = ModelWarmer.get_instance()
+        warmer.boot_warm()
+        logger.info("✓ 模型预热服务已启动")
+    except Exception as e:
+        logger.warning(f"模型预热服务启动失败（不影响主功能）: {e}")
     
     @app.errorhandler(500)
     def internal_error(error):

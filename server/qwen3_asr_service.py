@@ -337,23 +337,50 @@ class Qwen3ASRService:
 
         try:
             temp_wav = tempfile.mktemp(suffix=".wav")
+            temp_denoised = tempfile.mktemp(suffix=".wav")
+            
+            # 第一步：格式转换（16kHz单声道PCM）
             subprocess.run([
                 'ffmpeg', '-y', '-i', audio_path,
                 '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le',
                 temp_wav
             ], capture_output=True, check=True)
 
-            result = self.transcribe(temp_wav, language)
+            # 第二步：降噪处理链
+            # - highpass=80: 去除低频噪声（空调、风扇等）
+            # - lowpass=4000: 去除高频噪声（嘶嘶声、电流声）
+            # - afftdn=nf=-25: 频域降噪，降噪强度-25dB
+            # - volume=2.0: 音量增强
+            subprocess.run([
+                'ffmpeg', '-y', '-i', temp_wav,
+                '-af', 'highpass=f=80,lowpass=f=4000,afftdn=nf=-25,volume=2.0',
+                '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le',
+                temp_denoised
+            ], capture_output=True, check=True)
+
+            result = self.transcribe(temp_denoised, language)
             
-            if os.path.exists(temp_wav):
-                os.remove(temp_wav)
+            # 清理临时文件
+            for f in [temp_wav, temp_denoised]:
+                if os.path.exists(f):
+                    try:
+                        os.remove(f)
+                    except:
+                        pass
             
             return result
 
         except Exception as e:
             logger.error(f"预处理转写失败: {e}")
-            if 'temp_wav' in dir() and os.path.exists(temp_wav):
-                os.remove(temp_wav)
+            import traceback
+            traceback.print_exc()
+            # 清理临时文件
+            for f in [temp_wav, temp_denoised]:
+                if os.path.exists(f):
+                    try:
+                        os.remove(f)
+                    except:
+                        pass
             return None
 
     def _get_audio_duration(self, audio_path: str) -> float:

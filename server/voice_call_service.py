@@ -25,10 +25,21 @@ import time
 import base64
 import asyncio
 import logging
+import numpy as np
 from typing import Dict, Optional, Any, Set
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+
+try:
+    from unified_engine import UnifiedEngine
+    _UNIFIED_ENGINE_AVAILABLE = True
+except ImportError:
+    try:
+        from server.unified_engine import UnifiedEngine
+        _UNIFIED_ENGINE_AVAILABLE = True
+    except ImportError:
+        _UNIFIED_ENGINE_AVAILABLE = False
 
 # 添加项目根目录到路径
 SERVER_DIR = Path(__file__).resolve().parent
@@ -48,6 +59,11 @@ try:
     import websockets
     from websockets.server import WebSocketServerProtocol
     WEBSOCKET_AVAILABLE = True
+
+    # 抑制 websockets 库内部握手失败的 ERROR 日志
+    # 这些错误通常是浏览器预连接或健康检查导致的正常现象
+    _ws_logger = logging.getLogger("websockets")
+    _ws_logger.setLevel(logging.WARNING)
 except ImportError:
     WEBSOCKET_AVAILABLE = False
     logger.warning("websockets库未安装，语音通话服务将不可用")
@@ -96,7 +112,7 @@ class VoiceCallConfig:
     asr_buffer_chunks: int = 2  # 累积2个分片后识别（优化延迟）
     
     # TTS配置
-    tts_speaker_id: str = "default"
+    tts_speaker_id: str = "vivian"
     tts_speed: float = 1.0
     
     # LLM配置
@@ -105,8 +121,8 @@ class VoiceCallConfig:
     llm_temperature: float = 0.7
     
     # 超时配置
-    connection_timeout: int = 300  # 5分钟无活动断开
-    max_session_duration: int = 1800  # 最大通话时长30分钟
+    connection_timeout: int = 3000  # 30分钟无活动断开
+    max_session_duration: int = 18000  # 最大通话时长30分钟
 
 
 class MessageProtocol:
@@ -137,18 +153,21 @@ class VoiceCallService:
     语音通话服务
     
     设计原则：
-    1. 单路通话：同一时间只允许一个会话
+    1. 多路并发：支持多个chat-stream会话并发
     2. 流式处理：音频流实时处理，不缓存大量数据
     3. 低延迟：端到端延迟控制在500ms以内
     4. 容错处理：模型加载失败时优雅降级
     """
     
+    MAX_CHAT_SESSIONS = 8
+    
     def __init__(self, config: Optional[VoiceCallConfig] = None):
         self.config = config or VoiceCallConfig()
         self.protocol = MessageProtocol()
         
-        # 会话管理
+        # 会话管理 - 支持并发
         self.active_session: Optional[CallSession] = None
+        self.active_chat_sessions: Dict[str, Any] = {}
         self.sessions_lock = asyncio.Lock()
         
         # 服务组件
@@ -286,7 +305,15 @@ class VoiceCallService:
                        f"音频数据={session.total_audio_bytes} bytes")
     
     async def _handle_chat_ws(self, websocket: Any):
-        """文本对话WebSocket流式处理"""
+        """文本对话WebSocket流式处理 - 支持并发"""
+        session_id = f"chat_{int(time.time())}_{id(websocket)}"
+        
+        async with self.sessions_lock:
+            if len(self.active_chat_sessions) >= self.MAX_CHAT_SESSIONS:
+                await websocket.send(self.protocol.encode("error", {"message": f"并发会话数已达上限 ({self.MAX_CHAT_SESSIONS})"}))
+                return
+            self.active_chat_sessions[session_id] = websocket
+        
         try:
             import aiohttp
             start_payload = await websocket.recv()
@@ -297,53 +324,280 @@ class VoiceCallService:
             message = data.get("message", "")
             model = data.get("model", self.config.llm_model)
             thinking_chain_mode = data.get("thinking_chain_mode", "brief")
+            thinking_enabled = data.get("thinking_enabled", False)
             history_messages = data.get("messages", [])
+            chat_settings = data.get("chat_settings", {})
             if not message:
                 await websocket.send(self.protocol.encode("error", {"message": "empty message"}))
                 return
             system_prompt = data.get("system_prompt", "你是一个智能助手。")
 
+            # 统一引擎增强：为WebSocket路径添加记忆和风格上下文
+            if _UNIFIED_ENGINE_AVAILABLE:
+                try:
+                    engine = UnifiedEngine.get_instance()
+                    persona_id = data.get("persona_id", "default")
+                    engine.record_turn(session_id, "user", message, persona_id)
+                    pre_result = engine.pre_enhance(session_id, message, persona_id)
+                    addon = pre_result.get("system_prompt_addon", "")
+                    if addon:
+                        system_prompt = system_prompt + addon
+                except Exception as e:
+                    logger.debug(f"[UnifiedEngine] WebSocket pre_enhance failed (non-fatal): {e}")
+
             thinking_content = ""
             answer_content = ""
             in_thinking_phase = False
 
-            ollama_ok = await self._try_ollama_stream(
+            # LSMPE流式消息持久化：创建消息记录
+            lsmpe_msg_id = None
+            try:
+                from lsmpe_engine import LSMPEEngine, TYPE_AI_REPLY
+                lsmpe = LSMPEEngine.get_instance()
+                conv_id = data.get("conversation_id", session_id)
+                lsmpe_msg = lsmpe.create_message(conv_id, TYPE_AI_REPLY, model)
+                lsmpe_msg_id = lsmpe_msg.msg_id
+            except Exception as e:
+                logger.debug(f"LSMPE创建消息失败(非致命): {e}")
+
+            # 优先使用本地模型 (llama.cpp)，通过后端API调用
+            local_ok = await self._try_local_model_stream(
                 websocket, model, system_prompt, message,
-                thinking_chain_mode,
-                thinking_content, answer_content, in_thinking_phase,
-                history_messages
+                thinking_chain_mode, history_messages, thinking_enabled, chat_settings,
+                lsmpe_msg_id=lsmpe_msg_id, data=data, session_id=session_id
             )
 
-            if not ollama_ok:
-                await self._try_backend_fallback(
-                    websocket, model, message,
-                    thinking_chain_mode,
-                    history_messages
+            if not local_ok:
+                # 降级到 Ollama
+                ollama_ok = await self._try_ollama_stream(
+                    websocket, model, system_prompt, message,
+                    thinking_chain_mode, history_messages, thinking_enabled, chat_settings,
+                    lsmpe_msg_id=lsmpe_msg_id, data=data, session_id=session_id
                 )
+
+                if not ollama_ok:
+                    error_msg = f"模型服务不可用: {model}"
+                    error_detail = "本地模型和 Ollama 均不可用"
+                    await websocket.send(self.protocol.encode("error", {
+                        "message": error_msg,
+                        "detail": error_detail,
+                        "model": model,
+                        "suggestion": "请尝试: 1) 切换其他模型 2) 运行 ollama pull 重新下载 3) 检查模型文件是否完整"
+                    }))
+                    try:
+                        from auto_heal import auto_heal
+                        auto_heal.diagnose_and_repair(
+                            error_message=error_msg,
+                            source="voice_call.all_failed",
+                            extra={"model": model},
+                        )
+                    except ImportError:
+                        pass
         except Exception as e:
-            await websocket.send(self.protocol.encode("error", {"message": str(e)}))
+            try:
+                await websocket.send(self.protocol.encode("error", {"message": str(e)}))
+                try:
+                    from auto_heal import auto_heal
+                    auto_heal.diagnose_and_repair(
+                        error_message=str(e),
+                        source="voice_call.exception",
+                        extra={"model": data.get("model", "") if isinstance(data, dict) else ""},
+                    )
+                except ImportError:
+                    pass
+            except Exception:
+                pass
+        finally:
+            async with self.sessions_lock:
+                self.active_chat_sessions.pop(session_id, None)
+            logger.info(f"chat会话已结束: {session_id}, 当前并发数: {len(self.active_chat_sessions)}")
+
+    async def _try_local_model_stream(self, websocket, model, system_prompt, message,
+                                      thinking_chain_mode, history_messages=None, thinking_enabled=False, chat_settings=None,
+                                      lsmpe_msg_id=None, data=None, session_id=None):
+        """通过后端API调用本地模型 (llama.cpp) 流式响应"""
+        import aiohttp
+        try:
+            from model_availability import check_model_availability
+            avail = check_model_availability(model)
+            if not avail['local_available']:
+                logger.info(f"本地模型不可用: {model}，跳过")
+                return False
+        except ImportError:
+            try:
+                from local_model_loader import is_local_model_available
+                if not is_local_model_available(model):
+                    logger.info(f"本地模型不可用: {model}，跳过")
+                    return False
+            except ImportError:
+                return False
+
+        logger.info(f"本地模型可用，优先使用: {model}")
+
+        fallback_chat_settings = {"thinking": thinking_enabled}
+        if chat_settings and isinstance(chat_settings, dict):
+            for key in ("temperature", "top_p", "top_k", "repeat_penalty", "max_response_tokens"):
+                if key in chat_settings:
+                    fallback_chat_settings[key] = chat_settings[key]
+
+        payload = {
+            "message": message,
+            "model": model,
+            "stream": True,
+            "messages": history_messages or [],
+            "system_prompt": system_prompt,
+            "chat_settings": fallback_chat_settings
+        }
+        headers = {"X-Internal-Call": "true"}
+        try:
+            async with aiohttp.ClientSession() as sess:
+                async with sess.post("http://127.0.0.1:5001/api/chat", json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=3600)) as resp:
+                    if resp.status != 200:
+                        body = await resp.text()
+                        logger.warning(f"本地模型API返回 {resp.status}，将降级到 Ollama")
+                        return False
+
+                    thinking_content = ""
+                    answer_content = ""
+                    async for raw_line in resp.content:
+                        line = raw_line.decode("utf-8").strip()
+                        if not line or not line.startswith("data: "):
+                            continue
+                        json_str = line[6:]
+                        if json_str.strip() == "[DONE]":
+                            break
+                        try:
+                            obj = json.loads(json_str)
+                        except json.JSONDecodeError:
+                            continue
+
+                        if "error" in obj:
+                            logger.warning(f"本地模型流式错误: {obj['error']}")
+                            return False
+
+                        event = obj.get("event", "")
+                        content = obj.get("content", "")
+                        done = obj.get("done", False)
+
+                        if event == "thinking_start":
+                            await websocket.send(self.protocol.encode("thinking_start", {}))
+                        elif event == "thinking_chunk" and content:
+                            thinking_content += content
+                            await websocket.send(self.protocol.encode("thinking_chunk", {
+                                "content": content,
+                                "model": model,
+                                "created": int(time.time())
+                            }))
+                            if lsmpe_msg_id:
+                                try:
+                                    from lsmpe_engine import LSMPEEngine
+                                    LSMPEEngine.get_instance().append_thinking(lsmpe_msg_id, content)
+                                except Exception:
+                                    pass
+                        elif event == "answer_chunk" and content:
+                            answer_content += content
+                            await websocket.send(self.protocol.encode("answer_chunk", {
+                                "content": content,
+                                "model": model,
+                                "created": int(time.time())
+                            }))
+                            if lsmpe_msg_id:
+                                try:
+                                    from lsmpe_engine import LSMPEEngine
+                                    LSMPEEngine.get_instance().append_chunk(lsmpe_msg_id, content)
+                                except Exception:
+                                    pass
+
+                        if done:
+                            await websocket.send(self.protocol.encode("done", {
+                                "thinking_summary": self._summarize_thinking(thinking_content) if thinking_chain_mode == "brief" and thinking_content else thinking_content,
+                                "model": model,
+                                "created": int(time.time())
+                            }))
+                            if lsmpe_msg_id:
+                                try:
+                                    from lsmpe_engine import LSMPEEngine, STATUS_COMPLETED
+                                    LSMPEEngine.get_instance().finish_message(lsmpe_msg_id, STATUS_COMPLETED)
+                                except Exception:
+                                    pass
+                            # 统一引擎post_enhance（本地模型路径）
+                            if _UNIFIED_ENGINE_AVAILABLE and answer_content:
+                                try:
+                                    engine = UnifiedEngine.get_instance()
+                                    persona_id = data.get("persona_id", "default") if isinstance(data, dict) else "default"
+                                    engine.record_turn(session_id, "assistant", answer_content, persona_id)
+                                    engine.post_enhance(session_id, message, answer_content, persona_id)
+                                except Exception as e:
+                                    logger.debug(f"[UnifiedEngine] local post_enhance failed (non-fatal): {e}")
+                            return True
+            return True
+        except Exception as e:
+            logger.warning(f"本地模型流式请求失败: {e}，将降级到 Ollama")
+            return False
 
     async def _try_ollama_stream(self, websocket, model, system_prompt, message,
-                                  thinking_chain_mode,
-                                  thinking_content, answer_content, in_thinking_phase,
-                                  history_messages=None):
+                                 thinking_chain_mode, history_messages=None, thinking_enabled=False, chat_settings=None,
+                                 lsmpe_msg_id=None, data=None, session_id=None):
         import aiohttp
+        try:
+            from model_availability import check_model_availability
+            avail = check_model_availability(model)
+            if not avail['ollama_available']:
+                logger.info(f"Ollama模型不可用: {model}，跳过")
+                return False
+        except ImportError:
+            pass
+        thinking_content = ""
+        answer_content = ""
+        in_thinking_phase = False
         ollama_messages = [{"role": "system", "content": system_prompt}]
         if history_messages and isinstance(history_messages, list):
             for hm in history_messages:
                 if isinstance(hm, dict) and hm.get("role") in ("user", "assistant") and hm.get("content", "").strip():
                     ollama_messages.append({"role": hm["role"], "content": hm["content"]})
         ollama_messages.append({"role": "user", "content": message})
+
+        options = {}
+        if chat_settings and isinstance(chat_settings, dict):
+            if "temperature" in chat_settings:
+                options["temperature"] = float(chat_settings["temperature"])
+            if "top_p" in chat_settings:
+                options["top_p"] = float(chat_settings["top_p"])
+            if "top_k" in chat_settings:
+                options["top_k"] = int(chat_settings["top_k"])
+            if "repeat_penalty" in chat_settings:
+                options["repeat_penalty"] = float(chat_settings["repeat_penalty"])
+
         payload = {
             "model": model,
             "messages": ollama_messages,
-            "stream": True
+            "stream": True,
+            "think": thinking_enabled
         }
+        if options:
+            payload["options"] = options
         try:
             async with aiohttp.ClientSession() as sess:
-                async with sess.post("http://localhost:11434/api/chat", json=payload, timeout=aiohttp.ClientTimeout(total=300)) as resp:
+                async with sess.post("http://localhost:11434/api/chat", json=payload, timeout=aiohttp.ClientTimeout(total=3600)) as resp:
+                    if resp.status == 404:
+                        error_body = await resp.text()
+                        error_detail = ""
+                        try:
+                            error_obj = json.loads(error_body)
+                            error_detail = error_obj.get("error", "")
+                        except Exception:
+                            error_detail = error_body[:200]
+                        logger.warning(f"Ollama 404: 模型 \"{model}\" 未注册: {error_detail}，将降级到后端 API")
+                        return False
                     if resp.status != 200:
-                        logger.warning(f"Ollama 返回 {resp.status}，将降级到后端 API")
+                        error_body = await resp.text()
+                        error_detail = ""
+                        try:
+                            error_obj = json.loads(error_body)
+                            error_detail = error_obj.get("error", "")
+                        except Exception:
+                            error_detail = error_body[:200]
+                        logger.warning(f"Ollama 返回 {resp.status}: {error_detail}，将降级到后端 API")
                         return False
 
                     async for raw in resp.content:
@@ -367,6 +621,12 @@ class VoiceCallService:
                                     "model": model,
                                     "created": int(time.time())
                                 }))
+                                if lsmpe_msg_id:
+                                    try:
+                                        from lsmpe_engine import LSMPEEngine
+                                        LSMPEEngine.get_instance().append_thinking(lsmpe_msg_id, thinking)
+                                    except Exception:
+                                        pass
                             elif content:
                                 if in_thinking_phase:
                                     in_thinking_phase = False
@@ -376,6 +636,12 @@ class VoiceCallService:
                                     "model": model,
                                     "created": int(time.time())
                                 }))
+                                if lsmpe_msg_id:
+                                    try:
+                                        from lsmpe_engine import LSMPEEngine
+                                        LSMPEEngine.get_instance().append_chunk(lsmpe_msg_id, content)
+                                    except Exception:
+                                        pass
 
                             if done:
                                 await websocket.send(self.protocol.encode("done", {
@@ -383,6 +649,21 @@ class VoiceCallService:
                                     "model": model,
                                     "created": int(time.time())
                                 }))
+                                if lsmpe_msg_id:
+                                    try:
+                                        from lsmpe_engine import LSMPEEngine, STATUS_COMPLETED
+                                        LSMPEEngine.get_instance().finish_message(lsmpe_msg_id, STATUS_COMPLETED)
+                                    except Exception:
+                                        pass
+                                # 统一引擎post_enhance（Ollama路径）
+                                if _UNIFIED_ENGINE_AVAILABLE and answer_content:
+                                    try:
+                                        engine = UnifiedEngine.get_instance()
+                                        persona_id = data.get("persona_id", "default") if isinstance(data, dict) else "default"
+                                        engine.record_turn(session_id, "assistant", answer_content, persona_id)
+                                        engine.post_enhance(session_id, message, answer_content, persona_id)
+                                    except Exception as e:
+                                        logger.debug(f"[UnifiedEngine] ollama post_enhance failed (non-fatal): {e}")
                                 break
                         except Exception:
                             continue
@@ -391,18 +672,25 @@ class VoiceCallService:
             logger.warning(f"Ollama 流式请求失败: {e}，将降级到后端 API")
             return False
 
-    async def _try_backend_fallback(self, websocket, model, message, thinking_chain_mode, history_messages=None):
+    async def _try_backend_fallback(self, websocket, model, message, thinking_chain_mode, history_messages=None, thinking_enabled=False, chat_settings=None):
         import aiohttp
+        fallback_chat_settings = {"thinking": thinking_enabled}
+        if chat_settings and isinstance(chat_settings, dict):
+            for key in ("temperature", "top_p", "top_k", "repeat_penalty", "max_response_tokens"):
+                if key in chat_settings:
+                    fallback_chat_settings[key] = chat_settings[key]
+
         payload = {
             "message": message,
             "model": model,
             "stream": False,
-            "messages": history_messages or []
+            "messages": history_messages or [],
+            "chat_settings": fallback_chat_settings
         }
         headers = {"X-Internal-Call": "true"}
         try:
             async with aiohttp.ClientSession() as sess:
-                async with sess.post("http://localhost:5001/api/chat", json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=120)) as resp:
+                async with sess.post("http://127.0.0.1:5001/api/chat", json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=3600)) as resp:
                     if resp.status != 200:
                         body = await resp.text()
                         logger.error(f"后端降级也失败: {resp.status} {body[:200]}")
@@ -527,7 +815,21 @@ class VoiceCallService:
             await session.websocket.send(self.protocol.encode("status", {
                 "is_speaking": session.is_speaking,
                 "is_ai_speaking": session.is_ai_speaking,
-                "conversation_length": len(session.conversation_history)
+                "conversation_length": len(session.conversation_history),
+                "current_speaker": self.config.tts_speaker_id
+            }))
+        
+        elif msg_type == "set_voice":
+            speaker_id = data.get("speaker_id", "vivian")
+            if hasattr(self.tts_service, 'set_speaker'):
+                self.tts_service.set_speaker(speaker_id)
+                self.config.tts_speaker_id = self.tts_service.current_speaker
+            else:
+                self.config.tts_speaker_id = speaker_id
+            logger.info(f"[Voice] 音色已切换: {speaker_id}")
+            await session.websocket.send(self.protocol.encode("voice_changed", {
+                "speaker_id": speaker_id,
+                "success": True
             }))
         
         else:
@@ -569,27 +871,57 @@ class VoiceCallService:
             return
         
         try:
-            # 使用内存buffer代替临时文件（避免磁盘IO）
             import io
             import wave
+            import tempfile
+            import subprocess
             
-            wav_buffer = io.BytesIO()
-            with wave.open(wav_buffer, 'wb') as wav_file:
+            # 第一步：将原始音频保存为临时WAV文件
+            temp_raw = tempfile.mktemp(suffix='.wav')
+            temp_denoised = tempfile.mktemp(suffix='.wav')
+            
+            with wave.open(temp_raw, 'wb') as wav_file:
                 wav_file.setnchannels(1)
                 wav_file.setsampwidth(2)
                 wav_file.setframerate(self.config.audio_sample_rate)
                 wav_file.writeframes(audio_data)
             
-            wav_buffer.seek(0)
+            # 第二步：使用ffmpeg进行降噪处理
+            # - highpass=f=80: 去除低频噪声（空调、风扇等）
+            # - lowpass=f=4000: 去除高频噪声（嘶嘶声、电流声）
+            # - afftdn=nf=-25: 频域降噪，降噪强度-25dB
+            # - silenceremove: 去除静音段
+            # - volume=2.0: 音量增强
+            try:
+                subprocess.run([
+                    'ffmpeg', '-y', '-i', temp_raw,
+                    '-af', 'highpass=f=80,lowpass=f=4000,afftdn=nf=-25,volume=2.0',
+                    '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le',
+                    temp_denoised
+                ], capture_output=True, check=True, timeout=10)
+                
+                # 使用降噪后的音频
+                wav_path = temp_denoised
+            except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError) as e:
+                logger.warning(f"[Voice Debug] ffmpeg降噪失败({e})，使用原始音频")
+                wav_path = temp_raw
             
-            # ASR识别（异步调用，避免阻塞事件循环）
+            # 第三步：ASR识别
             if self.asr_service:
-                logger.info(f"[Voice Debug] 开始ASR识别，音频大小: {len(audio_data)} bytes, 采样率: {self.config.audio_sample_rate}")
+                logger.info(f"[Voice Debug] 开始ASR识别，音频文件: {wav_path}")
                 loop = asyncio.get_event_loop()
                 result = await loop.run_in_executor(
-                    None,  # 使用默认线程池
-                    lambda: self.asr_service.transcribe(wav_buffer, language="zh")
+                    None,
+                    lambda: self.asr_service.transcribe(wav_path, language="zh")
                 )
+
+                # 清理临时文件
+                for f in [temp_raw, temp_denoised]:
+                    if os.path.exists(f):
+                        try:
+                            os.remove(f)
+                        except:
+                            pass
 
                 if result:
                     text = result.text.strip()
@@ -616,6 +948,13 @@ class VoiceCallService:
                     logger.warning("[Voice Debug] ASR返回空结果")
             else:
                 logger.error("[Voice Debug] ASR服务不可用！")
+                # 清理临时文件
+                for f in [temp_raw, temp_denoised]:
+                    if os.path.exists(f):
+                        try:
+                            os.remove(f)
+                        except:
+                            pass
             
         except Exception as e:
             logger.error(f"[Voice Debug] 处理音频失败: {e}")
@@ -652,89 +991,143 @@ class VoiceCallService:
         return True
     
     async def _generate_ai_response(self, session: CallSession, user_text: str):
-        """生成AI回复"""
         logger.info(f"[Voice Debug] _generate_ai_response 被调用, 用户文本: '{user_text[:50]}'")
-        
+
         if session.is_interrupted:
             logger.info("[Voice Debug] 会话已被打断，跳过AI回复")
             return
-        
+
         session.is_ai_speaking = True
-        
+
         try:
-            # 构建对话历史
             messages = []
-            for msg in session.conversation_history[-10:]:  # 保留最近10轮
+            for msg in session.conversation_history[-10:]:
                 messages.append({"role": msg["role"], "content": msg["content"]})
-            
             messages.append({"role": "user", "content": user_text})
-            
-            # 系统提示词
+
             system_prompt = """你是一个智能语音助手，使用Qwen3.5模型。
 请用简洁、自然的口语化中文回答，长度控制在1-3句话。
 保持友好、专业的态度，响应要快。"""
-            
-            # 调用Ollama生成回复
-            logger.info(f"[Voice Debug] 调用Ollama LLM, model={self.config.llm_model}")
+
             import aiohttp
-            
-            async with aiohttp.ClientSession() as http_session:
-                async with http_session.post(
-                    "http://localhost:11434/api/chat",
-                    json={
-                        "model": self.config.llm_model,
-                        "messages": [{"role": "system", "content": system_prompt}] + messages,
-                        "stream": False,
-                        "options": {
-                            "temperature": self.config.llm_temperature,
-                            "num_predict": self.config.llm_max_tokens
-                        }
+
+            sentence_queue = asyncio.Queue()
+            full_text_holder = [""]
+
+            async def _stream_llm():
+                payload = {
+                    "model": self.config.llm_model,
+                    "messages": [{"role": "system", "content": system_prompt}] + messages,
+                    "stream": True,
+                    "options": {
+                        "temperature": self.config.llm_temperature,
+                        "num_predict": self.config.llm_max_tokens
                     }
-                ) as response:
-                    logger.info(f"[Voice Debug] Ollama响应状态: {response.status}")
-                    if response.status == 200:
-                        result = await response.json()
-                        logger.info(f"[Voice Debug] Ollama完整响应: {str(result)[:300]}")
-                        ai_text = result.get("message", {}).get("content", "").strip()
-                        logger.info(f"[Voice Debug] LLM回复: '{ai_text[:80]}' (长度: {len(ai_text)})")
-                        
-                        if not ai_text:
-                            logger.warning("[Voice Debug] LLM返回空回复，发送默认回复")
-                            ai_text = "抱歉，我没有听清楚，请再说一次。"
-                        
-                        if not session.is_interrupted:
-                            session.current_ai_text = ai_text
-                            session.total_ai_messages += 1
-                            
-                            # 保存到对话历史
-                            session.conversation_history.append({
-                                "role": "user",
-                                "content": user_text,
-                                "timestamp": time.time()
-                            })
-                            session.conversation_history.append({
-                                "role": "assistant",
-                                "content": ai_text,
-                                "timestamp": time.time()
-                            })
-                            
-                            # 发送AI文本
-                            await session.websocket.send(self.protocol.encode("ai_text", {
-                                "text": ai_text
-                            }))
-                            
-                            logger.info(f"[Voice Debug] 发送ai_text消息，准备合成语音")
-                            
-                            # 合成语音
-                            await self._synthesize_speech(session, ai_text)
-                    else:
-                        logger.error(f"[Voice Debug] LLM调用失败: HTTP {response.status}")
-                        try:
-                            error_text = await response.text()
-                            logger.error(f"[Voice Debug] LLM错误详情: {error_text[:200]}")
-                        except:
-                            pass
-                        
+                }
+                try:
+                    async with aiohttp.ClientSession() as http_sess:
+                        async with http_sess.post(
+                            "http://localhost:11434/api/chat",
+                            json=payload,
+                            timeout=aiohttp.ClientTimeout(total=120)
+                        ) as resp:
+                            if resp.status == 404:
+                                logger.error(f"[Voice] LLM模型 \"{self.config.llm_model}\" 未在 Ollama 中注册")
+                                await sentence_queue.put(None)
+                                return
+                            if resp.status != 200:
+                                logger.error(f"[Voice] LLM流式请求失败: HTTP {resp.status}")
+                                await sentence_queue.put(None)
+                                return
+
+                            buffer = ""
+                            async for raw in resp.content:
+                                if session.is_interrupted:
+                                    break
+                                line = raw.decode("utf-8").strip()
+                                if not line:
+                                    continue
+                                try:
+                                    obj = json.loads(line)
+                                    content = obj.get("message", {}).get("content", "")
+                                    done = obj.get("done", False)
+                                    if content:
+                                        buffer += content
+                                        full_text_holder[0] += content
+                                        sentence = self._extract_complete_sentence(buffer)
+                                        if sentence:
+                                            buffer = buffer[len(sentence):]
+                                            await sentence_queue.put(sentence)
+                                    if done:
+                                        break
+                                except json.JSONDecodeError:
+                                    continue
+
+                            if buffer.strip() and not session.is_interrupted:
+                                await sentence_queue.put(buffer.strip())
+                except Exception as e:
+                    logger.error(f"[Voice] LLM流式异常: {e}")
+                finally:
+                    await sentence_queue.put(None)
+
+            llm_task = asyncio.create_task(_stream_llm())
+
+            pending_tts = []
+
+            while True:
+                sentence = await sentence_queue.get()
+                if sentence is None:
+                    break
+                if session.is_interrupted:
+                    break
+                if len(sentence) < 2:
+                    continue
+
+                await session.websocket.send(self.protocol.encode("ai_text", {
+                    "text": sentence,
+                    "is_chunk": True
+                }))
+
+                synth_task = asyncio.create_task(self._synthesize_only(session, sentence))
+                pending_tts.append(synth_task)
+
+                if len(pending_tts) >= 2:
+                    result = await pending_tts.pop(0)
+                    if result and not session.is_interrupted:
+                        await self._send_audio(session, result)
+
+            for task in pending_tts:
+                if not session.is_interrupted:
+                    result = await task
+                    if result:
+                        await self._send_audio(session, result)
+
+            llm_task.cancel()
+            try:
+                await llm_task
+            except asyncio.CancelledError:
+                pass
+
+            ai_text = full_text_holder[0].strip()
+            if ai_text and not session.is_interrupted:
+                session.current_ai_text = ai_text
+                session.total_ai_messages += 1
+                session.conversation_history.append({
+                    "role": "user",
+                    "content": user_text,
+                    "timestamp": time.time()
+                })
+                session.conversation_history.append({
+                    "role": "assistant",
+                    "content": ai_text,
+                    "timestamp": time.time()
+                })
+
+                await session.websocket.send(self.protocol.encode("ai_text", {
+                    "text": ai_text,
+                    "is_final": True
+                }))
+
         except Exception as e:
             logger.error(f"[Voice Debug] 生成AI回复异常: {e}")
             import traceback
@@ -742,98 +1135,88 @@ class VoiceCallService:
         finally:
             session.is_ai_speaking = False
     
-    async def _synthesize_speech(self, session: CallSession, text: str):
-        """合成语音"""
-        logger.info(f"[TTS Debug] _synthesize_speech 被调用, text长度={len(text)}, interrupted={session.is_interrupted}")
-        
-        if session.is_interrupted:
-            logger.info("[TTS Debug] 会话已被打断，跳过合成")
-            return
-
-        if not self.tts_service:
-            logger.error("[TTS Debug] TTS服务不可用，无法合成语音")
-            try:
-                await session.websocket.send(self.protocol.encode("status", {
-                    "tts_available": False,
-                    "reason": "tts_service_unavailable"
-                }))
-            except Exception:
-                pass
-            return
-        
-        logger.info(f"[TTS Debug] TTS服务可用，开始处理文本: '{text[:50]}...'")
-        
-        try:
-            # 分段合成（按句子分割）
-            sentences = self._split_sentences(text)
-            
-            for sentence in sentences:
-                if session.is_interrupted:
-                    break
-                
-                if len(sentence) < 3:
-                    continue
-                
-                # 合成语音（在线程池中执行，避免阻塞事件循环）
-                logger.info(f"[TTS Debug] 开始合成语音: '{sentence[:30]}...' speaker={self.config.tts_speaker_id}")
-                loop = asyncio.get_event_loop()
-                result = await loop.run_in_executor(
-                    None,
-                    lambda s=sentence: self.tts_service.synthesize(
-                        s,
-                        speaker_id=self.config.tts_speaker_id,
-                        speed=self.config.tts_speed
-                    )
-                )
-                
-                logger.info(f"[TTS Debug] 合成结果: {result is not None}, interrupted={session.is_interrupted}")
-                
-                if result and not session.is_interrupted:
-                    # 转换为base64
-                    audio_base64 = self.tts_service.audio_to_base64(result)
-                    logger.info(f"[TTS Debug] base64转换完成, 长度: {len(audio_base64) if audio_base64 else 0}")
-                    
-                    # 发送音频
-                    await session.websocket.send(self.protocol.encode("ai_audio", {
-                        "audio": audio_base64,
-                        "sample_rate": result.sample_rate,
-                        "duration_ms": result.duration_ms
-                    }))
-                    
-                    logger.info(f"[TTS Debug] ai_audio 消息已发送, 时长: {result.duration_ms:.0f}ms, 采样率: {result.sample_rate}")
-                    
-                    # 非阻塞等待，让前端有时间播放
-                    await asyncio.sleep(min(result.duration_ms / 1000, 0.5))
-        
-        except Exception as e:
-            logger.error(f"语音合成失败: {e}")
-            try:
-                await session.websocket.send(self.protocol.encode("status", {
-                    "tts_available": False,
-                    "reason": f"tts_synthesis_failed: {str(e)}"
-                }))
-            except Exception:
-                pass
-    
     def _split_sentences(self, text: str) -> list:
-        """将文本分割成句子"""
         import re
-        # 按标点符号分割
         sentences = re.split(r'([。！？.!?])', text)
         result = []
         current = ""
-        
         for part in sentences:
             current += part
             if part in '。！？.!?':
                 if current.strip():
                     result.append(current.strip())
                 current = ""
-        
         if current.strip():
             result.append(current.strip())
-        
         return result if result else [text]
+
+    def _extract_complete_sentence(self, buffer: str) -> str:
+        import re
+        match = re.search(r'.*?[。！？.!?；;]', buffer)
+        if match:
+            return match.group(0)
+        if len(buffer) > 60:
+            match = re.search(r'.*?[，,、]', buffer)
+            if match:
+                return match.group(0)
+        return ""
+
+    def _infer_emotion(self, text: str, history: list) -> str:
+        if not text:
+            return None
+        excl = text.count('！') + text.count('!')
+        ques = text.count('？') + text.count('?')
+        if excl >= 2:
+            return "cheerful"
+        if ques > 0:
+            return "calm"
+        warm_kw = {'谢谢', '感谢', '很高兴', '欢迎', '喜欢', '开心', '好的', '没问题'}
+        if any(kw in text for kw in warm_kw):
+            return "warm"
+        sorry_kw = {'抱歉', '对不起', '不好意思', '遗憾'}
+        if any(kw in text for kw in sorry_kw):
+            return "calm"
+        return None
+
+    async def _synthesize_only(self, session: CallSession, sentence: str):
+        if session.is_interrupted:
+            return None
+        if not self.tts_service:
+            return None
+        if len(sentence) < 3:
+            return None
+
+        try:
+            emotion = self._infer_emotion(sentence, session.conversation_history)
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                lambda s=sentence, e=emotion: self.tts_service.synthesize(
+                    s,
+                    speaker_id=self.config.tts_speaker_id,
+                    speed=self.config.tts_speed,
+                    emotion=e
+                )
+            )
+            return result
+        except Exception as e:
+            logger.error(f"[TTS] 合成失败: {e}")
+            return None
+
+    async def _send_audio(self, session: CallSession, result):
+        if not result or session.is_interrupted:
+            return
+        try:
+            audio_base64 = self.tts_service.audio_to_base64(result)
+            payload = {
+                "audio": audio_base64,
+                "sample_rate": result.sample_rate,
+                "duration_ms": result.duration_ms
+            }
+            await session.websocket.send(self.protocol.encode("ai_audio", payload))
+            logger.info(f"[TTS] 音频已发送, 时长={result.duration_ms:.0f}ms")
+        except Exception as e:
+            logger.error(f"[TTS] 发送音频失败: {e}")
     
     async def _handle_interrupt(self, session: CallSession):
         """处理打断"""
@@ -868,9 +1251,9 @@ class VoiceCallService:
             self.handle_websocket,
             self.config.host,
             self.config.port,
-            ping_interval=20,  # 每20秒发送一次ping
-            ping_timeout=30,   # 30秒内无响应才断开（更宽容）
-            close_timeout=10   # 关闭连接超时
+            ping_interval=60,
+            ping_timeout=120,
+            close_timeout=30,
         ):
             logger.info("语音通话服务已启动")
             await asyncio.Future()  # 永久运行

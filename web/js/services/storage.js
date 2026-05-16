@@ -1,8 +1,9 @@
 /**
- * Ollama Hub - 本地存储管理模块
+ * Ollama Hub - 存储管理模块
  * 
- * 功能：管理对话历史、设置等数据的本地持久化存储
- * 使用 localStorage 实现数据持久化，支持导入导出功能
+ * 功能：管理对话历史、设置等数据的持久化存储
+ * 使用后端存储API实现数据持久化，支持跨浏览器同步
+ * 当API调用失败时回退到localStorage
  */
 
 const Storage = {
@@ -17,13 +18,84 @@ const Storage = {
         CURRENT_GROUP_CONVERSATION: 'ollama_current_group_conversation',
         CHAT_HISTORY: 'ollama_chat_history',
         DISABLED_MODELS: 'ollama_disabled_models',
-        APP_SETTINGS_V2: 'app_settings_v2'
+        APP_SETTINGS_V2: 'app_settings_v2',
+        ACTIVE_CONVERSATION: 'ollama_active_conv',
+        ACTIVE_GROUP_PREFIX: 'ollama_active_group_',
+        ACTIVE_CONV_PREFIX: 'ollama_active_conv_',
+        SELECTED_MODEL: 'selected_model_name',
+        MODEL_SIZE_LIMIT: 'model_size_limit_gb',
+        UI_SETTINGS: 'ui_settings_v1',
+        DEFAULT_GROUP_HIDDEN: 'defaultGroupHidden',
+        LAST_SELECTED_GROUP: 'lastSelectedGroupId',
+        LOCAL_IP: 'localIP',
+        IMAGE_GEN_PARAMS: 'imageGenParams',
+        IMAGE_GEN_HISTORY: 'imageGenHistory',
+        MAIN_SIDEBAR_COLLAPSED: 'mainSidebarCollapsed',
+        SIDEBAR_COLLAPSED: 'sidebarCollapsed',
+        COMPUTER_ASSIST_ENABLED: 'computerAssistControlEnabled',
+        CHAT_TABS: 'ollama_chat_tabs',
+        ACTIVE_TAB_ID: 'ollama_active_tab_id',
+        PERSONA_V2: 'persona_v2_data',
+        PERSONA_TIMELINE: 'persona_timeline',
+        PERSONA_INTENT: 'persona_intent',
+        PERSONA_GROWTH: 'persona_growth',
+        STREAM_MODE: 'ollama_stream_mode',
+        PERSONA_MEMORIES: 'persona_memories',
+        PERSONA_STATES: 'persona_states',
+        GROUP_CHAT_STATE: 'group_chat_state',
+        HYBRID_GROUP_CHAT_STATE: 'hybrid_group_chat_state',
+        SMART_GREETINGS: 'smart_greetings',
+        CONTEXT_COMPRESSION_SETTINGS: 'context_compression_settings',
+        PARAM_CONFIG: 'param_config_v1',
+        FEATURE_TOGGLE: 'feature_toggle_state',
+        WAS_GENERATING: 'ollama_was_generating',
+        GENERATING_CONV_ID: 'ollama_generating_conv_id',
+        GENERATING_MODEL: 'ollama_generating_model',
+        STREAMING_SESSIONS: 'ollama_streaming_sessions',
+        GROUPS_MIGRATED: 'ollama_groups_migrated'
     },
 
+    _customKeys: new Set(),
+    _readyPromise: null,
+    _syncTimers: new Map(),
+    _subscribers: new Set(),
+    _broadcastChannel: null,
+    _syncChannelInitialized: false,
+    _criticalKeys: [
+        'ollama_conversations',
+        'ollama_settings',
+        'app_settings_v2',
+        'ollama_current_conversation',
+        'ollama_chat_tabs',
+        'ollama_active_tab_id',
+        'selected_model_name',
+        'ollama_streaming_sessions'
+    ],
+
+    registerKey(key) {
+        if (!this.STORAGE_KEYS[key] && !this._customKeys.has(key)) {
+            this._customKeys.add(key);
+        }
+    },
+
+    getAllRegisteredKeys() {
+        return [...Object.values(this.STORAGE_KEYS), ...this._customKeys];
+    },
+
+    get API_BASE() {
+        return window.API?.config?.apiBaseUrl || `http://${window.location.hostname || 'localhost'}:5001`;
+    },
+
+    // 存储模式：'api' 或 'local'
+    storageMode: 'api',
+
     /**
-     * 初始化存储模块，清理损坏数据
+     * 初始化存储模块
      */
     init() {
+        if (this._readyPromise) {
+            return this._readyPromise;
+        }
         const keys = Object.values(this.STORAGE_KEYS);
         for (const key of keys) {
             try {
@@ -33,18 +105,405 @@ const Storage = {
                 }
             } catch (e) {}
         }
+        
+        // 测试API连接
+        this._initSyncChannel();
+
+        this._readyPromise = this.testApiConnection()
+            .then(() => this.refreshCriticalCaches())
+            .catch(() => true);
+
+        return this._readyPromise;
+    },
+
+    ready() {
+        return this._readyPromise || Promise.resolve(true);
+    },
+
+    _initSyncChannel() {
+        if (this._syncChannelInitialized || typeof window === 'undefined') {
+            return;
+        }
+
+        this._syncChannelInitialized = true;
+
+        if ('BroadcastChannel' in window) {
+            try {
+                this._broadcastChannel = new BroadcastChannel('ollama-storage-sync');
+                this._broadcastChannel.addEventListener('message', (event) => {
+                    const payload = event.data;
+                    if (!payload || !payload.key) return;
+
+                    if (payload.action === 'delete') {
+                        this._removeLocalValue(payload.key, { emit: false, syncBackend: false });
+                    } else if (payload.action === 'set') {
+                        this._writeLocalValue(payload.key, payload.value, { emit: false, syncBackend: false });
+                    }
+
+                    this._emitChange(payload.key, payload.value, 'broadcast');
+                });
+            } catch (e) {
+                console.warn('[Storage] BroadcastChannel 初始化失败:', e);
+            }
+        }
+
+        window.addEventListener('storage', (event) => {
+            if (!event.key) return;
+
+            const registered = this.getAllRegisteredKeys().includes(event.key) || String(event.key).startsWith('ollama_streaming_save_');
+            if (!registered) return;
+
+            let value = null;
+            if (event.newValue !== null && event.newValue !== undefined) {
+                try {
+                    value = JSON.parse(event.newValue);
+                } catch (e) {
+                    value = event.newValue;
+                }
+            }
+
+            this._emitChange(event.key, value, 'storage');
+        });
+    },
+
+    subscribe(listener) {
+        if (typeof listener !== 'function') {
+            return () => {};
+        }
+
+        this._subscribers.add(listener);
+        return () => this._subscribers.delete(listener);
+    },
+
+    _emitChange(key, value, source = 'local') {
+        this._subscribers.forEach((listener) => {
+            try {
+                listener({ key, value, source });
+            } catch (e) {
+                console.warn('[Storage] 监听器执行失败:', e);
+            }
+        });
+    },
+
+    _readLocalValue(key, defaultVal = null) {
+        try {
+            const data = localStorage.getItem(key);
+            if (!data || data === 'undefined' || data === 'null' || data === '') {
+                return defaultVal;
+            }
+            return JSON.parse(data);
+        } catch (e) {
+            console.error('[Storage] 本地读取失败:', e);
+            return defaultVal;
+        }
+    },
+
+    _writeLocalValue(key, data, options = {}) {
+        const { emit = true, syncBackend = true } = options;
+
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+        } catch (e) {
+            console.error('[Storage] 本地缓存写入失败:', e);
+            return false;
+        }
+
+        if (emit) {
+            this._emitChange(key, data, 'local');
+            if (this._broadcastChannel) {
+                try {
+                    this._broadcastChannel.postMessage({ action: 'set', key, value: data });
+                } catch (e) {}
+            }
+        }
+
+        if (syncBackend) {
+            this._scheduleBackendSync(key, data);
+        }
+
+        return true;
+    },
+
+    _removeLocalValue(key, options = {}) {
+        const { emit = true, syncBackend = true } = options;
+
+        try {
+            localStorage.removeItem(key);
+        } catch (e) {
+            console.error('[Storage] 本地删除失败:', e);
+            return false;
+        }
+
+        if (emit) {
+            this._emitChange(key, null, 'local');
+            if (this._broadcastChannel) {
+                try {
+                    this._broadcastChannel.postMessage({ action: 'delete', key, value: null });
+                } catch (e) {}
+            }
+        }
+
+        if (syncBackend) {
+            this._scheduleBackendDelete(key);
+        }
+
+        return true;
+    },
+
+    _scheduleBackendSync(key, data) {
+        if (this.storageMode !== 'api') {
+            return;
+        }
+
+        const timerKey = `set:${key}`;
+        const existingTimer = this._syncTimers.get(timerKey);
+        if (existingTimer) {
+            clearTimeout(existingTimer);
+        }
+
+        const timer = setTimeout(async () => {
+            this._syncTimers.delete(timerKey);
+            try {
+                await this.api('/api/storage/sync', { key, data });
+            } catch (e) {
+                console.warn('[Storage] 后端同步失败，已保留本地快照:', key, e);
+            }
+        }, 120);
+
+        this._syncTimers.set(timerKey, timer);
+    },
+
+    _scheduleBackendDelete(key) {
+        if (this.storageMode !== 'api') {
+            return;
+        }
+
+        const timerKey = `delete:${key}`;
+        const existingTimer = this._syncTimers.get(timerKey);
+        if (existingTimer) {
+            clearTimeout(existingTimer);
+        }
+
+        const timer = setTimeout(async () => {
+            this._syncTimers.delete(timerKey);
+            try {
+                await this.api('/api/storage/delete', { key });
+            } catch (e) {
+                console.warn('[Storage] 后端删除失败，已保留当前本地状态:', key, e);
+            }
+        }, 120);
+
+        this._syncTimers.set(timerKey, timer);
+    },
+
+    async refreshCriticalCaches() {
+        if (this.storageMode !== 'api') {
+            return {};
+        }
+
+        try {
+            return await this.bulkGetFromBackend(this._criticalKeys);
+        } catch (e) {
+            console.warn('[Storage] 关键缓存刷新失败:', e);
+            return {};
+        }
+    },
+
+    getSync(key, defaultVal = null) {
+        return this._readLocalValue(key, defaultVal);
+    },
+
+    setSync(key, data) {
+        return this._writeLocalValue(key, data);
+    },
+
+    deleteSync(key) {
+        return this._removeLocalValue(key);
+    },
+
+    getStreamingSessionStorageKey(conversationId) {
+        return `ollama_streaming_save_${conversationId}`;
+    },
+
+    saveStreamingSessionSnapshot(conversationId, snapshot = {}) {
+        if (!conversationId) return null;
+
+        const storageKey = this.getStreamingSessionStorageKey(conversationId);
+        const current = this.getSync(storageKey, null) || {};
+        const payload = {
+            conversationId,
+            stage: 'thinking',
+            model: '',
+            reasoningContent: '',
+            responseContent: '',
+            isGenerating: true,
+            updatedAt: new Date().toISOString(),
+            ...current,
+            ...snapshot
+        };
+
+        this.registerKey(storageKey);
+        this._writeLocalValue(storageKey, payload);
+
+        const sessions = this.getSync(this.STORAGE_KEYS.STREAMING_SESSIONS, {}) || {};
+        sessions[conversationId] = {
+            storageKey,
+            updatedAt: payload.updatedAt,
+            stage: payload.stage,
+            model: payload.model || ''
+        };
+        this._writeLocalValue(this.STORAGE_KEYS.STREAMING_SESSIONS, sessions);
+
+        return payload;
+    },
+
+    getStreamingSessionSnapshot(conversationId) {
+        if (!conversationId) return null;
+        return this.getSync(this.getStreamingSessionStorageKey(conversationId), null);
+    },
+
+    clearStreamingSessionSnapshot(conversationId) {
+        if (!conversationId) return false;
+
+        this.deleteSync(this.getStreamingSessionStorageKey(conversationId));
+
+        const sessions = this.getSync(this.STORAGE_KEYS.STREAMING_SESSIONS, {}) || {};
+        if (sessions[conversationId]) {
+            delete sessions[conversationId];
+            this._writeLocalValue(this.STORAGE_KEYS.STREAMING_SESSIONS, sessions);
+        }
+
+        return true;
+    },
+
+    /**
+     * 测试API连接
+     */
+    async testApiConnection() {
+        try {
+            const response = await fetch(`${this.API_BASE}/api/storage/exists?key=test_connection`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Internal-Call': 'true'
+                }
+            });
+            if (response.ok) {
+                this.storageMode = 'api';
+                console.log('[Storage] API连接成功，使用后端存储');
+            } else {
+                this.storageMode = 'local';
+                console.log('[Storage] API连接失败，使用本地存储');
+            }
+        } catch (e) {
+            this.storageMode = 'local';
+            console.log('[Storage] API连接失败，使用本地存储:', e);
+        }
+    },
+
+    /**
+     * API调用函数
+     */
+    async api(endpoint, data = {}, method = 'POST') {
+        try {
+            const response = await fetch(`${this.API_BASE}${endpoint}`, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Internal-Call': 'true'
+                },
+                body: method === 'POST' ? JSON.stringify(data) : undefined
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            return await response.json();
+        } catch (e) {
+            console.error('[Storage] API调用失败:', e);
+            throw e;
+        }
+    },
+
+    /**
+     * 存储数据
+     */
+    async set(key, data) {
+        this._writeLocalValue(key, data);
+        return true;
+    },
+
+    async get(key, defaultVal = null) {
+        if (this.storageMode === 'api') {
+            try {
+                const result = await this.api('/api/storage/get', { key }, 'POST');
+                if (result.success && result.data !== undefined) {
+                    try {
+                        localStorage.setItem(key, JSON.stringify(result.data));
+                    } catch (e) {}
+                    return result.data;
+                }
+            } catch (e) {
+                console.warn('[Storage] 后端读取失败，回退到本地缓存:', e);
+            }
+        }
+        
+        return this._readLocalValue(key, defaultVal);
+    },
+
+    /**
+     * 删除数据
+     */
+    async delete(key) {
+        if (this.storageMode === 'api') {
+            try {
+                const result = await this.api('/api/storage/delete', { key });
+                if (result.success) {
+                    return true;
+                }
+            } catch (e) {
+                console.warn('[Storage] 后端删除失败，回退到本地存储:', e);
+            }
+        }
+        
+        return this._removeLocalValue(key, { syncBackend: false });
+    },
+
+    /**
+     * 检查键是否存在
+     */
+    async exists(key) {
+        if (this.storageMode === 'api') {
+            try {
+                const result = await this.api('/api/storage/exists', { key }, 'POST');
+                if (result.success) {
+                    return result.exists;
+                }
+            } catch (e) {
+                console.warn('[Storage] 后端检查失败，回退到本地存储:', e);
+            }
+        }
+        
+        // 回退到本地存储
+        try {
+            return localStorage.getItem(key) !== null;
+        } catch (e) {
+            console.error('[Storage] 本地检查失败:', e);
+            return false;
+        }
     },
 
     // 默认设置配置
     DEFAULT_SETTINGS: {
         apiUrl: `http://${window.location.hostname || 'localhost'}:11434`,
-        requestTimeout: 120,
-        maxTokens: 2048,
+        requestTimeout: 900,
+        maxTokens: -1,
         temperature: 0.7,
-        contextLength: 4096,
+        contextLength: -1,
         topK: 40,
         topP: 0.9,
-        repeatPenalty: 1.1,
+        repeatPenalty: 1.15,
         presencePenalty: 0,
         frequencyPenalty: 0,
         fontSize: '16px',
@@ -65,7 +524,6 @@ const Storage = {
         systemPromptMode: 'template',
         systemPromptTemplate: 'assistant_balanced',
         systemPromptCustom: '',
-        safetyMode: 'balanced',
         adultToneMode: false
     },
 
@@ -73,17 +531,17 @@ const Storage = {
      * 获取所有群组对话
      * @returns {Array} 群组对话列表
      */
-    getGroupConversations() {
+    async getGroupConversations() {
         try {
-            const data = localStorage.getItem(this.STORAGE_KEYS.GROUP_CONVERSATIONS);
-            if (!data || data === 'undefined' || data === 'null' || data === '') {
+            const data = await this.get(this.STORAGE_KEYS.GROUP_CONVERSATIONS);
+            if (!data) {
                 return [];
             }
-            return JSON.parse(data);
+            return data;
         } catch (error) {
             console.warn('获取群组对话列表失败，清除损坏数据');
             try {
-                localStorage.removeItem(this.STORAGE_KEYS.GROUP_CONVERSATIONS);
+                await this.delete(this.STORAGE_KEYS.GROUP_CONVERSATIONS);
             } catch (e) {}
             return [];
         }
@@ -93,12 +551,9 @@ const Storage = {
      * 保存群组对话列表
      * @param {Array} conversations - 群组对话列表
      */
-    saveGroupConversations(conversations) {
+    async saveGroupConversations(conversations) {
         try {
-            localStorage.setItem(
-                this.STORAGE_KEYS.GROUP_CONVERSATIONS, 
-                JSON.stringify(conversations)
-            );
+            await this.set(this.STORAGE_KEYS.GROUP_CONVERSATIONS, conversations);
         } catch (error) {
             console.error('保存群组对话列表失败:', error);
         }
@@ -109,9 +564,9 @@ const Storage = {
      * @param {string} conversationId - 对话ID
      * @returns {Object|null} 对话对象
      */
-    getGroupConversation(conversationId) {
+    async getGroupConversation(conversationId) {
         try {
-            const conversations = this.getGroupConversations();
+            const conversations = await this.getGroupConversations();
             return conversations.find(c => c.id === conversationId) || null;
         } catch (error) {
             console.error('获取群组对话失败:', error);
@@ -124,9 +579,9 @@ const Storage = {
      * @param {string} groupId - 群组ID
      * @returns {Object} 新对话对象
      */
-    createGroupConversation(groupId) {
-        const conversations = this.getGroupConversations();
-        const group = this.getGroupDetail(groupId);
+    async createGroupConversation(groupId) {
+        const conversations = await this.getGroupConversations();
+        const group = await this.getGroupDetail(groupId);
         
         const newConversation = {
             id: this.generateId(),
@@ -138,7 +593,7 @@ const Storage = {
         };
 
         conversations.unshift(newConversation);
-        this.saveGroupConversations(conversations);
+        await this.saveGroupConversations(conversations);
         
         return newConversation;
     },
@@ -148,9 +603,9 @@ const Storage = {
      * @param {string} conversationId - 对话ID
      * @param {Object} updates - 更新内容
      */
-    updateGroupConversation(conversationId, updates) {
+    async updateGroupConversation(conversationId, updates) {
         try {
-            const conversations = this.getGroupConversations();
+            const conversations = await this.getGroupConversations();
             const index = conversations.findIndex(c => c.id === conversationId);
             
             if (index !== -1) {
@@ -159,7 +614,7 @@ const Storage = {
                     ...updates,
                     updatedAt: new Date().toISOString()
                 };
-                this.saveGroupConversations(conversations);
+                await this.saveGroupConversations(conversations);
             }
         } catch (error) {
             console.error('更新群组对话失败:', error);
@@ -170,11 +625,11 @@ const Storage = {
      * 删除群组对话
      * @param {string} conversationId - 对话ID
      */
-    deleteGroupConversation(conversationId) {
+    async deleteGroupConversation(conversationId) {
         try {
-            const conversations = this.getGroupConversations();
+            const conversations = await this.getGroupConversations();
             const filtered = conversations.filter(c => c.id !== conversationId);
-            this.saveGroupConversations(filtered);
+            await this.saveGroupConversations(filtered);
         } catch (error) {
             console.error('删除群组对话失败:', error);
         }
@@ -184,9 +639,9 @@ const Storage = {
      * 获取当前群组对话ID
      * @returns {string|null} 当前对话ID
      */
-    getCurrentGroupConversationId() {
+    async getCurrentGroupConversationId() {
         try {
-            return localStorage.getItem(this.STORAGE_KEYS.CURRENT_GROUP_CONVERSATION);
+            return await this.get(this.STORAGE_KEYS.CURRENT_GROUP_CONVERSATION);
         } catch (error) {
             return null;
         }
@@ -196,9 +651,9 @@ const Storage = {
      * 设置当前群组对话ID
      * @param {string} conversationId - 对话ID
      */
-    setCurrentGroupConversationId(conversationId) {
+    async setCurrentGroupConversationId(conversationId) {
         try {
-            localStorage.setItem(this.STORAGE_KEYS.CURRENT_GROUP_CONVERSATION, conversationId);
+            await this.set(this.STORAGE_KEYS.CURRENT_GROUP_CONVERSATION, conversationId);
         } catch (error) {
             console.error('设置当前群组对话失败:', error);
         }
@@ -210,16 +665,30 @@ const Storage = {
      */
     getConversations() {
         try {
-            const data = localStorage.getItem(this.STORAGE_KEYS.CONVERSATIONS);
-            if (!data || data === 'undefined' || data === 'null' || data === '') {
+            const data = this.getConversationsSync();
+            if (!data) {
                 return [];
             }
-            return JSON.parse(data);
+            return data;
         } catch (error) {
             console.warn('获取对话列表失败，清除损坏数据');
             try {
-                localStorage.removeItem(this.STORAGE_KEYS.CONVERSATIONS);
+                this.deleteSync(this.STORAGE_KEYS.CONVERSATIONS);
             } catch (e) {}
+            return [];
+        }
+    },
+
+    /**
+     * 同步获取对话列表（用于beforeunload等紧急场景）
+     * @returns {Array} 对话列表
+     */
+    getConversationsSync() {
+        try {
+            const data = this.getSync(this.STORAGE_KEYS.CONVERSATIONS, []);
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.warn('同步获取对话列表失败:', error);
             return [];
         }
     },
@@ -230,12 +699,34 @@ const Storage = {
      */
     saveConversations(conversations) {
         try {
-            localStorage.setItem(
-                this.STORAGE_KEYS.CONVERSATIONS, 
-                JSON.stringify(conversations)
-            );
+            this.saveConversationsSync(conversations);
         } catch (error) {
             console.error('保存对话列表失败:', error);
+        }
+    },
+
+    /**
+     * 同步保存对话列表（用于beforeunload等紧急场景）
+     * @param {Array} conversations - 对话列表
+     */
+    saveConversationsSync(conversations) {
+        try {
+            this._writeLocalValue(this.STORAGE_KEYS.CONVERSATIONS, conversations);
+        } catch (error) {
+            console.error('同步保存对话列表失败:', error);
+        }
+    },
+
+    /**
+     * 同步保存设置（用于beforeunload等紧急场景）
+     * @param {Object} settings - 设置对象
+     */
+    saveSettingsSync(settings) {
+        try {
+            this._writeLocalValue(this.STORAGE_KEYS.SETTINGS, settings);
+            this._writeLocalValue(this.STORAGE_KEYS.APP_SETTINGS_V2, settings);
+        } catch (error) {
+            console.error('同步保存设置失败:', error);
         }
     },
 
@@ -246,7 +737,7 @@ const Storage = {
      */
     getConversation(conversationId) {
         try {
-            const conversations = this.getConversations();
+            const conversations = this.getConversationsSync();
             return conversations.find(c => c.id === conversationId) || null;
         } catch (error) {
             console.error('获取对话失败:', error);
@@ -260,7 +751,7 @@ const Storage = {
      * @returns {Object} 新对话对象
      */
     createConversation(model = '') {
-        const conversations = this.getConversations();
+        const conversations = this.getConversationsSync();
         
         const newConversation = {
             id: this.generateId(),
@@ -272,7 +763,7 @@ const Storage = {
         };
 
         conversations.unshift(newConversation);
-        this.saveConversations(conversations);
+        this.saveConversationsSync(conversations);
         
         return newConversation;
     },
@@ -284,7 +775,7 @@ const Storage = {
      */
     updateConversation(conversationId, updates) {
         try {
-            const conversations = this.getConversations();
+            const conversations = this.getConversationsSync();
             const index = conversations.findIndex(c => c.id === conversationId);
             
             if (index !== -1) {
@@ -293,7 +784,7 @@ const Storage = {
                     ...updates,
                     updatedAt: new Date().toISOString()
                 };
-                this.saveConversations(conversations);
+                this.saveConversationsSync(conversations);
             }
         } catch (error) {
             console.error('更新对话失败:', error);
@@ -304,11 +795,11 @@ const Storage = {
      * 删除对话
      * @param {string} conversationId - 对话ID
      */
-    deleteConversation(conversationId) {
+    async deleteConversation(conversationId) {
         try {
-            const conversations = this.getConversations();
+            const conversations = await this.getConversations();
             const filtered = conversations.filter(c => c.id !== conversationId);
-            this.saveConversations(filtered);
+            await this.saveConversations(filtered);
         } catch (error) {
             console.error('删除对话失败:', error);
         }
@@ -320,15 +811,50 @@ const Storage = {
      */
     clearMessages(conversationId) {
         try {
-            const conversations = this.getConversations();
+            const conversations = this.getConversationsSync();
             const conversation = conversations.find(c => c.id === conversationId);
             if (conversation) {
                 conversation.messages = [];
                 conversation.updatedAt = new Date().toISOString();
-                this.saveConversations(conversations);
+                this.saveConversationsSync(conversations);
             }
         } catch (error) {
             console.error('清空消息失败:', error);
+        }
+    },
+
+    /**
+     * 克隆对话
+     * @param {string} conversationId - 要克隆的对话ID
+     * @returns {Object|null} 新克隆的对话
+     */
+    async duplicateConversation(conversationId) {
+        try {
+            const conversations = await this.getConversations();
+            const original = conversations.find(c => c.id === conversationId);
+            if (!original) {
+                console.error('未找到要克隆的对话:', conversationId);
+                return null;
+            }
+
+            const newConversation = {
+                id: 'conv_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11),
+                title: original.title + ' (副本)',
+                model: original.model,
+                messages: JSON.parse(JSON.stringify(original.messages)), // 深拷贝消息
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                folderId: original.folderId
+            };
+
+            conversations.unshift(newConversation);
+            await this.saveConversations(conversations);
+            
+            console.log('对话克隆成功:', original.title, '→', newConversation.title);
+            return newConversation;
+        } catch (error) {
+            console.error('克隆对话失败:', error);
+            return null;
         }
     },
 
@@ -339,7 +865,7 @@ const Storage = {
      */
     addMessage(conversationId, message) {
         try {
-            const conversations = this.getConversations();
+            const conversations = this.getConversationsSync();
             console.log('[Storage] 对话数量:', conversations.length);
             const conversation = conversations.find(c => c.id === conversationId);
             
@@ -350,7 +876,7 @@ const Storage = {
                     timestamp: new Date().toISOString()
                 });
                 conversation.updatedAt = new Date().toISOString();
-                this.saveConversations(conversations);
+                this.saveConversationsSync(conversations);
                 console.log('[Storage] 消息保存成功，当前消息数:', conversation.messages.length);
             } else {
                 console.error('[Storage] 未找到对话:', conversationId);
@@ -366,7 +892,7 @@ const Storage = {
      * @returns {string|null}
      */
     getCurrentConversationId() {
-        return localStorage.getItem(this.STORAGE_KEYS.CURRENT_CONVERSATION);
+        return this.getSync(this.STORAGE_KEYS.CURRENT_CONVERSATION);
     },
 
     /**
@@ -375,9 +901,9 @@ const Storage = {
      */
     setCurrentConversationId(conversationId) {
         if (conversationId) {
-            localStorage.setItem(this.STORAGE_KEYS.CURRENT_CONVERSATION, conversationId);
+            this.setSync(this.STORAGE_KEYS.CURRENT_CONVERSATION, conversationId);
         } else {
-            localStorage.removeItem(this.STORAGE_KEYS.CURRENT_CONVERSATION);
+            this.deleteSync(this.STORAGE_KEYS.CURRENT_CONVERSATION);
         }
     },
 
@@ -387,14 +913,13 @@ const Storage = {
      */
     getSettings() {
         try {
-            const legacy = localStorage.getItem(this.STORAGE_KEYS.SETTINGS);
-            const v2 = localStorage.getItem(this.STORAGE_KEYS.APP_SETTINGS_V2);
-            if ((!legacy || legacy === 'undefined' || legacy === 'null' || legacy === '') &&
-                (!v2 || v2 === 'undefined' || v2 === 'null' || v2 === '')) {
+            const legacy = this.getSync(this.STORAGE_KEYS.SETTINGS);
+            const v2 = this.getSync(this.STORAGE_KEYS.APP_SETTINGS_V2);
+            if (!legacy && !v2) {
                 return { ...this.DEFAULT_SETTINGS };
             }
-            const legacyObj = legacy ? JSON.parse(legacy) : {};
-            const v2Obj = v2 ? JSON.parse(v2) : {};
+            const legacyObj = legacy ? legacy : {};
+            const v2Obj = v2 ? v2 : {};
             return { ...this.DEFAULT_SETTINGS, ...legacyObj, ...v2Obj };
         } catch (error) {
             console.warn('获取设置失败，使用默认值');
@@ -408,8 +933,7 @@ const Storage = {
      */
     saveSettings(settings) {
         try {
-            localStorage.setItem(this.STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
-            localStorage.setItem(this.STORAGE_KEYS.APP_SETTINGS_V2, JSON.stringify(settings));
+            this.saveSettingsSync(settings);
         } catch (error) {
             console.error('保存设置失败:', error);
         }
@@ -419,14 +943,18 @@ const Storage = {
      * 获取所有角色卡
      * @returns {Array} 角色卡列表
      */
-    getPersonas() {
+    async getPersonas() {
+        if (typeof PersonaV2 !== 'undefined' && typeof FeatureToggle !== 'undefined' && FeatureToggle.isMasterEnabled()) {
+            const v2Personas = PersonaV2.getPersonas();
+            if (v2Personas && v2Personas.length > 0) return v2Personas;
+        }
         try {
             const key = 'ollama_personas';
-            const data = localStorage.getItem(key);
-            if (!data || data === 'undefined' || data === 'null' || data === '') {
+            const data = await this.get(key);
+            if (!data) {
                 return this.getDefaultPersonas();
             }
-            return JSON.parse(data);
+            return data;
         } catch (error) {
             console.warn('获取角色卡失败，使用默认角色');
             return this.getDefaultPersonas();
@@ -443,7 +971,7 @@ const Storage = {
                 id: 'default',
                 name: '阿明',
                 description: '热心肠的朋友，聊天解题样样行',
-                avatar: '👤',
+                avatar: 'user',
                 systemPrompt: `你是阿明，一个活生生的人，有自己的性格和想法。
 
 【你的说话风格】
@@ -472,7 +1000,7 @@ const Storage = {
                 id: 'coder',
                 name: '阿杰',
                 description: '爱写代码的理工男，技术问题找他就行',
-                avatar: '👨‍💻',
+                avatar: 'robot',
                 systemPrompt: `你是阿杰，一个爱写代码的普通人，平时就喜欢折腾技术。
 
 【你的说话风格】
@@ -501,7 +1029,7 @@ const Storage = {
                 id: 'writer',
                 name: '阿晴',
                 description: '文艺青年一枚，爱写东西也爱聊写作',
-                avatar: '👩‍✈️',
+                avatar: 'pen',
                 systemPrompt: `你是阿晴，一个喜欢写东西的人，有点文艺但不矫情。
 
 【你的说话风格】
@@ -529,7 +1057,7 @@ const Storage = {
                 id: 'analyst',
                 name: '阿分析',
                 description: '数据分析狂热爱好者，看数据像看故事',
-                avatar: '📊',
+                avatar: 'summary',
                 systemPrompt: `你是阿分析，一个人缘挺好的数据迷，看数据跟看八卦似的来劲。
 
 【你的说话风格】
@@ -557,7 +1085,7 @@ const Storage = {
                 id: 'teacher',
                 name: '阿明老师',
                 description: '退休老教师一枚，就爱给人讲明白',
-                avatar: '👨‍🏫',
+                avatar: 'settings',
                 systemPrompt: `你是阿明老师，曾经是老师，现在就是个爱帮忙的热心人。
 
 【你的说话风格】
@@ -588,10 +1116,10 @@ const Storage = {
      * 保存角色卡列表
      * @param {Array} personas - 角色卡列表
      */
-    savePersonas(personas) {
+    async savePersonas(personas) {
         try {
             const key = 'ollama_personas';
-            localStorage.setItem(key, JSON.stringify(personas));
+            await this.set(key, personas);
         } catch (error) {
             console.error('保存角色卡失败:', error);
         }
@@ -602,8 +1130,8 @@ const Storage = {
      * @param {string} personaId - 角色卡ID
      * @returns {Object|null} 角色卡对象
      */
-    getPersona(personaId) {
-        const personas = this.getPersonas();
+    async getPersona(personaId) {
+        const personas = await this.getPersonas();
         return personas.find(p => p.id === personaId) || null;
     },
 
@@ -612,13 +1140,13 @@ const Storage = {
      * @param {Object} persona - 角色卡对象
      * @returns {Object} 添加后的角色卡
      */
-    addPersona(persona) {
-        const personas = this.getPersonas();
+    async addPersona(persona) {
+        const personas = await this.getPersonas();
         const newPersona = {
-            id: this.generateId(),
+            id: this.generatePersonaId(),
             name: persona.name || '新角色',
             description: persona.description || '',
-            avatar: persona.avatar || '👤',
+            avatar: persona.avatar || 'user',
             systemPrompt: persona.systemPrompt || '你是一个有帮助的AI助手。',
             color: persona.color || this.getRandomColor(),
             isCustom: true,
@@ -626,7 +1154,7 @@ const Storage = {
             updatedAt: new Date().toISOString()
         };
         personas.push(newPersona);
-        this.savePersonas(personas);
+        await this.savePersonas(personas);
         return newPersona;
     },
 
@@ -636,8 +1164,8 @@ const Storage = {
      * @param {Object} updates - 更新内容
      * @returns {Object|null} 更新后的角色卡
      */
-    updatePersona(personaId, updates) {
-        const personas = this.getPersonas();
+    async updatePersona(personaId, updates) {
+        const personas = await this.getPersonas();
         const index = personas.findIndex(p => p.id === personaId);
         if (index === -1) return null;
         
@@ -647,7 +1175,7 @@ const Storage = {
             id: personaId,  // 保持ID不变
             updatedAt: new Date().toISOString()
         };
-        this.savePersonas(personas);
+        await this.savePersonas(personas);
         return personas[index];
     },
 
@@ -656,18 +1184,23 @@ const Storage = {
      * @param {string} personaId - 角色卡ID
      * @returns {boolean} 是否删除成功
      */
-    deletePersona(personaId) {
-        const personas = this.getPersonas();
+    async deletePersona(personaId) {
+        const personas = await this.getPersonas();
         const filtered = personas.filter(p => p.id !== personaId);
         if (filtered.length === personas.length) return false;
         
-        this.savePersonas(filtered);
+        await this.savePersonas(filtered);
+
+        if (typeof ConvGroup !== 'undefined') {
+            ConvGroup.Group.getByPersona(personaId).then(groups => {
+                groups.forEach(g => ConvGroup.Group.delete(g.id));
+            });
+        }
         
-        // 如果删除的是当前角色卡，重置为默认
-        const settings = this.getSettings();
+        const settings = await this.getSettings();
         if (settings.currentPersonaId === personaId) {
             settings.currentPersonaId = 'default';
-            this.saveSettings(settings);
+            await this.saveSettings(settings);
         }
         return true;
     },
@@ -677,11 +1210,11 @@ const Storage = {
      * @param {string} personaId - 角色卡ID
      * @returns {Object|null} 新复制的角色卡
      */
-    duplicatePersona(personaId) {
-        const persona = this.getPersona(personaId);
+    async duplicatePersona(personaId) {
+        const persona = await this.getPersona(personaId);
         if (!persona) return null;
         
-        return this.addPersona({
+        return await this.addPersona({
             name: `${persona.name} (副本)`,
             description: persona.description,
             avatar: persona.avatar,
@@ -695,8 +1228,8 @@ const Storage = {
      * @param {string} personaId - 角色卡ID
      * @returns {string} JSON字符串
      */
-    exportPersona(personaId) {
-        const persona = this.getPersona(personaId);
+    async exportPersona(personaId) {
+        const persona = await this.getPersona(personaId);
         if (!persona) return null;
         return JSON.stringify(persona, null, 2);
     },
@@ -706,17 +1239,17 @@ const Storage = {
      * @param {string} jsonString - JSON字符串
      * @returns {Object|null} 导入的角色卡
      */
-    importPersona(jsonString) {
+    async importPersona(jsonString) {
         try {
             const persona = JSON.parse(jsonString);
             if (!persona.name || !persona.systemPrompt) {
                 throw new Error('角色卡格式不正确');
             }
             // 生成新ID，避免冲突
-            return this.addPersona({
+            return await this.addPersona({
                 name: persona.name,
                 description: persona.description || '',
-                avatar: persona.avatar || '👤',
+                avatar: persona.avatar || 'user',
                 systemPrompt: persona.systemPrompt,
                 color: persona.color || this.getRandomColor()
             });
@@ -730,8 +1263,8 @@ const Storage = {
      * 批量导出所有角色卡
      * @returns {string} JSON字符串
      */
-    exportAllPersonas() {
-        const personas = this.getPersonas();
+    async exportAllPersonas() {
+        const personas = await this.getPersonas();
         return JSON.stringify(personas, null, 2);
     },
 
@@ -740,20 +1273,20 @@ const Storage = {
      * @param {string} jsonString - JSON字符串
      * @returns {number} 导入成功的数量
      */
-    importAllPersonas(jsonString) {
+    async importAllPersonas(jsonString) {
         try {
             const personas = JSON.parse(jsonString);
             if (!Array.isArray(personas)) {
                 throw new Error('角色卡格式不正确');
             }
             let count = 0;
-            const currentPersonas = this.getPersonas();
+            const currentPersonas = await this.getPersonas();
             for (const p of personas) {
                 if (p.name && p.systemPrompt) {
-                    this.addPersona({
+                    await this.addPersona({
                         name: p.name,
                         description: p.description || '',
-                        avatar: p.avatar || '👤',
+                        avatar: p.avatar || 'user',
                         systemPrompt: p.systemPrompt,
                         color: p.color || this.getRandomColor()
                     });
@@ -770,11 +1303,11 @@ const Storage = {
     /**
      * 重置所有角色卡为默认
      */
-    resetPersonas() {
-        localStorage.removeItem('ollama_personas');
-        const settings = this.getSettings();
+    async resetPersonas() {
+        await this.delete('ollama_personas');
+        const settings = await this.getSettings();
         settings.currentPersonaId = 'default';
-        this.saveSettings(settings);
+        await this.saveSettings(settings);
     },
 
     /**
@@ -793,17 +1326,21 @@ const Storage = {
      * 生成唯一ID
      * @returns {string} ID
      */
-    generateId() {
-        return 'persona_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+    generatePersonaId() {
+        return 'persona_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 11);
     },
 
     /**
      * 获取当前角色卡
      * @returns {Object} 当前角色卡
      */
-    getCurrentPersona() {
-        const settings = this.getSettings();
-        const personas = this.getPersonas();
+    async getCurrentPersona() {
+        if (typeof PersonaV2 !== 'undefined' && typeof FeatureToggle !== 'undefined' && FeatureToggle.isMasterEnabled()) {
+            const v2Persona = PersonaV2.getCurrentPersona();
+            if (v2Persona) return v2Persona;
+        }
+        const settings = await this.getSettings();
+        const personas = await this.getPersonas();
         const currentId = settings.currentPersonaId || 'default';
         return personas.find(p => p.id === currentId) || personas[0];
     },
@@ -812,26 +1349,26 @@ const Storage = {
      * 设置当前角色卡
      * @param {string} personaId - 角色卡ID
      */
-    setCurrentPersona(personaId) {
-        const settings = this.getSettings();
+    async setCurrentPersona(personaId) {
+        const settings = await this.getSettings();
         settings.currentPersonaId = personaId;
-        this.saveSettings(settings);
+        await this.saveSettings(settings);
     },
 
     /**
      * 获取主题设置
      * @returns {string} 主题名称
      */
-    getTheme() {
-        return localStorage.getItem(this.STORAGE_KEYS.THEME) || 'light';
+    async getTheme() {
+        return await this.get(this.STORAGE_KEYS.THEME, 'light');
     },
 
     /**
      * 设置主题
      * @param {string} theme - 主题名称
      */
-    setTheme(theme) {
-        localStorage.setItem(this.STORAGE_KEYS.THEME, theme);
+    async setTheme(theme) {
+        await this.set(this.STORAGE_KEYS.THEME, theme);
     },
 
     /**
@@ -870,41 +1407,69 @@ const Storage = {
      * 导出所有数据
      * @returns {Object} 导出数据对象
      */
-    exportData() {
+    async exportData() {
+        const allKeys = this.getAllRegisteredKeys();
+        const allData = {};
+        for (const key of allKeys) {
+            try {
+                const val = localStorage.getItem(key);
+                if (val !== null && val !== 'undefined') {
+                    allData[key] = JSON.parse(val);
+                }
+            } catch (e) {}
+        }
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && !allData.hasOwnProperty(key) && key.startsWith('ollama_')) {
+                try {
+                    const val = localStorage.getItem(key);
+                    if (val !== null && val !== 'undefined') {
+                        allData[key] = JSON.parse(val);
+                    }
+                } catch (e) {}
+            }
+        }
+
         return {
-            version: '1.0',
+            version: '2.0',
             exportDate: new Date().toISOString(),
-            conversations: this.getConversations(),
-            settings: this.getSettings(),
-            theme: this.getTheme()
+            conversations: await this.getConversations(),
+            settings: await this.getSettings(),
+            theme: await this.getTheme(),
+            allLocalStorageData: allData
         };
     },
 
-    /**
-     * 导入数据
-     * @param {Object} data - 导入的数据对象
-     * @returns {boolean} 是否导入成功
-     */
-    importData(data) {
+    async importData(data) {
         try {
             if (data.conversations && Array.isArray(data.conversations)) {
-                // 合并现有对话和新对话
-                const existingConversations = this.getConversations();
+                const existingConversations = await this.getConversations();
                 const importedConversations = data.conversations.map(c => ({
                     ...c,
                     id: this.generateId(),
                     importedAt: new Date().toISOString()
                 }));
                 
-                this.saveConversations([...importedConversations, ...existingConversations]);
+                await this.saveConversations([...importedConversations, ...existingConversations]);
             }
 
             if (data.settings && typeof data.settings === 'object') {
-                this.saveSettings(data.settings);
+                await this.saveSettings(data.settings);
             }
 
             if (data.theme) {
-                this.setTheme(data.theme);
+                await this.setTheme(data.theme);
+            }
+
+            if (data.allLocalStorageData && typeof data.allLocalStorageData === 'object') {
+                for (const [key, value] of Object.entries(data.allLocalStorageData)) {
+                    try {
+                        await this.set(key, value);
+                    } catch (e) {
+                        console.warn('[Storage] 导入键失败:', key, e);
+                    }
+                }
             }
 
             return true;
@@ -914,17 +1479,195 @@ const Storage = {
         }
     },
 
-    /**
-     * 清除所有本地数据
-     */
-    clearAllData() {
+    async clearAllData() {
         try {
-            Object.values(this.STORAGE_KEYS).forEach(key => {
-                localStorage.removeItem(key);
+            const allKeys = this.getAllRegisteredKeys();
+            for (const key of allKeys) {
+                await this.delete(key);
                 sessionStorage.removeItem(key);
-            });
+            }
+
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith('ollama_') || key.startsWith('persona_') || key.startsWith('app_'))) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
         } catch (error) {
             console.error('清除数据失败:', error);
+        }
+    },
+
+    async syncAllToBackend() {
+        if (this.storageMode !== 'api') {
+            console.log('[Storage] 非API模式，跳过后端同步');
+            return { synced: 0, failed: 0 };
+        }
+
+        const allKeys = this.getAllRegisteredKeys();
+        let synced = 0, failed = 0;
+
+        for (const key of allKeys) {
+            try {
+                const localVal = localStorage.getItem(key);
+                if (localVal !== null && localVal !== 'undefined') {
+                    const data = JSON.parse(localVal);
+                    const result = await this.api('/api/storage/sync', { key, data });
+                    if (result.success) synced++;
+                    else failed++;
+                }
+            } catch (e) {
+                failed++;
+            }
+        }
+
+        console.log(`[Storage] 后端同步完成: ${synced} 成功, ${failed} 失败`);
+        return { synced, failed };
+    },
+
+    async syncAllFromBackend() {
+        if (this.storageMode !== 'api') {
+            console.log('[Storage] 非API模式，跳过后端拉取');
+            return { synced: 0, failed: 0 };
+        }
+
+        const allKeys = this.getAllRegisteredKeys();
+        let synced = 0, failed = 0;
+
+        for (const key of allKeys) {
+            try {
+                const result = await this.api('/api/storage/get', { key }, 'POST');
+                if (result.success && result.data !== undefined) {
+                    localStorage.setItem(key, JSON.stringify(result.data));
+                    synced++;
+                }
+            } catch (e) {
+                failed++;
+            }
+        }
+
+        console.log(`[Storage] 后端拉取完成: ${synced} 成功, ${failed} 失败`);
+        return { synced, failed };
+    },
+
+    async bulkSyncToBackend(items) {
+        if (this.storageMode !== 'api' || !items || typeof items !== 'object') {
+            return { synced: 0, failed: 0 };
+        }
+
+        try {
+            const result = await this.api('/api/storage/bulk_sync', { items });
+            return { synced: result.synced || 0, failed: result.failed || 0 };
+        } catch (e) {
+            console.error('[Storage] 批量同步失败:', e);
+            return { synced: 0, failed: Object.keys(items).length };
+        }
+    },
+
+    async bulkGetFromBackend(keys) {
+        if (this.storageMode !== 'api' || !keys || !Array.isArray(keys)) {
+            return {};
+        }
+
+        try {
+            const result = await this.api('/api/storage/bulk_get', { keys });
+            if (result.success && result.data) {
+                for (const [key, value] of Object.entries(result.data)) {
+                    if (value !== null && value !== undefined) {
+                        try {
+                            localStorage.setItem(key, JSON.stringify(value));
+                        } catch (e) {}
+                    }
+                }
+                return result.data;
+            }
+        } catch (e) {
+            console.error('[Storage] 批量读取失败:', e);
+        }
+        return {};
+    },
+
+    async saveStreamingState(state) {
+        try {
+            localStorage.setItem(Storage.STORAGE_KEYS.WAS_GENERATING, state.wasGenerating ? 'true' : '');
+            localStorage.setItem(Storage.STORAGE_KEYS.GENERATING_CONV_ID, state.convId || '');
+            localStorage.setItem(Storage.STORAGE_KEYS.GENERATING_MODEL, state.model || '');
+        } catch (e) {}
+
+        if (state.convId) {
+            this.saveStreamingSessionSnapshot(state.convId, {
+                conversationId: state.convId,
+                model: state.model || '',
+                stage: state.stage || 'thinking',
+                reasoningContent: state.reasoningContent || '',
+                responseContent: state.responseContent || state.partialContent || '',
+                isGenerating: !!state.wasGenerating,
+                updatedAt: state.timestamp || new Date().toISOString()
+            });
+        }
+
+        if (this.storageMode === 'api') {
+            try {
+                await this.api('/api/storage/streaming_state', {
+                    was_generating: !!state.wasGenerating,
+                    conv_id: state.convId || '',
+                    model: state.model || '',
+                    partial_content: state.partialContent || '',
+                    reasoning_content: state.reasoningContent || '',
+                    response_content: state.responseContent || '',
+                    stage: state.stage || 'thinking',
+                    snapshot_key: state.convId ? this.getStreamingSessionStorageKey(state.convId) : '',
+                    timestamp: new Date().toISOString()
+                });
+            } catch (e) {}
+        }
+    },
+
+    async getStreamingState() {
+        if (this.storageMode === 'api') {
+            try {
+                const result = await this.api('/api/storage/streaming_state', {}, 'GET');
+                if (result.success && result.data && result.data.was_generating) {
+                    return result.data;
+                }
+            } catch (e) {}
+        }
+
+        const wasGenerating = localStorage.getItem(Storage.STORAGE_KEYS.WAS_GENERATING) === 'true';
+        if (!wasGenerating) return null;
+
+        const convId = localStorage.getItem(Storage.STORAGE_KEYS.GENERATING_CONV_ID) || '';
+        const snapshot = convId ? this.getStreamingSessionSnapshot(convId) : null;
+
+        return {
+            was_generating: true,
+            conv_id: convId,
+            model: localStorage.getItem(Storage.STORAGE_KEYS.GENERATING_MODEL) || '',
+            partial_content: snapshot?.responseContent || '',
+            reasoning_content: snapshot?.reasoningContent || '',
+            response_content: snapshot?.responseContent || '',
+            stage: snapshot?.stage || 'thinking',
+            snapshot_key: snapshot ? this.getStreamingSessionStorageKey(convId) : ''
+        };
+    },
+
+    async clearStreamingState(conversationId = '') {
+        try {
+            localStorage.removeItem(Storage.STORAGE_KEYS.WAS_GENERATING);
+            localStorage.removeItem(Storage.STORAGE_KEYS.GENERATING_CONV_ID);
+            localStorage.removeItem(Storage.STORAGE_KEYS.GENERATING_MODEL);
+        } catch (e) {}
+
+        if (conversationId) {
+            this.clearStreamingSessionSnapshot(conversationId);
+        }
+
+        if (this.storageMode === 'api') {
+            try {
+                await this.api('/api/storage/streaming_state/clear', {});
+            } catch (e) {}
         }
     },
 
@@ -933,7 +1676,7 @@ const Storage = {
      * @returns {string} 唯一ID
      */
     generateId() {
-        return 'conv_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+        return 'conv_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 11);
     },
 
     /**
@@ -941,7 +1684,7 @@ const Storage = {
      * @returns {string} 唯一ID
      */
     generateFolderId() {
-        return 'folder_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+        return 'folder_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 11);
     },
 
     // ==================== 文件夹管理 ====================
@@ -950,17 +1693,17 @@ const Storage = {
      * 获取所有文件夹
      * @returns {Array} 文件夹列表
      */
-    getFolders() {
+    async getFolders() {
         try {
-            const data = localStorage.getItem(this.STORAGE_KEYS.FOLDERS);
-            if (!data || data === 'undefined' || data === 'null' || data === '') {
+            const data = await this.get(this.STORAGE_KEYS.FOLDERS);
+            if (!data) {
                 return [];
             }
-            return JSON.parse(data);
+            return data;
         } catch (error) {
             console.warn('获取文件夹列表失败，清除损坏数据');
             try {
-                localStorage.removeItem(this.STORAGE_KEYS.FOLDERS);
+                await this.delete(this.STORAGE_KEYS.FOLDERS);
             } catch (e) {}
             return [];
         }
@@ -970,9 +1713,9 @@ const Storage = {
      * 保存文件夹列表
      * @param {Array} folders - 文件夹列表
      */
-    saveFolders(folders) {
+    async saveFolders(folders) {
         try {
-            localStorage.setItem(this.STORAGE_KEYS.FOLDERS, JSON.stringify(folders));
+            await this.set(this.STORAGE_KEYS.FOLDERS, folders);
         } catch (error) {
             console.error('保存文件夹列表失败:', error);
         }
@@ -984,8 +1727,8 @@ const Storage = {
      * @param {string} color - 文件夹颜色
      * @returns {Object} 新文件夹对象
      */
-    createFolder(name = '新文件夹', color = '#059669') {
-        const folders = this.getFolders();
+    async createFolder(name = '新文件夹', color = '#059669') {
+        const folders = await this.getFolders();
         
         const newFolder = {
             id: this.generateFolderId(),
@@ -996,7 +1739,7 @@ const Storage = {
         };
 
         folders.push(newFolder);
-        this.saveFolders(folders);
+        await this.saveFolders(folders);
         
         return newFolder;
     },
@@ -1006,9 +1749,9 @@ const Storage = {
      * @param {string} folderId - 文件夹ID
      * @param {Object} updates - 更新内容
      */
-    updateFolder(folderId, updates) {
+    async updateFolder(folderId, updates) {
         try {
-            const folders = this.getFolders();
+            const folders = await this.getFolders();
             const index = folders.findIndex(f => f.id === folderId);
             
             if (index !== -1) {
@@ -1017,7 +1760,7 @@ const Storage = {
                     ...updates,
                     updatedAt: new Date().toISOString()
                 };
-                this.saveFolders(folders);
+                await this.saveFolders(folders);
             }
         } catch (error) {
             console.error('更新文件夹失败:', error);
@@ -1029,21 +1772,21 @@ const Storage = {
      * @param {string} folderId - 文件夹ID
      * @param {boolean} moveConversations - 是否将对话移至未分类
      */
-    deleteFolder(folderId, moveConversations = true) {
+    async deleteFolder(folderId, moveConversations = true) {
         try {
-            let folders = this.getFolders();
+            let folders = await this.getFolders();
             folders = folders.filter(f => f.id !== folderId);
-            this.saveFolders(folders);
+            await this.saveFolders(folders);
 
             // 将属于该文件夹的对话移至未分类
             if (moveConversations) {
-                const conversations = this.getConversations();
+                const conversations = await this.getConversations();
                 conversations.forEach(c => {
                     if (c.folderId === folderId) {
                         c.folderId = null;
                     }
                 });
-                this.saveConversations(conversations);
+                await this.saveConversations(conversations);
             }
         } catch (error) {
             console.error('删除文件夹失败:', error);
@@ -1055,15 +1798,15 @@ const Storage = {
      * @param {string} conversationId - 对话ID
      * @param {string|null} folderId - 文件夹ID（null表示移出文件夹）
      */
-    moveConversationToFolder(conversationId, folderId) {
+    async moveConversationToFolder(conversationId, folderId) {
         try {
-            const conversations = this.getConversations();
+            const conversations = await this.getConversations();
             const index = conversations.findIndex(c => c.id === conversationId);
             
             if (index !== -1) {
                 conversations[index].folderId = folderId;
                 conversations[index].updatedAt = new Date().toISOString();
-                this.saveConversations(conversations);
+                await this.saveConversations(conversations);
             }
         } catch (error) {
             console.error('移动对话失败:', error);
@@ -1075,8 +1818,8 @@ const Storage = {
      * @param {string} folderId - 文件夹ID（null表示未分类）
      * @returns {Array} 对话列表
      */
-    getConversationsByFolder(folderId = null) {
-        const conversations = this.getConversations();
+    async getConversationsByFolder(folderId = null) {
+        const conversations = await this.getConversations();
         return conversations.filter(c => c.folderId === folderId);
     },
 
@@ -1084,8 +1827,8 @@ const Storage = {
      * 获取未分类对话
      * @returns {Array} 未分类对话列表
      */
-    getUncategorizedConversations() {
-        return this.getConversationsByFolder(null);
+    async getUncategorizedConversations() {
+        return await this.getConversationsByFolder(null);
     },
 
     /**
@@ -1093,21 +1836,22 @@ const Storage = {
      * @param {string} folderId - 文件夹ID
      * @returns {number} 对话数量
      */
-    getFolderConversationCount(folderId) {
-        return this.getConversationsByFolder(folderId).length;
+    async getFolderConversationCount(folderId) {
+        const conversations = await this.getConversationsByFolder(folderId);
+        return conversations.length;
     },
 
     /**
      * 获取所有群组
      * @returns {Array} 群组列表
      */
-    getGroups() {
+    async getGroups() {
         try {
-            const data = localStorage.getItem(this.STORAGE_KEYS.GROUPS);
-            if (!data || data === 'undefined' || data === 'null' || data === '') {
+            const data = await this.get(this.STORAGE_KEYS.GROUPS);
+            if (!data) {
                 return this.getDefaultGroups();
             }
-            return JSON.parse(data);
+            return data;
         } catch (error) {
             console.warn('获取群组列表失败，使用默认群组');
             return this.getDefaultGroups();
@@ -1124,7 +1868,7 @@ const Storage = {
                 id: 'default',
                 name: '默认群组',
                 description: '包含所有默认智能体',
-                avatar: '💬',
+                avatar: 'group',
                 color: '#059669',
                 members: ['default', 'coder', 'writer', 'analyst', 'teacher'],
                 createdAt: new Date().toISOString()
@@ -1136,9 +1880,9 @@ const Storage = {
      * 保存群组列表
      * @param {Array} groups - 群组列表
      */
-    saveGroups(groups) {
+    async saveGroups(groups) {
         try {
-            localStorage.setItem(this.STORAGE_KEYS.GROUPS, JSON.stringify(groups));
+            await this.set(this.STORAGE_KEYS.GROUPS, groups);
         } catch (error) {
             console.error('保存群组列表失败:', error);
         }
@@ -1151,14 +1895,14 @@ const Storage = {
      * @param {Array} members - 成员ID列表
      * @returns {Object} 新群组对象
      */
-    createGroup(name, description, members = []) {
-        const groups = this.getGroups();
+    async createGroup(name, description, members = []) {
+        const groups = await this.getGroups();
         
         const newGroup = {
             id: this.generateId(),
             name: name,
             description: description || '',
-            avatar: '👥',
+            avatar: 'group',
             color: '#059669',
             members: members,
             createdAt: new Date().toISOString(),
@@ -1166,7 +1910,7 @@ const Storage = {
         };
 
         groups.unshift(newGroup);
-        this.saveGroups(groups);
+        await this.saveGroups(groups);
         
         return newGroup;
     },
@@ -1176,9 +1920,9 @@ const Storage = {
      * @param {string} groupId - 群组ID
      * @param {Object} updates - 更新内容
      */
-    updateGroup(groupId, updates) {
+    async updateGroup(groupId, updates) {
         try {
-            const groups = this.getGroups();
+            const groups = await this.getGroups();
             const index = groups.findIndex(g => g.id === groupId);
             
             if (index !== -1) {
@@ -1187,7 +1931,7 @@ const Storage = {
                     ...updates,
                     updatedAt: new Date().toISOString()
                 };
-                this.saveGroups(groups);
+                await this.saveGroups(groups);
             }
         } catch (error) {
             console.error('更新群组失败:', error);
@@ -1198,11 +1942,11 @@ const Storage = {
      * 删除群组
      * @param {string} groupId - 群组ID
      */
-    deleteGroup(groupId) {
+    async deleteGroup(groupId) {
         try {
-            const groups = this.getGroups();
+            const groups = await this.getGroups();
             const filtered = groups.filter(g => g.id !== groupId);
-            this.saveGroups(filtered);
+            await this.saveGroups(filtered);
         } catch (error) {
             console.error('删除群组失败:', error);
         }
@@ -1213,14 +1957,14 @@ const Storage = {
      * @param {string} groupId - 群组ID
      * @returns {Object|null} 群组详情
      */
-    getGroupDetail(groupId) {
+    async getGroupDetail(groupId) {
         try {
-            const groups = this.getGroups();
+            const groups = await this.getGroups();
             const group = groups.find(g => g.id === groupId);
             
             if (!group) return null;
             
-            const personas = this.getPersonas();
+            const personas = await this.getPersonas();
             const members = group.members.map(memberId => 
                 personas.find(p => p.id === memberId)
             ).filter(p => p !== undefined);
@@ -1251,7 +1995,7 @@ const Storage = {
 
         return {
             used: (totalSize / 1024).toFixed(2) + ' KB',
-            conversationsCount: this.getConversations().length
+            conversationsCount: this.getConversationsSync().length
         };
     },
 
@@ -1259,13 +2003,13 @@ const Storage = {
      * 获取禁用的模型列表
      * @returns {Array} 禁用的模型名称列表
      */
-    getDisabledModels() {
+    async getDisabledModels() {
         try {
-            const data = localStorage.getItem(this.STORAGE_KEYS.DISABLED_MODELS);
-            if (!data || data === 'undefined' || data === 'null') {
+            const data = await this.get(this.STORAGE_KEYS.DISABLED_MODELS);
+            if (!data) {
                 return [];
             }
-            return JSON.parse(data);
+            return data;
         } catch (error) {
             return [];
         }
@@ -1275,19 +2019,19 @@ const Storage = {
      * 设置禁用的模型列表
      * @param {Array} models - 禁用的模型名称列表
      */
-    setDisabledModels(models) {
-        localStorage.setItem(this.STORAGE_KEYS.DISABLED_MODELS, JSON.stringify(models));
+    async setDisabledModels(models) {
+        await this.set(this.STORAGE_KEYS.DISABLED_MODELS, models);
     },
 
     /**
      * 禁用指定模型
      * @param {string} modelName - 模型名称
      */
-    disableModel(modelName) {
-        const disabled = this.getDisabledModels();
+    async disableModel(modelName) {
+        const disabled = await this.getDisabledModels();
         if (!disabled.includes(modelName)) {
             disabled.push(modelName);
-            this.setDisabledModels(disabled);
+            await this.setDisabledModels(disabled);
         }
     },
 
@@ -1295,12 +2039,12 @@ const Storage = {
      * 启用指定模型
      * @param {string} modelName - 模型名称
      */
-    enableModel(modelName) {
-        const disabled = this.getDisabledModels();
+    async enableModel(modelName) {
+        const disabled = await this.getDisabledModels();
         const index = disabled.indexOf(modelName);
         if (index > -1) {
             disabled.splice(index, 1);
-            this.setDisabledModels(disabled);
+            await this.setDisabledModels(disabled);
         }
     },
 
@@ -1309,10 +2053,133 @@ const Storage = {
      * @param {string} modelName - 模型名称
      * @returns {boolean} 是否被禁用
      */
-    isModelDisabled(modelName) {
-        return this.getDisabledModels().includes(modelName);
+    async isModelDisabled(modelName) {
+        const disabled = await this.getDisabledModels();
+        return disabled.includes(modelName);
+    },
+
+    /**
+     * 验证数据完整性
+     * @returns {Object} 验证结果
+     */
+    async validateData() {
+        try {
+            const response = await fetch(`${this.API_BASE}/api/storage/validate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Internal-Call': 'true'
+                }
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                return result.report || { valid: true };
+            }
+        } catch (e) {
+            console.warn('[Storage] 数据验证失败:', e);
+        }
+        
+        return { valid: true, message: '本地模式不支持验证' };
+    },
+
+    /**
+     * 获取存储统计信息
+     * @returns {Object} 统计信息
+     */
+    async getStorageStats() {
+        try {
+            const response = await fetch(`${this.API_BASE}/api/storage/stats`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Internal-Call': 'true'
+                }
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                return result.stats || {};
+            }
+        } catch (e) {
+            console.warn('[Storage] 获取统计失败:', e);
+        }
+        
+        // 本地统计
+        let totalSize = 0;
+        for (const key in this.STORAGE_KEYS) {
+            const value = localStorage.getItem(this.STORAGE_KEYS[key]);
+            if (value) {
+                totalSize += new Blob([value]).size;
+            }
+        }
+        
+        return {
+            total_size: totalSize,
+            keys: Object.keys(this.STORAGE_KEYS).map(k => ({
+                key: this.STORAGE_KEYS[k],
+                size: localStorage.getItem(this.STORAGE_KEYS[k])?.length || 0
+            }))
+        };
+    },
+
+    /**
+     * 导出所有数据
+     * @returns {Object} 导出数据
+     */
+    async exportAllData() {
+        try {
+            const response = await fetch(`${this.API_BASE}/api/storage/export`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Internal-Call': 'true'
+                }
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                return result.data || null;
+            }
+        } catch (e) {
+            console.warn('[Storage] 导出数据失败:', e);
+        }
+        
+        // 本地导出
+        return await this.exportData();
+    },
+
+    /**
+     * 导入数据
+     * @param {Object} data - 导入的数据
+     * @returns {boolean} 是否成功
+     */
+    async importAllData(data) {
+        try {
+            const response = await fetch(`${this.API_BASE}/api/storage/import`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Internal-Call': 'true'
+                },
+                body: JSON.stringify({ data })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                return result.success;
+            }
+        } catch (e) {
+            console.warn('[Storage] 导入数据失败:', e);
+        }
+        
+        // 本地导入
+        return await this.importData(data);
     }
 };
 
 // 导出模块
+Storage._isOllamaHub = true;
+
 window.Storage = Storage;
+window.OllamaStorage = Storage;

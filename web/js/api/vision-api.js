@@ -48,11 +48,12 @@ const VisionAPI = {
 
             if (response.ok) {
                 const data = await response.json();
+                const serviceData = data.data || data;
                 this.status = {
-                    available: data.status === 'online',
-                    modelLoaded: data.model_loaded,
+                    available: serviceData.loaded === true,
+                    modelLoaded: serviceData.loaded === true,
                     lastCheck: Date.now(),
-                    error: data.load_error || null
+                    error: serviceData.message || null
                 };
                 console.log('[VisionAPI] 服务状态:', this.status);
             } else {
@@ -238,7 +239,7 @@ const VisionAPI = {
                 base64Data = imageData.split(',')[1];
             }
 
-            const response = await fetch(`http://${window.location.hostname || 'localhost'}:11434/api/generate`, {
+            const response = await fetch(`http://${window.location.hostname || 'localhost'}:5001/api/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

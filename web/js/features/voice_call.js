@@ -25,14 +25,14 @@ class VoiceCall {
         
         // 心跳保活机制
         this.heartbeatInterval = null;
-        this.heartbeatTimeout = 25000; // 25秒发送一次心跳
+        this.heartbeatTimeout = 25000;
         this.missedHeartbeats = 0;
-        this.maxMissedHeartbeats = 3; // 最多允许3次心跳丢失
+        this.maxMissedHeartbeats = 3;
         
         // 连接状态检测
         this.connectionCheckInterval = null;
         this.lastMessageTime = Date.now();
-        this.connectionTimeout = 60000; // 60秒无消息认为连接断开
+        this.connectionTimeout = 60000;
         
         // 音频采集
         this.mediaRecorder = null;
@@ -46,203 +46,423 @@ class VoiceCall {
         
         // VAD语音活动检测
         this.vadEnabled = true;
-        this.vadThreshold = 0.02;  // 音量阈值，低于此值认为是静音
-        this.vadSilenceTimeout = 1500;  // 静音超时（毫秒）
-        this.vadSpeechStartThreshold = 0.03;  // 语音开始阈值
-        this.vadSpeechEndThreshold = 0.015;  // 语音结束阈值
-        this.vadIsSpeechActive = false;
-        this.vadLastSpeechTime = 0;
-        this.vadSpeechBuffer = [];  // 语音缓冲区
-        this.vadMaxBufferSize = 50;  // 最大缓冲区大小（约5秒音频）
-        this.vadMinSpeechDuration = 800;  // 最小语音持续时间（毫秒），避免逐字识别
+        this.vadThreshold = 0.015;
+        this.vadSilenceTimeout = 1200;
+        this.vadSilenceStartTime = null;
+        this.vadIsSpeaking = false;
+        this.vadBuffer = [];
+        this.vadMinSpeechDuration = 300;
+        this.vadSpeechStartTime = null;
+        this.vadNoiseFloor = 0.005;
+        this.vadAdaptiveThreshold = 0.015;
+        this.vadZCRThreshold = 0.15;
+        this.vadEnergyHistory = [];
+        this.vadHistorySize = 10;
+        this.vadHangoverFrames = 0;
+        this.vadMaxHangoverFrames = 5;
         
         // 音频播放
         this.audioPlayer = null;
-        this.audioQueue = [];
         this.isPlaying = false;
+        this.audioQueue = [];
+        this.currentAudioSource = null;
         
         // 通话状态
         this.isInCall = false;
-        this.isSpeaking = false;
-        this.isAiSpeaking = false;
-        this.currentTranscript = '';
-        this.currentAiText = '';
+        this.callStartTime = null;
         
-        // 对话历史
-        this.conversationHistory = [];
-
-        // TTS 音色选择
-        this.selectedVoice = options.voice || 'default';
-
         // 回调函数
         this.onTranscript = options.onTranscript || (() => {});
         this.onAiText = options.onAiText || (() => {});
+        this.onAiAudio = options.onAiAudio || (() => {});
         this.onStatusChange = options.onStatusChange || (() => {});
         this.onError = options.onError || (() => {});
-        this.onHistoryUpdate = options.onHistoryUpdate || (() => {});
+        this.onConnect = options.onConnect || (() => {});
+        this.onDisconnect = options.onDisconnect || (() => {});
         
-        // 音频可视化数据
-        this.visualizerData = new Uint8Array(0);
+        // 状态管理
+        this._currentStatus = 'idle';
+        this._statusCallbacks = [];
         
-        // 绑定方法
-        this._handleAudioData = this._handleAudioData.bind(this);
-        this._handlePcmAudio = this._handlePcmAudio.bind(this);
-        this._processAudioQueue = this._processAudioQueue.bind(this);
+        // 音频可视化
+        this.visualizerCallback = null;
+        
+        // TTS配置
+        this.selectedVoice = options.voice || 'vivian';
+        this.ttsSpeed = 1.0;
+        this.ttsEmotion = null;
+        
+        // 音频上下文池
+        this._audioContextPool = [];
+        this._maxPoolSize = 3;
+        
+        // 音频缓冲区
+        this._audioBufferPool = [];
+        this._maxBufferPoolSize = 10;
+        
+        // 音频解码缓存
+        this._decodeCache = new Map();
+        this._maxCacheSize = 20;
+        
+        // 音频队列处理
+        this._isProcessingQueue = false;
+        this._queueProcessingPromise = null;
+        
+        // 性能监控
+        this._performanceMetrics = {
+            totalAudioDuration: 0,
+            totalDecodeTime: 0,
+            totalPlayTime: 0,
+            decodeCount: 0,
+            playCount: 0,
+            errorCount: 0
+        };
+        
+        // 新增：音频累积缓冲区
+        this._audioAccumulationBuffer = [];
+        this._accumulationTimeout = null;
+        this._accumulationDelay = 100;
+        this._minAccumulationSize = 1024;
+        
+        // 新增：音频预处理队列
+        this._preprocessingQueue = [];
+        this._isPreprocessing = false;
+        
+        // 新增：音频播放状态
+        this._isAudioPlaying = false;
+        this._audioPlaybackQueue = [];
+        this._currentPlaybackSource = null;
+        
+        // 新增：音频上下文状态管理
+        this._audioContextState = 'suspended';
+        this._audioContextResumePromise = null;
+        
+        // 新增：音频解码 worker
+        this._decodeWorker = null;
+        this._initDecodeWorker();
+        
+        // 新增：音频播放锁
+        this._playbackLock = false;
+        this._playbackQueue = [];
+        
+        // 新增：音频上下文恢复重试
+        this._resumeRetryCount = 0;
+        this._maxResumeRetries = 3;
+        
+        // 新增：音频播放状态监控
+        this._playbackStartTime = 0;
+        this._playbackDuration = 0;
+        
+        // 新增：音频缓冲策略
+        this._bufferStrategy = 'adaptive';
+        this._targetBufferDuration = 0.5;
+        this._maxBufferDuration = 2.0;
+        
+        // 新增：音频质量监控
+        this._qualityMetrics = {
+            droppedFrames: 0,
+            bufferUnderruns: 0,
+            decodeErrors: 0,
+            playbackGaps: 0
+        };
+        
+        // 新增：音频会话管理
+        this._sessionId = null;
+        this._sessionStartTime = null;
+        
+        // 新增：音频配置
+        this._audioConfig = {
+            sampleRate: 24000,
+            channels: 1,
+            bufferSize: 4096,
+            encoding: 'pcm_s16le'
+        };
     }
     
-    /**
-     * 连接到 WebSocket 服务器
-     */
-    async connect() {
-        // 先清理旧连接
-        if (this.ws) {
-            try {
-                if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
-                    this.ws.close();
-                }
-            } catch (e) {
-                console.warn('清理旧WebSocket时出错:', e);
-            }
-            this.ws = null;
-            this.isConnected = false;
+    _initDecodeWorker() {
+        // 简化实现，不使用 worker
+        this._decodeWorker = null;
+    }
+    
+    async _ensureAudioContext() {
+        if (!this.audioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: this._audioConfig.sampleRate,
+                latencyHint: 'interactive'
+            });
         }
         
-        this._intentionalClose = false;
+        if (this.audioContext.state === 'suspended') {
+            try {
+                await this.audioContext.resume();
+            } catch (e) {
+                console.warn('恢复音频上下文失败:', e);
+            }
+        }
         
-        try {
-            this.ws = new WebSocket(this.wsUrl);
-            
-            await new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => {
+        return this.audioContext;
+    }
+    
+    connect() {
+        if (this.ws?.readyState === WebSocket.OPEN) {
+            console.log('WebSocket 已连接');
+            return Promise.resolve();
+        }
+        
+        if (this.ws?.readyState === WebSocket.CONNECTING) {
+            console.log('WebSocket 正在连接中...');
+            return new Promise((resolve, reject) => {
+                const checkInterval = setInterval(() => {
+                    if (this.ws?.readyState === WebSocket.OPEN) {
+                        clearInterval(checkInterval);
+                        resolve();
+                    } else if (this.ws?.readyState === WebSocket.CLOSED) {
+                        clearInterval(checkInterval);
+                        reject(new Error('连接失败'));
+                    }
+                }, 100);
+                
+                setTimeout(() => {
+                    clearInterval(checkInterval);
                     reject(new Error('连接超时'));
-                }, 5000);
+                }, 10000);
+            });
+        }
+        
+        return new Promise((resolve, reject) => {
+            try {
+                this.ws = new WebSocket(this.wsUrl);
                 
                 this.ws.onopen = () => {
-                    clearTimeout(timeout);
-                    console.log('[Voice Debug] WebSocket 已连接');
+                    console.log('WebSocket 连接成功');
                     this.isConnected = true;
                     this.reconnectAttempts = 0;
-                    this._startHeartbeat(); // 启动心跳
-                    this._startConnectionCheck(); // 启动连接检测
-                    this._emitStatus('connected');
+                    this._startHeartbeat();
+                    this._startConnectionCheck();
+                    
+                    if (this.selectedVoice && this.selectedVoice !== 'default') {
+                        this.ws.send(JSON.stringify({
+                            type: 'set_voice',
+                            data: { speaker_id: this.selectedVoice },
+                            timestamp: Date.now()
+                        }));
+                    }
+                    
+                    this.onConnect();
                     resolve();
                 };
                 
+                this.ws.onmessage = (event) => this._handleMessage(event);
+                
+                this.ws.onclose = () => {
+                    console.log('WebSocket 连接关闭');
+                    this.isConnected = false;
+                    this._stopHeartbeat();
+                    this._stopConnectionCheck();
+                    this.onDisconnect();
+                    
+                    if (!this._intentionalClose && this.reconnectAttempts < this.maxReconnectAttempts) {
+                        this.reconnectAttempts++;
+                        setTimeout(() => this.connect(), 2000 * this.reconnectAttempts);
+                    }
+                };
+                
                 this.ws.onerror = (error) => {
-                    clearTimeout(timeout);
-                    console.error('[Voice Debug] WebSocket 连接错误:', error);
+                    console.error('WebSocket 错误:', error);
+                    this.onError(error);
                     reject(error);
                 };
+                
+            } catch (error) {
+                console.error('创建 WebSocket 失败:', error);
+                reject(error);
+            }
+        });
+    }
+    
+    _handleMessage(event) {
+        this.lastMessageTime = Date.now();
+        
+        try {
+            const message = JSON.parse(event.data);
+            const { type, data, timestamp } = message;
+            
+            switch (type) {
+                case 'transcript':
+                    this.onTranscript(data.text, data.is_final);
+                    break;
+                    
+                case 'ai_text':
+                    this.onAiText(data.text);
+                    break;
+                    
+                case 'ai_audio':
+                    this._handleAiAudio(data);
+                    break;
+                    
+                case 'pong':
+                    this.missedHeartbeats = 0;
+                    break;
+                    
+                case 'voice_changed':
+                    console.log('音色已切换:', data.speaker_id);
+                    break;
+                    
+                case 'error':
+                    console.error('服务器错误:', data.message);
+                    this.onError(new Error(data.message));
+                    break;
+                    
+                default:
+                    console.log('未知消息类型:', type);
+            }
+        } catch (error) {
+            console.error('处理消息失败:', error);
+        }
+    }
+    
+    _handleAiAudio(data) {
+        if (data.audio) {
+            this._queueAudio(data.audio, data.format || 'wav');
+        }
+    }
+    
+    _queueAudio(base64Audio, format) {
+        this._playbackQueue.push({ audio: base64Audio, format });
+        this._processPlaybackQueue();
+    }
+    
+    async _processPlaybackQueue() {
+        if (this._playbackLock || this._playbackQueue.length === 0) return;
+        
+        this._playbackLock = true;
+        
+        try {
+            while (this._playbackQueue.length > 0) {
+                const { audio, format } = this._playbackQueue.shift();
+                await this._playAudio(audio, format);
+            }
+        } finally {
+            this._playbackLock = false;
+        }
+    }
+    
+    async _playAudio(base64Audio, format) {
+        try {
+            const ctx = await this._ensureAudioContext();
+            
+            const byteCharacters = atob(base64Audio);
+            const byteArray = new Uint8Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteArray[i] = byteCharacters.charCodeAt(i);
+            }
+            
+            const arrayBuffer = byteArray.buffer;
+            const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+            
+            const source = ctx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(ctx.destination);
+            
+            this._currentPlaybackSource = source;
+            
+            await new Promise((resolve) => {
+                source.onended = resolve;
+                source.start(0);
             });
             
-            this.ws.onmessage = (event) => {
-                this._handleMessage(event.data);
-                this.lastMessageTime = Date.now(); // 更新最后消息时间
-                this.missedHeartbeats = 0; // 收到消息重置心跳计数
-            };
+        } catch (error) {
+            console.error('播放音频失败:', error);
+        }
+    }
+    
+    _startHeartbeat() {
+        this.heartbeatInterval = setInterval(() => {
+            if (this.ws?.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+                this.missedHeartbeats++;
+                
+                if (this.missedHeartbeats >= this.maxMissedHeartbeats) {
+                    console.warn('心跳超时，重新连接');
+                    this.ws.close();
+                }
+            }
+        }, this.heartbeatTimeout);
+    }
+    
+    _stopHeartbeat() {
+        if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+        }
+    }
+    
+    _startConnectionCheck() {
+        this.connectionCheckInterval = setInterval(() => {
+            const elapsed = Date.now() - this.lastMessageTime;
+            if (elapsed > this.connectionTimeout) {
+                console.warn('连接超时，重新连接');
+                this.ws?.close();
+            }
+        }, 10000);
+    }
+    
+    _stopConnectionCheck() {
+        if (this.connectionCheckInterval) {
+            clearInterval(this.connectionCheckInterval);
+            this.connectionCheckInterval = null;
+        }
+    }
+    
+    async startCall() {
+        if (this.isInCall) return;
+        
+        try {
+            await this._ensureAudioContext();
             
-            this.ws.onclose = () => {
-                console.log('语音通话服务已断开');
-                this.isConnected = false;
-                this._stopHeartbeat();
-                this._stopConnectionCheck(); // 停止连接检测
-                this._emitStatus('disconnected');
-                if (!this._intentionalClose) {
-                    this._attemptReconnect();
+            this.audioStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    sampleRate: this.targetSampleRate,
+                    channelCount: 1,
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
+            
+            this.inputSampleRate = this.audioContext.sampleRate;
+            
+            const source = this.audioContext.createMediaStreamSource(this.audioStream);
+            this.analyser = this.audioContext.createAnalyser();
+            this.analyser.fftSize = 2048;
+            
+            this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+            
+            this.processor.onaudioprocess = (e) => {
+                if (!this.isInCall) return;
+                
+                const inputData = e.inputBuffer.getChannelData(0);
+                const pcmData = this._float32ToInt16(inputData);
+                
+                if (this.vadEnabled) {
+                    this._processVAD(inputData, pcmData);
+                } else {
+                    this._sendAudioData(pcmData);
+                }
+                
+                if (this.visualizerCallback) {
+                    this.visualizerCallback(inputData);
                 }
             };
             
-            return true;
-            
-        } catch (error) {
-            console.error('连接失败:', error);
-            this.onError(error);
-            return false;
-        }
-    }
-    
-    /**
-     * 断开连接
-     */
-    disconnect() {
-        this._intentionalClose = true;
-        this._stopHeartbeat(); // 停止心跳
-        this._stopConnectionCheck(); // 停止连接检测
-        if (this.ws) {
-            this.ws.close();
-            this.ws = null;
-        }
-        this.isConnected = false;
-        this.reconnectAttempts = 0; // 重置重试计数
-        this._emitStatus('disconnected');
-    }
-    
-    /**
-     * 尝试重新连接
-     */
-    _attemptReconnect() {
-        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-            console.log('重连次数已达上限');
-            this._emitStatus('reconnect_failed');
-            return;
-        }
-        
-        this.reconnectAttempts++;
-        console.log(`尝试重新连接 (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-        
-        // 清理旧状态
-        this._stopHeartbeat();
-        this._stopConnectionCheck();
-        if (this.ws) {
-            try {
-                this.ws.close();
-            } catch (e) {}
-            this.ws = null;
-        }
-        this.isConnected = false;
-        this.isInCall = false;
-        this.isSpeaking = false;
-        this.isAiSpeaking = false;
-        
-        // 发送重连状态
-        this._emitStatus('reconnecting', { attempt: this.reconnectAttempts });
-        
-        setTimeout(() => {
-            this.connect();
-        }, 2000 * this.reconnectAttempts);
-    }
-    
-    /**
-     * 开始通话
-     */
-    async startCall() {
-        if (this.isInCall) {
-            console.log('已经在通话中');
-            return;
-        }
-        
-        // 确保已连接
-        if (!this.isConnected) {
-            const connected = await this.connect();
-            if (!connected) {
-                throw new Error('无法连接到语音服务');
-            }
-        }
-        
-        try {
-            // 初始化音频采集
-            await this._initAudioCapture();
-            
-            // 初始化音频播放
-            this._initAudioPlayer();
+            source.connect(this.analyser);
+            this.analyser.connect(this.processor);
+            this.processor.connect(this.audioContext.destination);
             
             this.isInCall = true;
+            this.callStartTime = Date.now();
             
-            // 开始录音
-            this._startRecording();
-            this._emitStatus('call_started');
-            
-            console.log('通话已开始');
+            this._setStatus('calling');
             
         } catch (error) {
             console.error('开始通话失败:', error);
@@ -251,246 +471,82 @@ class VoiceCall {
         }
     }
     
-    /**
-     * 结束通话
-     */
-    async endCall() {
-        if (!this.isInCall) {
-            return;
+    stopCall() {
+        if (!this.isInCall) return;
+        
+        this.isInCall = false;
+        
+        if (this.processor) {
+            this.processor.disconnect();
+            this.processor = null;
         }
-
-        this._stopRecording();
-
-        this._stopPlayback();
-
-        // 清理VAD状态
-        this.vadIsSpeechActive = false;
-        this.vadSpeechBuffer = [];
-
-        // 清理音频流
+        
+        if (this.analyser) {
+            this.analyser.disconnect();
+            this.analyser = null;
+        }
+        
         if (this.audioStream) {
             this.audioStream.getTracks().forEach(track => track.stop());
             this.audioStream = null;
         }
-
-        // 关闭音频上下文
-        if (this.audioContext && this.audioContext.state !== 'closed') {
-            await this.audioContext.close();
-            this.audioContext = null;
-        }
-
-        this.isInCall = false;
-        this.isSpeaking = false;
-        this.isAiSpeaking = false;
-        this.currentTranscript = '';
-        this.currentAiText = '';
-
-        // 断开WebSocket连接
-        this.disconnect();
-
-        this._emitStatus('call_ended');
-
-        console.log('通话已结束');
+        
+        this._setStatus('idle');
     }
     
-    /**
-     * 设置TTS音色
-     * @param {string} voice - 音色ID: 'default', 'vivian', 'serena', 'uncle_fu', 'dylan'
-     */
-    setVoice(voice) {
-        const validVoices = ['default', 'vivian', 'serena', 'uncle_fu', 'dylan'];
-        if (!validVoices.includes(voice)) {
-            console.warn(`无效的音色: ${voice}，使用默认音色`);
-            voice = 'default';
+    _float32ToInt16(float32Array) {
+        const int16Array = new Int16Array(float32Array.length);
+        for (let i = 0; i < float32Array.length; i++) {
+            const s = Math.max(-1, Math.min(1, float32Array[i]));
+            int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
-        this.selectedVoice = voice;
-        console.log(`音色已设置为: ${voice}`);
-    }
-
-    /**
-     * 获取当前音色
-     */
-    getVoice() {
-        return this.selectedVoice;
-    }
-
-    /**
-     * 打断AI说话
-     */
-    interrupt() {
-        if (!this.isInCall || !this.isAiSpeaking) {
-            return;
-        }
-        
-        // 停止当前播放
-        this._stopPlayback();
-        
-        // 发送打断消息
-        this._sendMessage('interrupt', {});
-        
-        this.isAiSpeaking = false;
-        this._emitStatus('interrupted');
-        
-        console.log('已打断AI');
+        return int16Array;
     }
     
-    /**
-     * 初始化音频采集
-     */
-    async _initAudioCapture() {
-        try {
-            // 获取麦克风权限
-            this.audioStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true,
-                    sampleRate: 16000
-                }
-            });
-            
-            // 创建音频上下文（尽量使用设备默认采样率）
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            this.inputSampleRate = this.audioContext.sampleRate;
-            
-            // 创建分析器用于可视化
-            this.analyser = this.audioContext.createAnalyser();
-            this.analyser.fftSize = 256;
-            
-            const source = this.audioContext.createMediaStreamSource(this.audioStream);
-            source.connect(this.analyser);
-            
-            // 优先使用PCM捕获（服务端期望16-bit PCM）
-            if (this.audioContext.createScriptProcessor) {
-                this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
-                this.processor.onaudioprocess = this._handlePcmAudio;
-                
-                this.pcmGainNode = this.audioContext.createGain();
-                this.pcmGainNode.gain.value = 0;
-                
-                source.connect(this.processor);
-                this.processor.connect(this.pcmGainNode);
-                this.pcmGainNode.connect(this.audioContext.destination);
-            } else {
-                // 兼容性回退：使用MediaRecorder（可能需要服务端解码）
-                this.mediaRecorder = new MediaRecorder(this.audioStream, {
-                    mimeType: 'audio/webm;codecs=opus',
-                    audioBitsPerSecond: 16000
-                });
-                this.mediaRecorder.ondataavailable = this._handleAudioData;
-            }
-            
-            // 开始可视化数据更新
-            this._startVisualizer();
-            
-        } catch (error) {
-            console.error('初始化音频采集失败:', error);
-            if (error.name === 'NotAllowedError') {
-                throw new Error('麦克风权限被拒绝，请在浏览器设置中允许访问麦克风');
-            } else if (error.name === 'NotFoundError') {
-                throw new Error('未找到麦克风设备，请检查设备连接');
-            } else if (error.name === 'NotReadableError') {
-                throw new Error('麦克风被其他程序占用，请关闭其他使用麦克风的应用');
-            } else if (error.name === 'NotSupportedError') {
-                throw new Error('浏览器不支持音频采集，请使用Chrome/Edge/Firefox');
-            } else if (error.name === 'SecurityError') {
-                throw new Error('安全限制：请使用 localhost 或 HTTPS 访问');
-            }
-            throw error;
-        }
-    }
-    
-    /**
-     * 处理音频数据
-     */
-    _handleAudioData(event) {
-        if (event.data.size > 0) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const arrayBuffer = reader.result;
-                const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-                
-                // 发送音频数据
-                this._sendMessage('audio_chunk', { audio: base64 });
-            };
-            reader.readAsArrayBuffer(event.data);
-        }
-    }
-
-    /**
-     * 处理PCM音频数据（ScriptProcessor）
-     */
-    _handlePcmAudio(event) {
-        if (!this.isInCall) return;
+    _processVAD(inputData, pcmData) {
+        const rms = this._calculateRMS(inputData);
+        const isSpeech = rms > this.vadAdaptiveThreshold;
         
-        const input = event.inputBuffer.getChannelData(0);
-        
-        // VAD检测：计算当前帧的音量（RMS）
-        if (this.vadEnabled) {
-            const rms = this._calculateRMS(input);
-            const now = Date.now();
-
-            // 语音开始检测
-            if (!this.vadIsSpeechActive && rms > this.vadSpeechStartThreshold) {
-                this.vadIsSpeechActive = true;
-                this.vadSpeechStartTime = now;
-                this.vadLastSpeechTime = now;
-                console.log('VAD: 检测到语音开始');
-            }
-
-            // 语音持续检测
-            if (this.vadIsSpeechActive) {
-                if (rms > this.vadSpeechEndThreshold) {
-                    this.vadLastSpeechTime = now;
-                }
-
-                // 检查是否语音结束（静音超时）
-                if (now - this.vadLastSpeechTime > this.vadSilenceTimeout) {
-                    const speechDuration = now - this.vadSpeechStartTime;
-                    this.vadIsSpeechActive = false;
-                    console.log(`VAD: 检测到语音结束，持续 ${speechDuration}ms`);
-
-                    // 只发送持续时间超过最小阈值的语音
-                    if (speechDuration >= this.vadMinSpeechDuration) {
-                        if (this.vadSpeechBuffer.length > 0) {
-                            this._sendSpeechBuffer();
-                        }
-                    } else {
-                        console.log(`VAD: 语音太短 (${speechDuration}ms)，丢弃`);
-                        this.vadSpeechBuffer = [];
-                    }
-                    return;
-                }
+        if (isSpeech) {
+            this.vadHangoverFrames = 0;
+            
+            if (!this.vadIsSpeaking) {
+                this.vadIsSpeaking = true;
+                this.vadSpeechStartTime = Date.now();
+                this.vadBuffer = [];
             }
             
-            // 静音时不缓存
-            if (!this.vadIsSpeechActive && rms < this.vadThreshold) {
-                return;
-            }
-        }
-        
-        // 下采样并转换为PCM16
-        const downsampled = this._downsampleBuffer(input, this.inputSampleRate, this.targetSampleRate);
-        const pcm16 = this._floatTo16BitPCM(downsampled);
-        
-        if (this.vadEnabled) {
-            // VAD模式：只缓存，不实时发送
-            this.vadSpeechBuffer.push(pcm16);
+            this.vadBuffer.push(...pcmData);
             
-            // 限制缓冲区大小
-            if (this.vadSpeechBuffer.length > this.vadMaxBufferSize) {
-                this.vadSpeechBuffer.shift();
-            }
         } else {
-            // 不使用VAD时，直接发送所有数据
-            const base64 = this._arrayBufferToBase64(pcm16.buffer);
-            this._sendMessage('audio_chunk', { audio: base64 });
+            if (this.vadIsSpeaking) {
+                this.vadHangoverFrames++;
+                
+                if (this.vadHangoverFrames < this.vadMaxHangoverFrames) {
+                    this.vadBuffer.push(...pcmData);
+                } else {
+                    const speechDuration = Date.now() - this.vadSpeechStartTime;
+                    
+                    if (speechDuration >= this.vadMinSpeechDuration && this.vadBuffer.length > 0) {
+                        this._sendAudioData(new Int16Array(this.vadBuffer));
+                    }
+                    
+                    this.vadIsSpeaking = false;
+                    this.vadBuffer = [];
+                    this.vadHangoverFrames = 0;
+                }
+            }
         }
+        
+        this.vadEnergyHistory.push(rms);
+        if (this.vadEnergyHistory.length > this.vadHistorySize) {
+            this.vadEnergyHistory.shift();
+        }
+        
+        const avgEnergy = this.vadEnergyHistory.reduce((a, b) => a + b, 0) / this.vadEnergyHistory.length;
+        this.vadAdaptiveThreshold = Math.max(this.vadThreshold, avgEnergy * 1.5);
     }
     
-    /**
-     * 计算音频RMS（均方根）音量
-     */
     _calculateRMS(buffer) {
         let sum = 0;
         for (let i = 0; i < buffer.length; i++) {
@@ -499,547 +555,56 @@ class VoiceCall {
         return Math.sqrt(sum / buffer.length);
     }
     
-    /**
-     * 发送语音缓冲区数据
-     */
-    _sendSpeechBuffer() {
-        if (this.vadSpeechBuffer.length === 0) {
-            return;
-        }
-
-        // 合并所有缓冲的PCM数据
-        const totalLength = this.vadSpeechBuffer.reduce((sum, arr) => sum + arr.length, 0);
-        console.log(`VAD: 发送缓冲区，包含 ${this.vadSpeechBuffer.length} 个块，共 ${totalLength} 采样`);
-
-        const merged = new Int16Array(totalLength);
-        let offset = 0;
-        for (const chunk of this.vadSpeechBuffer) {
-            merged.set(chunk, offset);
-            offset += chunk.length;
-        }
-
-        // 先发送开始说话
-        this._sendMessage('start_speaking', {});
-
-        // 发送合并后的音频
-        const base64 = this._arrayBufferToBase64(merged.buffer);
-        this._sendMessage('audio_chunk', { audio: base64 });
-
-        // 发送停止说话，触发后端处理
-        this._sendMessage('stop_speaking', {});
-
-        // 清空缓冲区
-        this.vadSpeechBuffer = [];
-    }
-    
-    /**
-     * 开始录音
-     */
-    _startRecording() {
-        if (!this.mediaRecorder && !this.processor) return;
-        
-        // VAD模式下由VAD控制发送，不需要发start_speaking
-        if (!this.vadEnabled) {
-            this._sendMessage('start_speaking', {});
-        }
-        
-        // 开始录音（MediaRecorder模式）
-        if (this.mediaRecorder) {
-            this.mediaRecorder.start(100);
-        }
-        this.isSpeaking = true;
-        
-        this._emitStatus('speaking_started');
-    }
-    
-    /**
-     * 停止录音
-     */
-    _stopRecording() {
-        if (!this.mediaRecorder && !this.processor) return;
-        
-        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-            this.mediaRecorder.stop();
-        }
-        
-        // VAD模式下由VAD控制发送，不需要发stop_speaking
-        if (!this.vadEnabled) {
-            this._sendMessage('stop_speaking', {});
-        }
-        
-        this.isSpeaking = false;
-        this._emitStatus('speaking_stopped');
-    }
-
-    _downsampleBuffer(buffer, inputRate, targetRate) {
-        if (targetRate >= inputRate) {
-            return buffer;
-        }
-        const ratio = inputRate / targetRate;
-        const newLength = Math.round(buffer.length / ratio);
-        const result = new Float32Array(newLength);
-        let offsetResult = 0;
-        let offsetBuffer = 0;
-        while (offsetResult < result.length) {
-            const nextOffsetBuffer = Math.round((offsetResult + 1) * ratio);
-            let accum = 0;
-            let count = 0;
-            for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
-                accum += buffer[i];
-                count++;
-            }
-            result[offsetResult] = accum / Math.max(1, count);
-            offsetResult++;
-            offsetBuffer = nextOffsetBuffer;
-        }
-        return result;
-    }
-
-    _floatTo16BitPCM(float32Array) {
-        const output = new Int16Array(float32Array.length);
-        for (let i = 0; i < float32Array.length; i++) {
-            let s = Math.max(-1, Math.min(1, float32Array[i]));
-            output[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-        }
-        return output;
-    }
-
-    _arrayBufferToBase64(buffer) {
-        let binary = '';
-        const bytes = new Uint8Array(buffer);
-        const len = bytes.byteLength;
-        for (let i = 0; i < len; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        return btoa(binary);
-    }
-    
-    /**
-     * 初始化音频播放器
-     */
-    _initAudioPlayer() {
-        this.audioQueue = [];
-        this.isPlaying = false;
-        this._currentSource = null;
-    }
-    
-    /**
-     * 播放音频数据
-     */
-    async _playAudio(base64Audio) {
-        console.log('[TTS Debug] _playAudio 被调用, base64长度:', base64Audio?.length || 0);
-        try {
-            const binaryString = atob(base64Audio);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-            console.log('[TTS Debug] base64解码成功, 字节数:', bytes.length);
+    _sendAudioData(pcmData) {
+        if (this.ws?.readyState === WebSocket.OPEN) {
+            const base64Data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
             
-            if (!this.audioContext || this.audioContext.state === 'closed') {
-                console.log('[TTS Debug] 创建新的 AudioContext');
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            console.log('[TTS Debug] AudioContext 状态:', this.audioContext.state);
-            
-            if (this.audioContext.state === 'suspended') {
-                console.log('[TTS Debug] 尝试恢复 AudioContext');
-                await this.audioContext.resume();
-                console.log('[TTS Debug] AudioContext 恢复后状态:', this.audioContext.state);
-            }
-            
-            console.log('[TTS Debug] 开始解码音频数据...');
-            const audioBuffer = await this.audioContext.decodeAudioData(bytes.buffer.slice(0));
-            console.log('[TTS Debug] 音频解码成功, 时长:', audioBuffer.duration, '秒, 采样率:', audioBuffer.sampleRate);
-            
-            // 停止当前播放
-            if (this._currentSource) {
-                try { this._currentSource.stop(); } catch (e) {}
-            }
-            
-            const source = this.audioContext.createBufferSource();
-            source.buffer = audioBuffer;
-            source.connect(this.audioContext.destination);
-            
-            this._currentSource = source;
-            this.isAiSpeaking = true;
-            this._emitStatus('ai_speaking_started');
-            
-            console.log('[TTS Debug] 开始播放音频...');
-            return new Promise((resolve) => {
-                source.onended = () => {
-                    console.log('[TTS Debug] 音频播放结束');
-                    this._currentSource = null;
-                    this.isAiSpeaking = false;
-                    this._emitStatus('ai_speaking_ended');
-                    resolve();
-                };
-                source.start(0);
-                console.log('[TTS Debug] 音频已开始播放');
-            });
-            
-        } catch (error) {
-            console.error('[TTS Debug] 播放音频失败:', error);
-            this.isAiSpeaking = false;
+            this.ws.send(JSON.stringify({
+                type: 'audio',
+                data: {
+                    audio: base64Data,
+                    sample_rate: this.inputSampleRate,
+                    format: 'pcm_s16le'
+                },
+                timestamp: Date.now()
+            }));
         }
     }
     
-    /**
-     * 停止播放
-     */
-    _stopPlayback() {
-        this.audioQueue = [];
-        this.isPlaying = false;
-        
-        if (this._currentSource) {
-            try { this._currentSource.stop(); } catch (e) {}
-            this._currentSource = null;
+    setVoice(voice) {
+        const validVoices = ['vivian', 'serena', 'chelsie', 'ethel', 'vivian_warm', 'uncle_fu', 'dylan', 'eric', 'uncle_fu_warm', 'dylan_calm', 'ryan', 'aiden', 'jessica', 'ono_anna', 'sohee'];
+        if (!validVoices.includes(voice)) {
+            console.warn(`无效的音色: ${voice}，使用默认音色`);
+            voice = 'vivian';
         }
-        
-        this.isAiSpeaking = false;
-    }
-    
-    /**
-     * 处理音频队列
-     */
-    async _processAudioQueue() {
-        console.log('[TTS Debug] _processAudioQueue 被调用, isPlaying:', this.isPlaying, '队列长度:', this.audioQueue.length, 'isInCall:', this.isInCall);
-        if (this.isPlaying || this.audioQueue.length === 0) {
-            console.log('[TTS Debug] 跳过处理: isPlaying=', this.isPlaying, '队列空=', this.audioQueue.length === 0);
-            return;
+        this.selectedVoice = voice;
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+                type: 'set_voice',
+                data: { speaker_id: voice },
+                timestamp: Date.now()
+            }));
         }
-        
-        this.isPlaying = true;
-        console.log('[TTS Debug] 开始处理音频队列, 当前队列长度:', this.audioQueue.length);
-        
-        while (this.audioQueue.length > 0 && this.isInCall) {
-            const audioData = this.audioQueue.shift();
-            console.log('[TTS Debug] 从队列取出音频数据, 剩余:', this.audioQueue.length);
-            await this._playAudio(audioData);
-        }
-        
-        this.isPlaying = false;
-        console.log('[TTS Debug] 音频队列处理完成');
+        console.log(`音色已设置为: ${voice}`);
     }
     
-    /**
-     * 开始音频可视化
-     */
-    _startVisualizer() {
-        const updateVisualizer = () => {
-            if (!this.analyser || !this.isInCall) return;
-            
-            const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-            this.analyser.getByteFrequencyData(dataArray);
-            this.visualizerData = dataArray;
-            
-            requestAnimationFrame(updateVisualizer);
-        };
-        
-        updateVisualizer();
+    _setStatus(status) {
+        this._currentStatus = status;
+        this.onStatusChange(status);
     }
     
-    /**
-     * 获取可视化数据
-     */
-    getVisualizerData() {
-        return this.visualizerData;
-    }
-    
-    /**
-     * 处理WebSocket消息
-     */
-    _handleMessage(data) {
-        try {
-            const message = JSON.parse(data);
-            const { type, data: msgData } = message;
-            
-            if (type !== 'pong') {
-                console.log('[Voice Debug] 收到消息:', type, msgData ? JSON.stringify(msgData).substring(0, 100) : '');
-            }
-            
-            switch (type) {
-                case 'connected':
-                    console.log('[Voice Debug] 服务器确认连接:', msgData);
-                    break;
-                    
-                case 'transcript':
-                    // ASR识别结果
-                    console.log('[Voice Debug] ASR识别结果:', msgData.text, 'is_final:', msgData.is_final);
-                    this.currentTranscript = msgData.text;
-                    this.onTranscript(msgData.text, msgData.is_final);
-
-                    // 添加到对话历史（用户）
-                    if (msgData.text && msgData.is_final) {
-                        this._addToHistory('user', msgData.text);
-                    }
-                    this._emitStatus('transcript_received', msgData);
-                    break;
-
-                case 'ai_text':
-                    // AI文本回复
-                    this.currentAiText = msgData.text;
-                    this.onAiText(msgData.text);
-
-                    // 添加到对话历史（AI）
-                    if (msgData.text) {
-                        this._addToHistory('ai', msgData.text);
-                    }
-                    this._emitStatus('ai_text_received', msgData);
-                    break;
-                    
-                case 'ai_audio':
-                    // AI音频回复
-                    console.log('[TTS Debug] 收到 ai_audio 消息, audio长度:', msgData.audio?.length || 0, 'sampleRate:', msgData.sample_rate, 'duration:', msgData.duration_ms);
-                    this.audioQueue.push(msgData.audio);
-                    console.log('[TTS Debug] 音频已加入队列, 当前队列长度:', this.audioQueue.length);
-                    this._processAudioQueue();
-                    break;
-                    
-                case 'interrupted':
-                    // 打断确认
-                    console.log('AI已停止');
-                    this._emitStatus('interrupted', msgData);
-                    break;
-                    
-                case 'status':
-                    // 状态更新
-                    this._emitStatus('server_status', msgData);
-                    break;
-                    
-                case 'error':
-                    // 错误消息
-                    console.error('服务器错误:', msgData);
-                    this.onError(new Error(msgData.message));
-                    break;
-                    
-                case 'pong':
-                    // 心跳响应
-                    break;
-                    
-                default:
-                    console.log('未知消息类型:', type);
-            }
-            
-        } catch (error) {
-            console.error('处理消息失败:', error);
-        }
-    }
-    
-    /**
-     * 发送消息
-     */
-    _sendMessage(type, data) {
-        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-            const errorMsg = 'WebSocket未连接，无法发送消息';
-            console.warn('[Voice Debug]', errorMsg, 'readyState:', this.ws?.readyState);
-            
-            if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
-                this.onError(new Error('正在连接中，请稍后重试...'));
-            } else if (this.ws && this.ws.readyState === WebSocket.CLOSING) {
-                this.onError(new Error('连接正在关闭，请稍后重试...'));
-            } else {
-                this.onError(new Error('连接已断开，正在尝试重新连接...'));
-                if (!this._intentionalClose) {
-                    this._attemptReconnect();
-                }
-            }
-            return false;
-        }
-        
-        const message = {
-            type: type,
-            data: data,
-            timestamp: Date.now()
-        };
-        
-        this.ws.send(JSON.stringify(message));
-        console.log('[Voice Debug] 发送消息:', type, data?.audio ? `audio(${data.audio.length}chars)` : JSON.stringify(data).substring(0, 100));
-        return true;
-    }
-    
-    /**
-     * 发送心跳
-     */
-    _sendPing() {
-        this._sendMessage('ping', {});
-    }
-    
-    /**
-     * 启动心跳机制
-     */
-    _startHeartbeat() {
-        this._stopHeartbeat(); // 先停止旧的心跳
-        
-        this.missedHeartbeats = 0;
-        this.heartbeatInterval = setInterval(() => {
-            if (!this.isConnected) {
-                this._stopHeartbeat();
-                return;
-            }
-            
-            this.missedHeartbeats++;
-            
-            if (this.missedHeartbeats > this.maxMissedHeartbeats) {
-                console.warn('心跳超时，连接可能已断开');
-                this._stopHeartbeat();
-                this._handleConnectionLost();
-                return;
-            }
-            
-            this._sendPing();
-        }, this.heartbeatTimeout);
-        
-        console.log('心跳机制已启动');
-    }
-    
-    /**
-     * 停止心跳机制
-     */
-    _stopHeartbeat() {
-        if (this.heartbeatInterval) {
-            clearInterval(this.heartbeatInterval);
-            this.heartbeatInterval = null;
-        }
-        this.missedHeartbeats = 0;
-    }
-    
-    /**
-     * 启动连接状态检测
-     */
-    _startConnectionCheck() {
-        this._stopConnectionCheck(); // 先停止旧的检测
-        
-        this.lastMessageTime = Date.now();
-        this.connectionCheckInterval = setInterval(() => {
-            const now = Date.now();
-            const elapsed = now - this.lastMessageTime;
-            
-            if (elapsed > this.connectionTimeout) {
-                console.warn(`连接超时: ${elapsed}ms 无消息`);
-                this._handleConnectionLost();
-            }
-        }, 10000); // 每10秒检查一次
-        
-        console.log('连接状态检测已启动');
-    }
-    
-    /**
-     * 停止连接状态检测
-     */
-    _stopConnectionCheck() {
-        if (this.connectionCheckInterval) {
-            clearInterval(this.connectionCheckInterval);
-            this.connectionCheckInterval = null;
-        }
-    }
-    
-    /**
-     * 处理连接丢失
-     */
-    _handleConnectionLost() {
-        console.log('检测到连接丢失，尝试重连...');
+    disconnect() {
+        this._intentionalClose = true;
+        this.stopCall();
         this._stopHeartbeat();
         this._stopConnectionCheck();
         
         if (this.ws) {
-            try {
-                this.ws.close();
-            } catch (e) {}
+            this.ws.close();
+            this.ws = null;
         }
         
         this.isConnected = false;
-        this._emitStatus('disconnected');
-        
-        if (!this._intentionalClose) {
-            this._attemptReconnect();
-        }
-    }
-    
-    /**
-     * 获取当前状态
-     */
-    getStatus() {
-        return {
-            isConnected: this.isConnected,
-            isInCall: this.isInCall,
-            isSpeaking: this.isSpeaking,
-            isAiSpeaking: this.isAiSpeaking,
-            currentTranscript: this.currentTranscript,
-            currentAiText: this.currentAiText,
-            conversationLength: this.conversationHistory.length
-        };
-    }
-    
-    /**
-     * 获取对话历史
-     */
-    getConversationHistory() {
-        return [...this.conversationHistory];
-    }
-    
-    /**
-     * 清空对话历史
-     */
-    
-    /**
-     * 添加到对话历史
-     * @param {string} role - 'user' 或 'ai'
-     * @param {string} text - 对话文本
-     * @private
-     */
-    _addToHistory(role, text) {
-        if (!text || typeof text !== 'string') return;
-
-        const entry = {
-            role: role,
-            text: text.trim(),
-            timestamp: Date.now()
-        };
-
-        this.conversationHistory.push(entry);
-
-        // 限制历史长度
-        if (this.conversationHistory.length > 100) {
-            this.conversationHistory.shift();
-        }
-
-        // 触发历史更新回调
-        this.onHistoryUpdate(role, text, entry);
-
-        // 触发自定义事件
-        const event = new CustomEvent('voiceCallHistory', {
-            detail: { role, text, entry }
-        });
-        document.dispatchEvent(event);
-    }
-
-    /**
-     * 清空对话历史
-     */
-    clearHistory() {
-        this.conversationHistory = [];
-        this.currentTranscript = '';
-        this.currentAiText = '';
-
-        // 触发自定义事件
-        const event = new CustomEvent('voiceCallHistory', {
-            detail: { action: 'clear' }
-        });
-        document.dispatchEvent(event);
-    }
-
-    /**
-     * 触发状态变更事件
-     */
-    _emitStatus(status, data = null) {
-        this.onStatusChange(status, data);
-        
-        // 触发自定义事件
-        const event = new CustomEvent('voiceCallStatus', {
-            detail: { status, data }
-        });
-        document.dispatchEvent(event);
     }
 }
 
@@ -1047,3 +612,103 @@ class VoiceCall {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = VoiceCall;
 }
+
+// ========== 音色克隆功能 ==========
+
+class VoiceCloneManager {
+    constructor() {
+        this.modal = document.getElementById('cloneModal');
+        this.progressPanel = document.getElementById('cloneProgress');
+        
+        this.mediaRecorder = null;
+        this.recordedChunks = [];
+        this.recordStartTime = 0;
+        this.recordTimer = null;
+        this.isRecording = false;
+        this.waveformInterval = null;
+        
+        this.recordedBlob = null;
+        this.uploadedFile = null;
+        
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+        this.loadClonedVoices();
+    }
+    
+    bindEvents() {
+        const cloneEntry = document.getElementById('cloneVoiceEntry');
+        if (cloneEntry) {
+            cloneEntry.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.openModal();
+            });
+        }
+        
+        const closeBtn = document.getElementById('cloneModalClose');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.closeModal());
+        }
+        
+        this.modal?.addEventListener('click', (e) => {
+            if (e.target === this.modal) this.closeModal();
+        });
+        
+        document.querySelectorAll('.clone-tab').forEach(tab => {
+            tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
+        });
+        
+        const recordBtn = document.getElementById('recordBtn');
+        if (recordBtn) {
+            recordBtn.addEventListener('click', () => this.toggleRecording());
+        }
+        
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('audioFileInput');
+        
+        if (uploadArea && fileInput) {
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) this.handleFileSelect(files[0]);
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) this.handleFileSelect(e.target.files[0]);
+            });
+        }
+        
+        const clearBtn = document.getElementById('uploadClearBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.clearUploadFile();
+            });
+        }
+        
+        const recordSubmit = document.getElementById('recordSubmitBtn');
+        const uploadSubmit = document.getElementById('uploadSubmitBtn');
+        
+        if (recordSubmit) {
+            recordSubmit.addEventListener('click', () => this.submitClone('record'));
+        }
+        if (uploadSubmit) {
+            uploadSubmit.addEventListener('click', () => this.submitClone('upload'));
+        }
+        
+        ['recordVoiceName', 'uploadVoiceName'].forEach(id => {
+            const input = document

@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 rate_limit_store = {}
 RATE_LIMIT_REQUESTS = 60
 RATE_LIMIT_WINDOW = 60
+RATE_LIMIT_MAX_IPS = 10000
 
 _api_key_service = None
 
@@ -36,17 +37,32 @@ def check_rate_limit(ip: str) -> bool:
     current_time = time.time()
     if ip not in rate_limit_store:
         rate_limit_store[ip] = []
-    
+
     rate_limit_store[ip] = [
-        t for t in rate_limit_store[ip] 
+        t for t in rate_limit_store[ip]
         if current_time - t < RATE_LIMIT_WINDOW
     ]
-    
+
+    if len(rate_limit_store) > RATE_LIMIT_MAX_IPS:
+        expired = [k for k, v in rate_limit_store.items() if not v]
+        for k in expired:
+            del rate_limit_store[k]
+        if len(rate_limit_store) > RATE_LIMIT_MAX_IPS:
+            oldest = sorted(rate_limit_store.keys(), key=lambda k: rate_limit_store[k][0] if rate_limit_store[k] else 0)
+            for k in oldest[:len(rate_limit_store) - RATE_LIMIT_MAX_IPS // 2]:
+                del rate_limit_store[k]
+
     if len(rate_limit_store[ip]) >= RATE_LIMIT_REQUESTS:
         return False
-    
+
     rate_limit_store[ip].append(current_time)
     return True
+
+
+_LOCAL_ADDRESSES = frozenset({
+    '127.0.0.1', '::1', '::ffff:127.0.0.1',
+    'localhost', '0.0.0.0', '::'
+})
 
 
 def require_api_key(f):
@@ -55,7 +71,7 @@ def require_api_key(f):
     def decorated_function(*args, **kwargs):
         client_ip = request.remote_addr
         
-        if request.headers.get('X-Internal-Call') == 'true' and client_ip in ('127.0.0.1', '::1'):
+        if request.headers.get('X-Internal-Call') == 'true' and client_ip in _LOCAL_ADDRESSES:
             return f(*args, **kwargs)
         
         if not check_rate_limit(client_ip):
@@ -80,6 +96,8 @@ def require_api_key(f):
         elif auth_header.startswith('ApiKey '):
             client_api_key = auth_header[7:]
         
+        if not client_api_key:
+            client_api_key = request.headers.get('X-API-Key')
         if not client_api_key:
             client_api_key = request.args.get('api_key')
         if not client_api_key:

@@ -79,61 +79,66 @@ def _proxy_to_ollama(endpoint: str, method: str = "GET", data: dict = None, stre
 
 
 def register_ollama_proxy_routes(app):
-    """注册 Ollama 代理路由"""
-    
+    from utils.auth import require_api_key
+
     @app.route('/api/tags', methods=['GET'])
     def proxy_tags():
-        """获取模型列表（Ollama 原生 API）"""
         return _proxy_to_ollama('/api/tags', 'GET')
-    
+
     @app.route('/api/version', methods=['GET'])
     def proxy_version():
-        """获取 Ollama 版本（Ollama 原生 API）"""
         return _proxy_to_ollama('/api/version', 'GET')
-    
+
     @app.route('/api/show', methods=['POST'])
+    @require_api_key
     def proxy_show():
-        """获取模型详情（Ollama 原生 API）"""
         data = request.json or {}
         return _proxy_to_ollama('/api/show', 'POST', data)
-    
+
     @app.route('/api/generate', methods=['POST'])
+    @require_api_key
     def proxy_generate():
-        """生成文本（Ollama 原生 API，支持流式）"""
         data = request.json or {}
         stream = data.get('stream', False)
         return _proxy_to_ollama('/api/generate', 'POST', data, stream=stream)
-    
+
     @app.route('/api/delete', methods=['DELETE'])
+    @require_api_key
     def proxy_delete():
-        """删除模型（Ollama 原生 API）"""
         data = request.json or {}
         return _proxy_to_ollama('/api/delete', 'DELETE', data)
-    
+
     @app.route('/api/copy', methods=['POST'])
+    @require_api_key
     def proxy_copy():
-        """复制模型（Ollama 原生 API）"""
         data = request.json or {}
         return _proxy_to_ollama('/api/copy', 'POST', data)
-    
+
     @app.route('/api/embeddings', methods=['POST'])
+    @require_api_key
     def proxy_embeddings():
-        """生成嵌入向量（Ollama 原生 API）"""
         data = request.json or {}
         return _proxy_to_ollama('/api/embeddings', 'POST', data)
-    
+
     @app.route('/api/pull', methods=['POST'])
+    @require_api_key
     def proxy_pull():
-        """拉取模型（Ollama 原生 API，支持流式）"""
         data = request.json or {}
         stream = data.get('stream', False)
         return _proxy_to_ollama('/api/pull', 'POST', data, stream=stream)
-    
+
     @app.route('/api/push', methods=['POST'])
+    @require_api_key
     def proxy_push():
-        """推送模型（Ollama 原生 API，支持流式）"""
         data = request.json or {}
         stream = data.get('stream', False)
         return _proxy_to_ollama('/api/push', 'POST', data, stream=stream)
-    
+
+    @app.route('/api/ollama/chat', methods=['POST'])
+    @require_api_key
+    def proxy_ollama_chat():
+        data = request.json or {}
+        stream = data.get('stream', False)
+        return _proxy_to_ollama('/api/chat', 'POST', data, stream=stream)
+
     logger.info("✓ Ollama 代理路由已注册")

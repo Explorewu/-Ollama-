@@ -8,65 +8,30 @@ const ShareManager = (function() {
     const SHARE_BASE_URL = window.location.origin + window.location.pathname;
     
     /**
-     * 导出对话为JSON格式
-     * @param {Object} conversation - 对话对象
-     * @returns {string} JSON字符串
-     */
-    function exportToJSON(conversation) {
-        const data = {
-            version: '1.0',
-            exportDate: new Date().toISOString(),
-            conversation: {
-                id: conversation.id,
-                title: conversation.title,
-                model: conversation.model,
-                createdAt: conversation.createdAt,
-                updatedAt: conversation.updatedAt,
-                messages: conversation.messages
-            }
-        };
-        
-        return JSON.stringify(data, null, 2);
-    }
-    
-    /**
-     * 导出对话为Markdown格式
-     * @param {Object} conversation - 对话对象
-     * @returns {string} Markdown字符串
-     */
-    function exportToMarkdown(conversation) {
-        let md = `# ${conversation.title}\n\n`;
-        md += `> 模型: ${conversation.model || '未知'}\n`;
-        md += `> 创建时间: ${new Date(conversation.createdAt).toLocaleString('zh-CN')}\n\n`;
-        md += `---\n\n`;
-        
-        conversation.messages.forEach(msg => {
-            const role = msg.role === 'user' ? '**用户**' : '**AI**';
-            const time = msg.timestamp ? new Date(msg.timestamp).toLocaleString('zh-CN') : '';
-            md += `### ${role} ${time}\n\n`;
-            md += `${msg.content}\n\n`;
-            md += `---\n\n`;
-        });
-        
-        return md;
-    }
-    
-    /**
-     * 导出对话为纯文本格式
+     * 导出对话为纯文本格式（简洁版）
+     * 只保留用户和AI的对话内容，无额外元数据
      * @param {Object} conversation - 对话对象
      * @returns {string} 纯文本字符串
      */
     function exportToText(conversation) {
-        let text = `${conversation.title}\n`;
-        text += `${'='.repeat(50)}\n\n`;
+        const lines = [];
         
-        conversation.messages.forEach(msg => {
-            const role = msg.role === 'user' ? '用户' : 'AI';
-            text += `[${role}]\n`;
-            text += `${msg.content}\n\n`;
-        });
+        // 标题
+        if (conversation.title) {
+            lines.push(conversation.title);
+            lines.push('');
+        }
         
-        return text;
+        // 对话内容
+        if (conversation.messages && conversation.messages.length > 0) {
+            conversation.messages.forEach(msg => {
+                const role = msg.role === 'user' ? '用户' : 'AI';
+                lines.push(`${role}: ${msg.content}`);
+                lines.push('');
+            });
+        }
+        
+        return lines.join('\n');
     }
     
     /**
@@ -76,7 +41,7 @@ const ShareManager = (function() {
      * @returns {string} 文件名
      */
     function generateExportFilename(conversation, format) {
-        const title = conversation.title.replace(/[<>:"/\\|?*]/g, '_');
+        const title = (conversation.title || 'untitled').replace(/[<>:"/\\|?*]/g, '_');
         const date = new Date().toISOString().split('T')[0];
         return `ollama_${title}_${date}.${format}`;
     }
@@ -101,73 +66,74 @@ const ShareManager = (function() {
     }
     
     /**
-     * 导出单个对话
+     * 导出单个对话（仅纯文本）
      * @param {Object} conversation - 对话对象
-     * @param {string} format - 导出格式 (json/md/txt)
      */
-    function exportConversation(conversation, format = 'json') {
-        let content, filename, mimeType;
-        
-        switch (format.toLowerCase()) {
-            case 'json':
-                content = exportToJSON(conversation);
-                filename = generateExportFilename(conversation, 'json');
-                mimeType = 'application/json';
-                break;
-            case 'md':
-            case 'markdown':
-                content = exportToMarkdown(conversation);
-                filename = generateExportFilename(conversation, 'md');
-                mimeType = 'text/markdown';
-                break;
-            case 'txt':
-            case 'text':
-                content = exportToText(conversation);
-                filename = generateExportFilename(conversation, 'txt');
-                mimeType = 'text/plain';
-                break;
-            default:
-                throw new Error('不支持的导出格式');
-        }
-        
-        downloadFile(content, filename, mimeType);
+    function exportConversation(conversation) {
+        const content = exportToText(conversation);
+        const filename = generateExportFilename(conversation, 'txt');
+        downloadFile(content, filename, 'text/plain');
     }
     
     /**
-     * 导出所有对话
-     * @param {Array} conversations - 对话列表
-     * @param {string} format - 导出格式
+     * 导出当前对话（供UI调用）
      */
-    function exportAllConversations(conversations, format = 'json') {
-        const data = {
-            version: '1.0',
-            exportDate: new Date().toISOString(),
-            conversations: conversations
-        };
-        
-        let content, filename, mimeType;
-        
-        if (format === 'json') {
-            content = JSON.stringify(data, null, 2);
-            filename = `ollama_all_conversations_${new Date().toISOString().split('T')[0]}.json`;
-            mimeType = 'application/json';
-        } else {
-            // Markdown格式
-            let md = `# Ollama 对话导出\n\n`;
-            md += `> 导出时间: ${new Date().toLocaleString('zh-CN')}\n`;
-            md += `> 对话数量: ${conversations.length}\n\n`;
-            md += `---\n\n`;
-            
-            conversations.forEach(conv => {
-                md += exportToMarkdown(conv);
-            });
-            
-            content = md;
-            filename = `ollama_all_${new Date().toISOString().split('T')[0]}.md`;
-            mimeType = 'text/markdown';
+    function exportCurrent() {
+        const app = window.App;
+        if (!app || !app.state.currentConversation) {
+            showNotification('请先选择一个对话', 'warning');
+            return;
         }
+        exportConversation(app.state.currentConversation);
+        showNotification('对话已导出', 'success');
+    }
+    
+    /**
+     * 导出所有对话（供UI调用）
+     */
+    function exportAll() {
+        const conversations = Storage.getAllConversations();
+        if (!conversations || conversations.length === 0) {
+            showNotification('没有可导出的对话', 'warning');
+            return;
+        }
+        exportAllConversations(conversations);
+        showNotification(`已导出 ${conversations.length} 个对话`, 'success');
+    }
+    
+    /**
+     * 导出所有对话（仅纯文本）
+     * @param {Array} conversations - 对话列表
+     */
+    function exportAllConversations(conversations) {
+        const lines = [];
         
-        downloadFile(content, filename, mimeType);
+        conversations.forEach((conv, index) => {
+            // 对话标题
+            if (conv.title) {
+                lines.push(conv.title);
+                lines.push('');
+            }
+            
+            // 对话内容
+            if (conv.messages && conv.messages.length > 0) {
+                conv.messages.forEach(msg => {
+                    const role = msg.role === 'user' ? '用户' : 'AI';
+                    lines.push(`${role}: ${msg.content}`);
+                    lines.push('');
+                });
+            }
+            
+            // 对话之间添加分隔
+            if (index < conversations.length - 1) {
+                lines.push('---');
+                lines.push('');
+            }
+        });
+        
+        const content = lines.join('\n');
+        const filename = `ollama_all_conversations_${new Date().toISOString().split('T')[0]}.txt`;
+        downloadFile(content, filename, 'text/plain');
     }
     
     /**
@@ -198,6 +164,28 @@ const ShareManager = (function() {
                 document.body.removeChild(textarea);
             }
         }
+    }
+    
+    /**
+     * 复制当前对话内容到剪贴板（纯文本）
+     */
+    async function copyConversation() {
+        const app = window.App;
+        if (!app || !app.state.currentConversation) {
+            showNotification('请先选择一个对话', 'warning');
+            return;
+        }
+        const text = exportToText(app.state.currentConversation);
+        const success = await copyToClipboard(text);
+        showNotification(success ? '已复制到剪贴板' : '复制失败', success ? 'success' : 'error');
+    }
+    
+    /**
+     * 复制当前对话为纯文本格式（与 copyConversation 相同）
+     */
+    async function copyMarkdown() {
+        // 简化处理：与 copyConversation 相同，都是纯文本
+        await copyConversation();
     }
     
     /**
@@ -288,32 +276,18 @@ const ShareManager = (function() {
     }
     
     /**
-     * 创建导出选项HTML
+     * 创建导出选项HTML（仅纯文本）
      * @returns {string} HTML字符串
      */
     function createExportOptions() {
         return `
             <div class="export-options">
-                <div class="export-option" onclick="ShareManager.exportCurrent('json')">
+                <div class="export-option" onclick="ShareManager.exportCurrent()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
                         <polyline points="14 2 14 8 20 8"/>
                     </svg>
-                    <span>JSON</span>
-                </div>
-                <div class="export-option" onclick="ShareManager.exportCurrent('md')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                    <span>Markdown</span>
-                </div>
-                <div class="export-option" onclick="ShareManager.exportCurrent('txt')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                    <span>文本</span>
+                    <span>导出当前对话</span>
                 </div>
                 <div class="export-option" onclick="ShareManager.exportAll()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -321,7 +295,7 @@ const ShareManager = (function() {
                         <polyline points="7 10 12 15 17 10"/>
                         <line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
-                    <span>全部导出</span>
+                    <span>导出全部对话</span>
                 </div>
             </div>
         `;
@@ -375,12 +349,14 @@ const ShareManager = (function() {
     return {
         exportConversation: exportConversation,
         exportAllConversations: exportAllConversations,
-        exportToJSON: exportToJSON,
-        exportToMarkdown: exportToMarkdown,
+        exportCurrent: exportCurrent,
+        exportAll: exportAll,
         exportToText: exportToText,
         downloadFile: downloadFile,
         generateExportFilename: generateExportFilename,
         copyToClipboard: copyToClipboard,
+        copyConversation: copyConversation,
+        copyMarkdown: copyMarkdown,
         generateShareLink: generateShareLink,
         parseShareLink: parseShareLink,
         createShareOptions: createShareOptions,

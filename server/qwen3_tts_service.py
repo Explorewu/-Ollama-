@@ -15,7 +15,7 @@ Qwen3-TTS 语音合成服务模块
 
 使用方法:
     service = Qwen3TTSService()
-    audio = service.synthesize("你好，我是AI助手", speaker_id="default")
+    audio = service.synthesize("你好，我是AI助手", speaker_id="vivian")
     service.save_audio(audio, "output.wav")
 """
 
@@ -66,82 +66,95 @@ class SpeakerProfile:
 
 
 PRESET_SPEAKERS = {
-    "default": SpeakerProfile(
-        speaker_id="vivian",
-        name="Vivian",
-        description="明亮的年轻女声（中文）",
-        emotion="neutral",
-        speed=1.0
+    # ===== 中文女声 (5种) =====
+    "vivian": SpeakerProfile(
+        speaker_id="vivian", name="Vivian",
+        description="明亮自然女声 · 均衡清晰，适合日常对话", emotion="neutral", speed=1.0
     ),
-    "warm": SpeakerProfile(
-        speaker_id="serena",
-        name="Serena",
-        description="温暖柔和的年轻女声（中文）",
-        emotion="warm",
-        speed=0.95
+    "serena": SpeakerProfile(
+        speaker_id="serena", name="Serena",
+        description="温柔知性女声 · 语速舒缓，温暖亲和", emotion="warm", speed=0.88
     ),
-    "professional": SpeakerProfile(
-        speaker_id="uncle_fu",
-        name="Uncle_Fu",
-        description="成熟男声，音色醇厚（中文）",
-        emotion="neutral",
-        speed=1.0
+    "chelsie": SpeakerProfile(
+        speaker_id="chelsie", name="Chelsie",
+        description="优雅从容女声 · 沉稳大气，适合正式场景", emotion="warm", speed=0.82
     ),
-    "cheerful": SpeakerProfile(
-        speaker_id="dylan",
-        name="Dylan",
-        description="充满青春气息的北京男声",
-        emotion="cheerful",
-        speed=1.1
+    "ethel": SpeakerProfile(
+        speaker_id="ethel", name="Ethel",
+        description="甜美可爱少女 · 活泼轻快，元气满满", emotion="cheerful", speed=1.08
     ),
-    "calm": SpeakerProfile(
-        speaker_id="eric",
-        name="Eric",
-        description="活泼的成都男声",
-        emotion="calm",
-        speed=0.9
+    "vivian_warm": SpeakerProfile(
+        speaker_id="vivian", name="Vivian暖音",
+        description="邻家姐姐声 · 明亮中带温暖，亲切自然", emotion="warm", speed=0.92
     ),
-    "english_male": SpeakerProfile(
-        speaker_id="ryan",
-        name="Ryan",
-        description="富有节奏感的活力男声（英文）",
-        emotion="neutral",
-        speed=1.0
+
+    # ===== 中文男声 (5种) =====
+    "uncle_fu": SpeakerProfile(
+        speaker_id="uncle_fu", name="Uncle Fu",
+        description="醇厚成熟男声 · 沉稳可靠，有磁性", emotion="neutral", speed=0.88
     ),
-    "english_american": SpeakerProfile(
-        speaker_id="aiden",
-        name="Aiden",
-        description="阳光的美式男声（英文）",
-        emotion="neutral",
-        speed=1.0
+    "dylan": SpeakerProfile(
+        speaker_id="dylan", name="Dylan",
+        description="阳光活力男声 · 热情洋溢，充满朝气", emotion="cheerful", speed=1.12
     ),
-    "japanese": SpeakerProfile(
-        speaker_id="ono_anna",
-        name="Ono_Anna",
-        description="活泼的日语女声",
-        emotion="neutral",
-        speed=1.0
+    "eric": SpeakerProfile(
+        speaker_id="eric", name="Eric",
+        description="沉稳磁性男声 · 低沉厚重，适合讲故事", emotion="calm", speed=0.82
     ),
-    "korean": SpeakerProfile(
-        speaker_id="sohee",
-        name="Sohee",
-        description="温暖的韩语女声",
-        emotion="neutral",
-        speed=1.0
+    "uncle_fu_warm": SpeakerProfile(
+        speaker_id="uncle_fu", name="Uncle Fu暖叔",
+        description="温柔大叔声 · 成熟中带温和，如沐春风", emotion="warm", speed=0.80
+    ),
+    "dylan_calm": SpeakerProfile(
+        speaker_id="dylan", name="Dylan清朗",
+        description="清爽少年音 · 干净清澈，阳光少年感", emotion="calm", speed=0.95
+    ),
+
+    # ===== 英文/多语言 (5种) =====
+    "ryan": SpeakerProfile(
+        speaker_id="ryan", name="Ryan",
+        description="英伦绅士男声 · 富有节奏感，适合英文", emotion="neutral", speed=1.0
+    ),
+    "aiden": SpeakerProfile(
+        speaker_id="aiden", name="Aiden",
+        description="阳光美式男声 · 开朗自信，美式发音", emotion="cheerful", speed=1.05
+    ),
+    "jessica": SpeakerProfile(
+        speaker_id="jessica", name="Jessica",
+        description="优雅英式女声 · 温婉大方，英式发音", emotion="warm", speed=0.9
+    ),
+    "ono_anna": SpeakerProfile(
+        speaker_id="ono_anna", name="Ono Anna",
+        description="元气日语女声 · 活泼可爱，日语发音", emotion="cheerful", speed=1.0
+    ),
+    "sohee": SpeakerProfile(
+        speaker_id="sohee", name="Sohee",
+        description="温柔韩语女声 · 柔和细腻，韩语发音", emotion="warm", speed=0.95
     )
 }
 
 EDGE_TTS_VOICE_MAP = {
-    "default": "zh-CN-XiaoxiaoNeural",
-    "warm": "zh-CN-XiaoyiNeural",
-    "professional": "zh-CN-YunxiNeural",
-    "cheerful": "zh-CN-XiaochenNeural",
-    "calm": "zh-CN-YunjianNeural",
-    "english_male": "en-US-GuyNeural",
-    "english_american": "en-US-ChristopherNeural",
-    "japanese": "ja-JP-NanamiNeural",
-    "korean": "ko-KR-SunHiNeural"
+    "vivian": "zh-CN-XiaoxiaoNeural",
+    "serena": "zh-CN-XiaoyiNeural",
+    "chelsie": "zh-CN-XiaohanNeural",
+    "ethel": "zh-CN-XiaochenNeural",
+    "vivian_warm": "zh-CN-XiaoxiaoNeural",
+    "uncle_fu": "zh-CN-YunxiNeural",
+    "dylan": "zh-CN-YunyangNeural",
+    "eric": "zh-CN-YunjianNeural",
+    "uncle_fu_warm": "zh-CN-YunxiNeural",
+    "dylan_calm": "zh-CN-YunyangNeural",
+    "ryan": "en-US-GuyNeural",
+    "aiden": "en-US-ChristopherNeural",
+    "jessica": "en-US-JennyNeural",
+    "ono_anna": "ja-JP-NanamiNeural",
+    "sohee": "ko-KR-SunHiNeural"
 }
+
+SPEAKER_ID_ALIAS = {}
+for _key, _profile in PRESET_SPEAKERS.items():
+    SPEAKER_ID_ALIAS[_profile.speaker_id] = _key
+    SPEAKER_ID_ALIAS[_key] = _key
 
 
 def load_model_status() -> Dict[str, Any]:
@@ -193,7 +206,7 @@ class Qwen3TTSService:
         self.local_model_path = self._find_local_model_path()
         self.is_loaded = False
         self.device = "cpu"
-        self.current_speaker = "default"
+        self.current_speaker = "vivian"
         self._use_fallback = False
         self._torch = None
         
@@ -233,12 +246,6 @@ class Qwen3TTSService:
         return os.path.join(TTS_CACHE_DIR, "Qwen", "Qwen3-TTS-12Hz-0___6B-CustomVoice")
     
     def load_model(self) -> bool:
-        """
-        加载Qwen3-TTS模型
-        
-        Returns:
-            bool: 加载成功返回True，失败返回False
-        """
         if self.is_loaded:
             return True
         
@@ -261,7 +268,7 @@ class Qwen3TTSService:
                 logger.warning("qwen_tts 包未安装，尝试降级方案")
                 return self._load_fallback()
             
-            # 优先使用本地模型路径
+            model_path = self.local_model_path if os.path.exists(self.local_model_path) else self.model_name
             model_path = self.local_model_path if os.path.exists(self.local_model_path) else self.model_name
             
             self.model = Qwen3TTSModel.from_pretrained(
@@ -309,22 +316,11 @@ class Qwen3TTSService:
     def synthesize(
         self,
         text: str,
-        speaker_id: str = "default",
+        speaker_id: str = "vivian",
         speed: float = 1.0,
-        emotion: Optional[str] = None
+        emotion: Optional[str] = None,
+        emotion_intensity: float = 1.0
     ) -> Optional[TTSResult]:
-        """
-        合成语音
-        
-        Args:
-            text: 要合成的文本
-            speaker_id: 音色ID
-            speed: 语速倍率 (0.5-2.0)
-            emotion: 情绪标签
-            
-        Returns:
-            TTSResult: 合成结果，失败返回None
-        """
         if not text or not text.strip():
             logger.warning("合成文本为空")
             return None
@@ -337,33 +333,22 @@ class Qwen3TTSService:
         if self._use_fallback:
             return self._synthesize_fallback(text, speaker_id, speed)
         
-        return self._synthesize_qwen(text, speaker_id, speed, emotion)
+        return self._synthesize_qwen(text, speaker_id, speed, emotion, emotion_intensity)
     
     def _synthesize_qwen(
         self,
         text: str,
         speaker_id: str,
         speed: float,
-        emotion: Optional[str]
+        emotion: Optional[str],
+        emotion_intensity: float = 1.0
     ) -> Optional[TTSResult]:
-        """使用 Qwen3-TTS 合成"""
         try:
             start_time = time.time()
             
-            speaker = PRESET_SPEAKERS.get(speaker_id, PRESET_SPEAKERS["default"])
+            speaker = PRESET_SPEAKERS.get(speaker_id, PRESET_SPEAKERS["vivian"])
             
-            instruct = None
-            if emotion:
-                emotion_map = {
-                    "happy": "用开心的语气说",
-                    "sad": "用悲伤的语气说",
-                    "angry": "用愤怒的语气说",
-                    "neutral": "用平静的语气说",
-                    "warm": "用温暖的语气说",
-                    "cheerful": "用活泼的语气说",
-                    "calm": "用冷静的语气说"
-                }
-                instruct = emotion_map.get(emotion, f"用{emotion}的语气说")
+            instruct = self._build_emotion_instruct(emotion, emotion_intensity)
             
             wavs, sr = self.model.generate_custom_voice(
                 text=text,
@@ -378,6 +363,10 @@ class Qwen3TTSService:
             
             import numpy as np
             audio_data = np.array(wavs[0])
+            
+            # 音频后处理：速度调整 + 音量归一化
+            audio_data = self._apply_audio_postprocess(audio_data, sr, speed)
+            
             audio_bytes = self._numpy_to_bytes(audio_data)
             duration_ms = len(audio_data) / sr * 1000
             
@@ -395,20 +384,42 @@ class Qwen3TTSService:
             logger.error(f"Qwen3-TTS合成失败: {e}，尝试降级方案")
             return self._synthesize_fallback(text, speaker_id, speed)
     
+    def _apply_audio_postprocess(self, audio_data, sr: int, speed: float):
+        """
+        音频后处理算法：
+        1. 速度调整 - 通过线性插值重采样
+        2. 音量归一化 - 峰值归一化到 -3dB
+        """
+        import numpy as np
+        
+        # 1. 速度调整（重采样）
+        if abs(speed - 1.0) > 0.01:
+            orig_len = len(audio_data)
+            new_len = int(orig_len / speed)
+            indices = np.linspace(0, orig_len - 1, new_len)
+            audio_data = np.interp(indices, np.arange(orig_len), audio_data)
+        
+        # 2. 音量归一化（峰值归一化到 -3dB）
+        max_val = np.max(np.abs(audio_data))
+        if max_val > 0:
+            target_peak = 10 ** (-3 / 20)  # -3dB
+            scale = target_peak / max_val
+            audio_data = audio_data * scale
+        
+        return audio_data
+    
     def _synthesize_fallback(
         self,
         text: str,
         speaker_id: str,
         speed: float
     ) -> Optional[TTSResult]:
-        """使用 edge-tts 降级方案合成（返回WAV格式PCM数据）"""
         try:
             import edge_tts
-            import numpy as np
             
             start_time = time.time()
             
-            voice = EDGE_TTS_VOICE_MAP.get(speaker_id, EDGE_TTS_VOICE_MAP["default"])
+            voice = EDGE_TTS_VOICE_MAP.get(speaker_id, EDGE_TTS_VOICE_MAP["vivian"])
             
             communicate = edge_tts.Communicate(text, voice)
             
@@ -431,112 +442,102 @@ class Qwen3TTSService:
                 return None
             
             mp3_bytes = b"".join(audio_chunks)
-            
-            # edge-tts 返回 MP3 格式，需要解码为 PCM
-            pcm_bytes, actual_sample_rate = self._mp3_to_pcm(mp3_bytes)
-            
-            if pcm_bytes is None:
-                logger.error("MP3 解码失败")
-                return None
-            
-            duration_ms = len(pcm_bytes) / 2 / actual_sample_rate * 1000
+            duration_ms = len(mp3_bytes) / 16
             
             synthesis_time = time.time() - start_time
-            logger.info(f"edge-tts合成完成，文本长度: {len(text)}, 耗时: {synthesis_time:.3f}s")
+            logger.info(f"edge-tts合成完成（MP3直出），文本长度: {len(text)}, 耗时: {synthesis_time:.3f}s")
             
             return TTSResult(
-                audio_bytes=pcm_bytes,
-                sample_rate=actual_sample_rate,
+                audio_bytes=mp3_bytes,
+                sample_rate=24000,
                 duration_ms=duration_ms,
                 speaker_id=speaker_id,
-                format="pcm"
+                format="mp3"
             )
             
         except Exception as e:
             logger.error(f"edge-tts合成失败: {e}")
             return None
     
-    def _mp3_to_pcm(self, mp3_bytes: bytes):
-        """将 MP3 音频解码为 PCM (int16, mono) 数据"""
-        try:
-            import librosa
-            import tempfile
-            mp3_path = os.path.join(tempfile.gettempdir(), f'_qwen3_tts_{id(self)}.mp3')
-            with open(mp3_path, 'wb') as f:
-                f.write(mp3_bytes)
-            y, sr = librosa.load(mp3_path, sr=None, mono=True)
-            os.unlink(mp3_path)
-            audio_int16 = (y * 32767).astype(np.int16)
-            return audio_int16.tobytes(), int(sr)
-        except Exception as e:
-            logger.debug(f"librosa MP3解码失败: {e}")
-        
-        try:
-            from pydub import AudioSegment
-            audio = AudioSegment.from_mp3(io.BytesIO(mp3_bytes))
-            audio = audio.set_channels(1).set_sample_width(2)
-            actual_rate = audio.frame_rate
-            return audio.raw_data, actual_rate
-        except Exception as e:
-            logger.debug(f"pydub MP3解码失败: {e}")
-        
-        try:
-            import subprocess
-            import tempfile
-            with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as mp3_file:
-                mp3_file.write(mp3_bytes)
-                mp3_path = mp3_file.name
-            wav_path = mp3_path.replace('.mp3', '.wav')
-            result = subprocess.run(
-                ['ffmpeg', '-i', mp3_path, '-ac', '1', '-ar', '24000', '-f', 'wav', '-y', wav_path],
-                capture_output=True, timeout=10
-            )
-            if result.returncode == 0:
-                import wave
-                with wave.open(wav_path, 'rb') as wf:
-                    pcm_data = wf.readframes(wf.getnframes())
-                    actual_rate = wf.getframerate()
-                os.unlink(mp3_path)
-                os.unlink(wav_path)
-                return pcm_data, actual_rate
-            else:
-                logger.error(f"ffmpeg 解码失败: {result.stderr.decode()[:200]}")
-                if os.path.exists(mp3_path):
-                    os.unlink(mp3_path)
-                return None, 0
-        except FileNotFoundError:
-            logger.error("ffmpeg 未安装，无法解码 MP3")
-            return None, 0
-        except Exception as e:
-            logger.error(f"MP3 解码失败: {e}")
-            return None, 0
-    
     def synthesize_stream(
         self,
         text: str,
-        speaker_id: str = "default",
-        chunk_size: int = 1024
-    ) -> Generator[bytes, None, None]:
-        """
-        流式合成语音
+        speaker_id: str = "vivian",
+        speed: float = 1.0,
+        emotion: Optional[str] = None,
+        emotion_intensity: float = 1.0
+    ) -> Generator[dict, None, None]:
+        import re
         
-        Args:
-            text: 要合成的文本
-            speaker_id: 音色ID
-            chunk_size: 音频块大小
+        sentences = re.split(r'(?<=[。！？；\n])', text)
+        sentences = [s.strip() for s in sentences if s.strip()]
+        
+        if not sentences:
+            sentences = [text]
+        
+        for i, sentence in enumerate(sentences):
+            result = self.synthesize(
+                sentence, speaker_id, speed, emotion, emotion_intensity
+            )
+            if result is None:
+                continue
             
-        Yields:
-            bytes: 音频数据块
-        """
-        result = self.synthesize(text, speaker_id)
-        if result is None:
-            return
-        
-        audio_data = result.audio_bytes
-        for i in range(0, len(audio_data), chunk_size):
-            chunk = audio_data[i:i + chunk_size]
-            yield chunk
+            if result.format == "mp3":
+                audio_b64 = base64.b64encode(result.audio_bytes).decode('utf-8')
+            else:
+                wav_bytes = self._wrap_wav_header(
+                    result.audio_bytes, result.sample_rate, 1, 16
+                )
+                audio_b64 = base64.b64encode(wav_bytes).decode('utf-8')
+            
+            yield {
+                "audio": audio_b64,
+                "format": result.format if result.format == "mp3" else "wav",
+                "sample_rate": result.sample_rate,
+                "duration_ms": result.duration_ms,
+                "sentence_index": i,
+                "sentence_total": len(sentences),
+                "text": sentence,
+                "is_final": i == len(sentences) - 1
+            }
     
+    def _build_emotion_instruct(self, emotion: Optional[str], intensity: float = 1.0) -> Optional[str]:
+        if not emotion:
+            return None
+        
+        emotion_map = {
+            "happy": "开心",
+            "sad": "悲伤",
+            "angry": "愤怒",
+            "neutral": "平静",
+            "warm": "温暖",
+            "cheerful": "活泼",
+            "calm": "冷静",
+            "excited": "兴奋",
+            "whisper": "轻声细语",
+            "serious": "严肃",
+            "playful": "俏皮",
+            "gentle": "温柔"
+        }
+        
+        emotion_name = emotion_map.get(emotion, emotion)
+        intensity = max(0.1, min(2.0, intensity))
+        
+        if intensity <= 0.5:
+            degree = "略微"
+        elif intensity <= 0.8:
+            degree = "有些"
+        elif intensity <= 1.2:
+            degree = ""
+        elif intensity <= 1.6:
+            degree = "非常"
+        else:
+            degree = "极其"
+        
+        if degree:
+            return f"用{degree}{emotion_name}的语气说"
+        return f"用{emotion_name}的语气说"
+
     def _numpy_to_bytes(self, audio_data) -> bytes:
         """将numpy数组转换为音频字节"""
         import numpy as np
@@ -640,22 +641,13 @@ class Qwen3TTSService:
         return PRESET_SPEAKERS.copy()
     
     def set_speaker(self, speaker_id: str) -> bool:
-        """
-        设置当前音色
-        
-        Args:
-            speaker_id: 音色ID
-            
-        Returns:
-            bool: 设置成功返回True
-        """
-        if speaker_id not in PRESET_SPEAKERS:
-            logger.warning(f"未知音色ID: {speaker_id}，使用默认音色")
-            speaker_id = "default"
-        
-        self.current_speaker = speaker_id
-        logger.info(f"当前音色已设置为: {PRESET_SPEAKERS[speaker_id].name}")
-        return True
+        if speaker_id in PRESET_SPEAKERS:
+            self.current_speaker = speaker_id
+            logger.info(f"当前音色已设置为: {PRESET_SPEAKERS[speaker_id].name}")
+            return True
+        logger.warning(f"未知音色ID: {speaker_id}，使用默认音色")
+        self.current_speaker = "vivian"
+        return False
     
     def check_status(self) -> Dict[str, Any]:
         """检查服务状态"""
@@ -688,6 +680,22 @@ class Qwen3TTSService:
             "avg_synthesis_time": self._total_synthesis_time / max(1, self._total_synthesis_count)
         }
     
+    def preload(self):
+        """异步预加载模型，在服务启动时调用"""
+        import threading
+        def _load():
+            try:
+                result = self.load_model()
+                if result:
+                    logger.info("TTS模型预加载完成")
+                else:
+                    logger.warning("TTS模型预加载失败，将使用降级方案")
+            except Exception as e:
+                logger.error(f"TTS模型预加载异常: {e}")
+        t = threading.Thread(target=_load, daemon=True, name="tts-preload")
+        t.start()
+        logger.info("TTS模型预加载已启动（后台线程）")
+    
     def unload_model(self):
         """卸载模型，释放内存"""
         if self.model is not None:
@@ -700,16 +708,225 @@ class Qwen3TTSService:
         gc.collect()
         
         logger.info("TTS模型已卸载")
+    
+    # ========== 音色克隆功能 ==========
+    
+    def clone_voice(
+        self,
+        ref_audio_path: str,
+        ref_text: Optional[str] = None,
+        voice_name: str = "克隆音色",
+        x_vector_only_mode: bool = False
+    ) -> Optional[Dict[str, Any]]:
+        """
+        克隆音色
+        
+        Args:
+            ref_audio_path: 参考音频文件路径（3~10秒）
+            ref_text: 参考音频对应的文本（ICL模式需要）
+            voice_name: 克隆音色的名称
+            x_vector_only_mode: 是否只用声纹嵌入（True=简单模式，False=ICL高质量模式）
+        
+        Returns:
+            包含克隆音色信息的字典，失败返回None
+        """
+        if not self.is_loaded:
+            if not self.load_model():
+                logger.error("TTS模型未加载，无法克隆音色")
+                return None
+        
+        if self._use_fallback:
+            logger.error("降级模式下不支持音色克隆")
+            return None
+        
+        try:
+            import uuid
+            import shutil
+            
+            # 生成唯一ID
+            clone_id = f"cloned_{uuid.uuid4().hex[:8]}"
+            
+            # 保存参考音频到缓存目录
+            clone_dir = os.path.join(TTS_CACHE_DIR, "cloned_voices", clone_id)
+            os.makedirs(clone_dir, exist_ok=True)
+            
+            ref_audio_dest = os.path.join(clone_dir, "reference.wav")
+            shutil.copy2(ref_audio_path, ref_audio_dest)
+            
+            # 创建克隆提示
+            logger.info(f"正在创建音色克隆提示: {clone_id}")
+            start_time = time.time()
+            
+            if x_vector_only_mode or not ref_text:
+                # 简单模式：只用声纹
+                prompt = self.model.create_voice_clone_prompt(
+                    ref_audio=ref_audio_dest,
+                    x_vector_only_mode=True
+                )
+            else:
+                # ICL高质量模式：需要参考文本
+                prompt = self.model.create_voice_clone_prompt(
+                    ref_audio=ref_audio_dest,
+                    ref_text=ref_text,
+                    x_vector_only_mode=False
+                )
+            
+            # 保存提示到文件
+            prompt_path = os.path.join(clone_dir, "prompt.pkl")
+            import pickle
+            with open(prompt_path, 'wb') as f:
+                pickle.dump(prompt, f)
+            
+            # 保存元数据
+            metadata = {
+                "clone_id": clone_id,
+                "voice_name": voice_name,
+                "ref_text": ref_text,
+                "x_vector_only_mode": x_vector_only_mode,
+                "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "ref_audio_path": ref_audio_dest,
+                "prompt_path": prompt_path
+            }
+            metadata_path = os.path.join(clone_dir, "metadata.json")
+            with open(metadata_path, 'w', encoding='utf-8') as f:
+                json.dump(metadata, f, ensure_ascii=False, indent=2)
+            
+            clone_time = time.time() - start_time
+            logger.info(f"音色克隆完成: {clone_id}, 耗时: {clone_time:.2f}s")
+            
+            return {
+                "clone_id": clone_id,
+                "voice_name": voice_name,
+                "description": f"克隆音色: {voice_name}",
+                "ref_text": ref_text,
+                "x_vector_only_mode": x_vector_only_mode,
+                "created_at": metadata["created_at"]
+            }
+            
+        except Exception as e:
+            logger.error(f"音色克隆失败: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return None
+    
+    def synthesize_cloned(
+        self,
+        text: str,
+        clone_id: str,
+        speed: float = 1.0
+    ) -> Optional[TTSResult]:
+        """
+        使用克隆的音色合成语音
+        
+        Args:
+            text: 要合成的文本
+            clone_id: 克隆音色的ID
+            speed: 语速
+        
+        Returns:
+            合成结果
+        """
+        if not self.is_loaded:
+            if not self.load_model():
+                logger.error("TTS模型未加载")
+                return None
+        
+        try:
+            # 加载克隆提示
+            clone_dir = os.path.join(TTS_CACHE_DIR, "cloned_voices", clone_id)
+            prompt_path = os.path.join(clone_dir, "prompt.pkl")
+            
+            if not os.path.exists(prompt_path):
+                logger.error(f"克隆音色不存在: {clone_id}")
+                return None
+            
+            import pickle
+            with open(prompt_path, 'rb') as f:
+                prompt = pickle.load(f)
+            
+            # 使用克隆音色合成
+            start_time = time.time()
+            wavs, sr = self.model.generate_voice_clone(
+                text=text,
+                voice_clone_prompt=prompt,
+                language="Chinese"
+            )
+            
+            if wavs is None or len(wavs) == 0:
+                logger.error("克隆音色合成失败")
+                return None
+            
+            import numpy as np
+            audio_data = np.array(wavs[0])
+            
+            # 应用后处理
+            audio_data = self._apply_audio_postprocess(audio_data, sr, speed)
+            
+            audio_bytes = self._numpy_to_bytes(audio_data)
+            duration_ms = len(audio_data) / sr * 1000
+            
+            synthesis_time = time.time() - start_time
+            logger.info(f"克隆音色合成完成: {clone_id}, 耗时: {synthesis_time:.3f}s")
+            
+            return TTSResult(
+                audio_bytes=audio_bytes,
+                sample_rate=sr,
+                duration_ms=duration_ms,
+                speaker_id=clone_id
+            )
+            
+        except Exception as e:
+            logger.error(f"克隆音色合成失败: {e}")
+            return None
+    
+    def get_cloned_voices(self) -> List[Dict[str, Any]]:
+        """获取所有克隆的音色列表"""
+        cloned_voices = []
+        cloned_dir = os.path.join(TTS_CACHE_DIR, "cloned_voices")
+        
+        if not os.path.exists(cloned_dir):
+            return cloned_voices
+        
+        for clone_id in os.listdir(cloned_dir):
+            metadata_path = os.path.join(cloned_dir, clone_id, "metadata.json")
+            if os.path.exists(metadata_path):
+                try:
+                    with open(metadata_path, 'r', encoding='utf-8') as f:
+                        metadata = json.load(f)
+                    cloned_voices.append({
+                        "clone_id": metadata.get("clone_id"),
+                        "voice_name": metadata.get("voice_name"),
+                        "description": f"克隆音色: {metadata.get('voice_name')}",
+                        "created_at": metadata.get("created_at")
+                    })
+                except Exception as e:
+                    logger.warning(f"读取克隆音色元数据失败: {clone_id}, {e}")
+        
+        return cloned_voices
+    
+    def delete_cloned_voice(self, clone_id: str) -> bool:
+        """删除克隆的音色"""
+        try:
+            clone_dir = os.path.join(TTS_CACHE_DIR, "cloned_voices", clone_id)
+            if os.path.exists(clone_dir):
+                import shutil
+                shutil.rmtree(clone_dir)
+                logger.info(f"已删除克隆音色: {clone_id}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"删除克隆音色失败: {e}")
+            return False
 
 
 _tts_service = None
 
 
 def get_tts_service() -> Qwen3TTSService:
-    """获取TTS服务实例（单例模式）"""
     global _tts_service
     if _tts_service is None:
         _tts_service = Qwen3TTSService()
+        _tts_service.preload()
     return _tts_service
 
 

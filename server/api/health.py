@@ -1,9 +1,10 @@
 """
 健康检查 API 模块
 
-提供健康检查、状态监控接口
+提供健康检查、状态监控、自动修复接口
 """
 
+import os
 import time
 import logging
 import requests
@@ -11,6 +12,19 @@ from flask import request, jsonify
 
 from utils.config import OLLAMA_BASE_URL
 from utils.helpers import success_response, error_response
+from utils.auth import require_api_key
+
+try:
+    from auto_heal import auto_heal
+    AUTO_HEAL_AVAILABLE = True
+except ImportError:
+    AUTO_HEAL_AVAILABLE = False
+
+try:
+    from auto_service_recovery import get_auto_recovery
+    AUTO_RECOVERY_AVAILABLE = True
+except ImportError:
+    AUTO_RECOVERY_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +71,54 @@ def register_health_routes(app, services=None):
 
     @app.route('/api/health/detailed', methods=['GET'])
     def health_check_detailed():
-        """更优化的健康检查 (格式合作率得)"""
-        return health_check()
+        try:
+            detailed = {
+                "timestamp": int(time.time() * 1000),
+                "services": {},
+                "system": {},
+            }
+
+            for service_name in ['memory_service', 'summary_service', 'context_manager', 'asr_service', 'smart_cache']:
+                service = services.get(service_name)
+                detailed["services"][service_name] = {
+                    "loaded": service is not None,
+                    "status": "ready" if service else "not_loaded",
+                }
+                if service and hasattr(service, 'get_statistics'):
+                    try:
+                        detailed["services"][service_name]["statistics"] = service.get_statistics()
+                    except Exception:
+                        pass
+
+            try:
+                resp = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=3)
+                if resp.ok:
+                    models = resp.json().get("models", [])
+                    detailed["services"]["ollama"] = {
+                        "connected": True,
+                        "model_count": len(models),
+                        "models": [m.get("name", "") for m in models],
+                    }
+                else:
+                    detailed["services"]["ollama"] = {"connected": False, "status_code": resp.status_code}
+            except Exception as e:
+                detailed["services"]["ollama"] = {"connected": False, "error": str(e)}
+
+            try:
+                import psutil
+                detailed["system"] = {
+                    "cpu_percent": psutil.cpu_percent(interval=0.1),
+                    "memory_percent": psutil.virtual_memory().percent,
+                    "disk_percent": psutil.disk_usage('/').percent if os.name != 'nt' else psutil.disk_usage('C:\\').percent,
+                }
+            except ImportError:
+                detailed["system"] = {"note": "psutil not installed"}
+
+            detailed["status"] = "healthy"
+            return jsonify(success_response(data=detailed))
+        except Exception as e:
+            logger.error(f"detailed health check failed: {e}")
+            return jsonify(error_response(str(e), 500)), 500
 
     @app.route('/api/stats', methods=['GET'])
     def get_all_stats():
@@ -107,8 +167,8 @@ def register_health_routes(app, services=None):
             return jsonify(error_response(str(e), 500)), 500
     
     @app.route('/api/ollama/start', methods=['POST'])
+    @require_api_key
     def start_ollama_service():
-        """启动 Ollama 服务（仅返回提示，不实际启动）"""
         try:
             import subprocess
             import platform
@@ -168,11 +228,11 @@ def register_health_routes(app, services=None):
             }))
         else:
             return jsonify(success_response(data={
-                "status": "unhealthy",
+                "status": "not_loaded",
                 "service": "summary",
                 "loaded": False,
-                "error": "服务未加载"
-            })), 503
+                "message": "摘要服务未加载，按需启动"
+            }))
     
     @app.route('/api/vision/status', methods=['GET'])
     def vision_status():
@@ -186,11 +246,11 @@ def register_health_routes(app, services=None):
             }))
         else:
             return jsonify(success_response(data={
-                "status": "unhealthy",
+                "status": "not_loaded",
                 "service": "vision",
                 "loaded": False,
-                "error": "服务未加载"
-            })), 503
+                "message": "视觉服务未加载，按需启动"
+            }))
     
     @app.route('/api/native_llama_cpp_image/health', methods=['GET'])
     def native_image_health():
@@ -204,15 +264,15 @@ def register_health_routes(app, services=None):
             }))
         else:
             return jsonify(success_response(data={
-                "status": "unhealthy",
+                "status": "not_loaded",
                 "service": "nativeImage",
                 "loaded": False,
-                "error": "服务未加载"
-            })), 503
+                "message": "图像服务未加载，按需启动"
+            }))
     
     @app.route('/api/cache/clear', methods=['POST'])
+    @require_api_key
     def cache_clear():
-        """清空缓存"""
         try:
             smart_cache = services.get('smart_cache')
             if smart_cache:
@@ -261,8 +321,8 @@ def register_health_routes(app, services=None):
             return jsonify(error_response(str(e), 500)), 500
     
     @app.route('/api/connection/reset', methods=['POST'])
+    @require_api_key
     def reset_connection():
-        """重置连接"""
         try:
             reset_result = {
                 "timestamp": int(time.time() * 1000),
@@ -297,6 +357,128 @@ def register_health_routes(app, services=None):
             return jsonify(success_response(data=reset_result, message="连接已重置"))
         except Exception as e:
             logger.error(f"连接重置失败：{e}")
+            return jsonify(error_response(str(e), 500)), 500
+
+    @app.route('/api/health/auto_heal', methods=['POST'])
+    @require_api_key
+    def auto_heal_endpoint():
+        if not AUTO_HEAL_AVAILABLE:
+            return jsonify(error_response("auto_heal模块未加载", 503)), 503
+        try:
+            data = request.json or {}
+            error_message = data.get("error_message", "")
+            source = data.get("source", "manual")
+            response_data = data.get("response_data")
+            extra = data.get("extra")
+            if not error_message:
+                return jsonify(error_response("error_message is required", 400)), 400
+            result = auto_heal.diagnose_and_repair(
+                error_message=error_message,
+                source=source,
+                response_data=response_data,
+                extra=extra,
+            )
+            return jsonify(success_response(data=result))
+        except Exception as e:
+            logger.error(f"自动修复失败: {e}")
+            return jsonify(error_response(str(e), 500)), 500
+
+    @app.route('/api/health/auto_heal/status', methods=['GET'])
+    def auto_heal_status():
+        """获取自动修复状态"""
+        if not AUTO_HEAL_AVAILABLE:
+            return jsonify(success_response(data={"available": False}))
+        return jsonify(success_response(data={
+            "available": True,
+            **auto_heal.get_status(),
+        }))
+
+    @app.route('/api/health/inspect', methods=['POST'])
+    def inspect_response_endpoint():
+        """检查API响应是否存在状态矛盾"""
+        if not AUTO_HEAL_AVAILABLE:
+            return jsonify(success_response(data={"available": False}))
+        try:
+            data = request.json or {}
+            result = auto_heal.inspect_response(data, source="manual_inspect")
+            return jsonify(success_response(data=result))
+        except Exception as e:
+            return jsonify(error_response(str(e), 500)), 500
+
+    @app.route('/api/services/status', methods=['GET'])
+    def services_status():
+        """获取所有服务状态"""
+        try:
+            if AUTO_RECOVERY_AVAILABLE:
+                recovery = get_auto_recovery()
+                report = recovery.get_status_report()
+                return jsonify(success_response(data=report))
+            else:
+                # 基础状态检查
+                status = {
+                    'timestamp': time.time(),
+                    'services': {},
+                    'summary': {'total': 0, 'running': 0, 'stopped': 0, 'failed': 0, 'starting': 0}
+                }
+                return jsonify(success_response(data=status))
+        except Exception as e:
+            logger.error(f"获取服务状态失败: {e}")
+            return jsonify(error_response(str(e), 500)), 500
+
+    @app.route('/api/services/recover', methods=['POST'])
+    def services_recover():
+        """手动触发服务恢复"""
+        try:
+            if not AUTO_RECOVERY_AVAILABLE:
+                return jsonify(error_response("自动恢复模块未加载", 503)), 503
+            
+            data = request.json or {}
+            service_name = data.get('service')
+            
+            recovery = get_auto_recovery()
+            
+            if service_name:
+                # 恢复指定服务
+                success = recovery.recover_service(service_name)
+                return jsonify(success_response(data={
+                    'service': service_name,
+                    'success': success,
+                    'state': recovery.service_states.get(service_name, 'unknown').value if hasattr(recovery.service_states.get(service_name), 'value') else str(recovery.service_states.get(service_name))
+                }))
+            else:
+                # 恢复所有离线服务
+                results = recovery.check_and_recover()
+                return jsonify(success_response(data={
+                    'results': results,
+                    'message': '恢复命令已执行'
+                }))
+        except Exception as e:
+            logger.error(f"服务恢复失败: {e}")
+            return jsonify(error_response(str(e), 500)), 500
+
+    @app.route('/api/services/start', methods=['POST'])
+    def services_start():
+        """启动指定服务"""
+        try:
+            if not AUTO_RECOVERY_AVAILABLE:
+                return jsonify(error_response("自动恢复模块未加载", 503)), 503
+            
+            data = request.json or {}
+            service_name = data.get('service')
+            
+            if not service_name:
+                return jsonify(error_response("缺少 service 参数", 400)), 400
+            
+            recovery = get_auto_recovery()
+            success = recovery.start_service(service_name)
+            
+            return jsonify(success_response(data={
+                'service': service_name,
+                'success': success,
+                'state': recovery.service_states.get(service_name, 'unknown').value if hasattr(recovery.service_states.get(service_name), 'value') else str(recovery.service_states.get(service_name))
+            }))
+        except Exception as e:
+            logger.error(f"启动服务失败: {e}")
             return jsonify(error_response(str(e), 500)), 500
 
     logger.info("Health API routes registered")

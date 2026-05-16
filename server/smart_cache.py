@@ -2,7 +2,7 @@
 智能缓存系统 - 后端性能优化核心模块
 
 数学模型：
-1. LFU (Least Frequently Used) 缓存淘汰算法
+1. LRU (Least Recently Used) 缓存淘汰算法
 2. 自适应TTL：基于访问频率动态调整过期时间
 3. 内存压力感知：根据系统内存使用情况自动调整缓存大小
 4. 预测性缓存：基于历史访问模式预加载
@@ -19,10 +19,12 @@ import hashlib
 import json
 import logging
 import os
+import sqlite3
 from typing import Any, Optional, Dict, List, Callable
 from dataclasses import dataclass, field
 from collections import OrderedDict
 from functools import wraps
+from pathlib import Path
 import weakref
 
 logger = logging.getLogger(__name__)
@@ -330,13 +332,190 @@ def cached_api(ttl: float = 300, namespace: str = ''):
     return CachedAPI.cached(ttl=ttl, namespace=namespace)
 
 
-if __name__ == '__main__':
-    cache = MemoryAwareCache()
+class ThreeLevelCache:
+    """
+    三级缓存: L1内存 → L2SQLite → L3远程(Ollama)
     
-    cache.set('test_key', {'data': 'test_value'}, ttl=60)
-    print(f"Get: {cache.get('test_key')}")
-    print(f"Stats: {cache.get_stats()}")
+    快路径: L1/L2命中直接返回 (0-5ms)
+    慢路径: L3 Ollama推理 (1-10s), 结果回填L1/L2
+    """
+
+    L1_TTL = 300
+    L2_TTL = 3600
+
+    def __init__(self, db_path: str = None):
+        self._l1 = MemoryAwareCache(max_size=2000, max_memory_mb=50)
+        self._l2_path = db_path
+        self._l2_conn = None
+        self._lock = threading.Lock()
+        self._stats = {"l1_hits": 0, "l2_hits": 0, "l3_hits": 0, "misses": 0, "total": 0}
+
+        if db_path:
+            self._init_l2(db_path)
+
+    def _init_l2(self, db_path: str):
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+        self._l2_conn = sqlite3.connect(db_path, timeout=10)
+        self._l2_conn.execute("PRAGMA journal_mode=WAL")
+        self._l2_conn.execute("PRAGMA synchronous=NORMAL")
+        self._l2_conn.execute("""CREATE TABLE IF NOT EXISTS cache_entries (
+            key TEXT PRIMARY KEY, value TEXT NOT NULL, created_at REAL NOT NULL,
+            ttl REAL NOT NULL, access_count INTEGER DEFAULT 1)""")
+        self._l2_conn.execute("CREATE INDEX IF NOT EXISTS idx_cache_created ON cache_entries(created_at)")
+        self._l2_conn.commit()
+
+    def get(self, key: str) -> Optional[Any]:
+        self._stats["total"] += 1
+
+        result = self._l1.get(key, namespace="tlc")
+        if result is not None:
+            self._stats["l1_hits"] += 1
+            return result
+
+        if self._l2_conn:
+            result = self._l2_get(key)
+            if result is not None:
+                self._stats["l2_hits"] += 1
+                self._l1.set(key, result, ttl=self.L1_TTL, namespace="tlc")
+                return result
+
+        self._stats["misses"] += 1
+        return None
+
+    def set(self, key: str, value: Any, ttl: float = None) -> None:
+        ttl = ttl or self.L1_TTL
+        self._l1.set(key, value, ttl=ttl, namespace="tlc")
+        if self._l2_conn:
+            self._l2_set(key, value, ttl)
+
+    def _l2_get(self, key: str) -> Optional[Any]:
+        try:
+            cur = self._l2_conn.cursor()
+            cur.execute("SELECT value, created_at, ttl FROM cache_entries WHERE key=?", (key,))
+            row = cur.fetchone()
+            cur.close()
+            if not row:
+                return None
+            if time.time() - row[1] > row[2]:
+                self._l2_delete(key)
+                return None
+            self._l2_conn.execute("UPDATE cache_entries SET access_count=access_count+1 WHERE key=?", (key,))
+            self._l2_conn.commit()
+            return json.loads(row[0])
+        except Exception:
+            return None
+
+    def _l2_set(self, key: str, value: Any, ttl: float) -> None:
+        try:
+            data = json.dumps(value, ensure_ascii=False)
+            self._l2_conn.execute(
+                "INSERT OR REPLACE INTO cache_entries (key, value, created_at, ttl) VALUES (?, ?, ?, ?)",
+                (key, data, time.time(), ttl),
+            )
+            self._l2_conn.commit()
+        except Exception:
+            pass
+
+    def _l2_delete(self, key: str) -> None:
+        try:
+            self._l2_conn.execute("DELETE FROM cache_entries WHERE key=?", (key,))
+            self._l2_conn.commit()
+        except Exception:
+            pass
+
+    def cleanup(self) -> int:
+        count = 0
+        if self._l2_conn:
+            try:
+                cur = self._l2_conn.execute("DELETE FROM cache_entries WHERE created_at + ttl < ?", (time.time(),))
+                count = cur.rowcount
+                self._l2_conn.commit()
+            except Exception:
+                pass
+        return count
+
+    def get_stats(self) -> Dict:
+        total = self._stats["total"] or 1
+        return {
+            "total_requests": self._stats["total"],
+            "l1_hits": self._stats["l1_hits"],
+            "l2_hits": self._stats["l2_hits"],
+            "l3_hits": self._stats["l3_hits"],
+            "misses": self._stats["misses"],
+            "l1_hit_rate": round(self._stats["l1_hits"] / total * 100, 1),
+            "l2_hit_rate": round(self._stats["l2_hits"] / total * 100, 1),
+            "overall_hit_rate": round((self._stats["l1_hits"] + self._stats["l2_hits"]) / total * 100, 1),
+        }
+
+
+class FastPathRouter:
+    """
+    快慢路径路由器
     
-    estimator = TokenEstimatorOptimized()
-    test_text = "这是一段中文测试文本，包含一些English words和code like function() {}"
-    print(f"Token estimate: {estimator.estimate(test_text)}")
+    快路径: CASC意图识别 + 缓存命中 → 0-5ms
+    慢路径: Ollama推理 → 1-10s, 限流保护
+    """
+
+    def __init__(self, cache: ThreeLevelCache = None, max_concurrent_slow: int = 4):
+        self._cache = cache or ThreeLevelCache()
+        self._max_concurrent = max_concurrent_slow
+        self._current_slow = 0
+        self._lock = threading.Lock()
+        self._stats = {"fast_path": 0, "slow_path": 0, "slow_rejected": 0}
+
+    def route(self, text: str, intent_result: Dict = None) -> Dict:
+        cache_key = hashlib.md5(text.encode()).hexdigest()
+
+        cached = self._cache.get(cache_key)
+        if cached is not None:
+            self._stats["fast_path"] += 1
+            result = dict(cached)
+            result["_path"] = "fast_cache"
+            return result
+
+        if intent_result:
+            self._cache.set(cache_key, intent_result, ttl=ThreeLevelCache.L1_TTL)
+            self._stats["fast_path"] += 1
+            result = dict(intent_result)
+            result["_path"] = "fast_casc"
+            return result
+
+        can_slow = self._try_acquire_slow()
+        if can_slow:
+            self._stats["slow_path"] += 1
+            return {"_path": "slow", "_needs_inference": True}
+        else:
+            self._stats["slow_rejected"] += 1
+            return {"_path": "rejected", "_needs_inference": False, "_reason": "concurrency_limit"}
+
+    def _try_acquire_slow(self) -> bool:
+        with self._lock:
+            if self._current_slow < self._max_concurrent:
+                self._current_slow += 1
+                return True
+            return False
+
+    def release_slow(self):
+        with self._lock:
+            self._current_slow = max(0, self._current_slow - 1)
+
+    def store_slow_result(self, text: str, result: Dict, ttl: float = None):
+        cache_key = hashlib.md5(text.encode()).hexdigest()
+        self._cache.set(cache_key, result, ttl=ttl or ThreeLevelCache.L2_TTL)
+        self.release_slow()
+
+    def get_stats(self) -> Dict:
+        total = sum(self._stats.values()) or 1
+        return {
+            **self._stats,
+            "fast_path_pct": round(self._stats["fast_path"] / total * 100, 1),
+            "current_slow": self._current_slow,
+            "max_concurrent_slow": self._max_concurrent,
+            "cache_stats": self._cache.get_stats(),
+        }
+
+
+def get_three_level_cache(db_path: str = None) -> ThreeLevelCache:
+    data_dir = Path(__file__).parent / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return ThreeLevelCache(db_path or str(data_dir / "response_cache.db"))

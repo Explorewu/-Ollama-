@@ -169,6 +169,10 @@
     </div>
 
     <script>
+        // API 基础地址
+        const hostName = window.location.hostname || 'localhost';
+        const apiBase = `http://${hostName}:5001`;
+        
         // 图片数据
         const images = [
             {
@@ -197,7 +201,7 @@
                 card.className = 'image-card';
                 card.innerHTML = `
                     <div class="image-container">
-                        <img src="/api/image/${img.id}" alt="${img.title}" 
+                        <img src="${apiBase}/api/image/${img.id}" alt="${img.title}" 
                              onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWbvueJh+WKoOi9veWksei0pTwvdGV4dD48L3N2Zz4='">
                     </div>
                     <div class="image-info">
@@ -226,10 +230,11 @@
             generateBtn.textContent = '生成中...';
             
             try {
-                const response = await fetch('/api/image/generate', {
+                const response = await fetch(`${apiBase}/api/image/generate`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Internal-Call': 'true'
                     },
                     body: JSON.stringify({
                         prompt: 'beautiful landscape with mountains and sunset, golden hour lighting',

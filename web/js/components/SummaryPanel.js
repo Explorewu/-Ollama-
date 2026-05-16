@@ -78,16 +78,16 @@ class SummaryPanel {
                 <!-- 头部 -->
                 <div class="summary-panel-header">
                     <h3 class="summary-panel-title">
-                        <span class="icon">📋</span>
+                        <span class="icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('clipboard', 16) : '📋'}</span>
                         讨论总结
                     </h3>
                     <div class="summary-panel-actions">
                         <button class="btn btn-primary btn-generate" title="生成新总结">
-                            <span class="icon">✨</span>
+                            <span class="icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('summarize', 14) : SVGIcons.get('summarize', 14)}</span>
                             生成总结
                         </button>
                         <button class="btn btn-secondary btn-history" title="查看历史">
-                            <span class="icon">📚</span>
+                            <span class="icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('book', 14) : '📚'}</span>
                             历史
                         </button>
                         <button class="btn btn-icon btn-close" title="关闭">✕</button>
@@ -98,11 +98,11 @@ class SummaryPanel {
                 <div class="summary-panel-content">
                     <!-- 空状态 -->
                     <div class="summary-empty-state">
-                        <div class="empty-icon">📝</div>
+                        <div class="empty-icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('summary', 32) : SVGIcons.get('summary', 32)}</div>
                         <h4>暂无讨论总结</h4>
                         <p>点击"生成总结"按钮，AI将自动分析对话内容并生成总结</p>
                         <button class="btn btn-primary btn-generate-empty">
-                            <span class="icon">✨</span>
+                            <span class="icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('summarize', 14) : SVGIcons.get('summarize', 14)}</span>
                             生成总结
                         </button>
                     </div>
@@ -153,7 +153,7 @@ class SummaryPanel {
                         <!-- 关键要点 -->
                         <div class="summary-section">
                             <h4 class="section-title">
-                                <span class="icon">🎯</span>
+                                <span class="icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('target', 14) : '🎯'}</span>
                                 关键要点
                             </h4>
                             <ul class="key-points-list summary-key-points"></ul>
@@ -162,7 +162,7 @@ class SummaryPanel {
                         <!-- 讨论主题 -->
                         <div class="summary-section summary-topics-section" style="display: none;">
                             <h4 class="section-title">
-                                <span class="icon">🏷️</span>
+                                <span class="icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('tag', 14) : '🏷️'}</span>
                                 讨论主题
                             </h4>
                             <div class="topics-list summary-topics"></div>
@@ -171,7 +171,7 @@ class SummaryPanel {
                         <!-- 观点汇总 -->
                         <div class="summary-section summary-viewpoints-section" style="display: none;">
                             <h4 class="section-title">
-                                <span class="icon">💭</span>
+                                <span class="icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('thinking', 14) : '💭'}</span>
                                 观点汇总
                             </h4>
                             <div class="viewpoints-list summary-viewpoints"></div>
@@ -180,7 +180,7 @@ class SummaryPanel {
                         <!-- 结论建议 -->
                         <div class="summary-section summary-conclusions-section" style="display: none;">
                             <h4 class="section-title">
-                                <span class="icon">💡</span>
+                                <span class="icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('tip', 14) : SVGIcons.get('tip', 14)}</span>
                                 结论建议
                             </h4>
                             <ul class="conclusions-list summary-conclusions"></ul>
@@ -189,7 +189,7 @@ class SummaryPanel {
                         <!-- 讨论时间线 -->
                         <div class="summary-section summary-timeline-section" style="display: none;">
                             <h4 class="section-title">
-                                <span class="icon">⏱️</span>
+                                <span class="icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('clock', 14) : '⏱️'}</span>
                                 讨论时间线
                             </h4>
                             <div class="timeline-list summary-timeline"></div>
@@ -201,12 +201,12 @@ class SummaryPanel {
                 <div class="summary-panel-footer" style="display: none;">
                     <div class="footer-actions">
                         <button class="btn btn-secondary btn-edit">
-                            <span class="icon">✏️</span>
+                            <span class="icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('edit', 14) : '✏️'}</span>
                             编辑
                         </button>
                         <div class="export-dropdown">
                             <button class="btn btn-secondary btn-export">
-                                <span class="icon">📤</span>
+                                <span class="icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('export', 14) : '📤'}</span>
                                 导出
                                 <span class="dropdown-arrow">▼</span>
                             </button>
@@ -217,7 +217,7 @@ class SummaryPanel {
                             </div>
                         </div>
                         <button class="btn btn-danger btn-delete">
-                            <span class="icon">🗑️</span>
+                            <span class="icon">${typeof SVGIcons !== 'undefined' ? SVGIcons.get('trash', 14) : SVGIcons.get('trash', 14)}</span>
                             删除
                         </button>
                     </div>
@@ -380,7 +380,7 @@ class SummaryPanel {
             this._setLoading(true);
             
             const response = await fetch(
-                `${this.apiBaseUrl}/api/summary/conversation/${this.conversationId}?limit=10`
+                `${this.apiBaseUrl}/api/summary?conversation_id=${this.conversationId}&limit=10`
             );
             
             if (!response.ok) {
@@ -773,7 +773,12 @@ class SummaryPanel {
         
         try {
             const response = await fetch(
-                `${this.apiBaseUrl}/api/summary/${this.currentSummary.id}/export?format=${format}`
+                `${this.apiBaseUrl}/api/summary/${this.currentSummary.id}/export`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ format })
+                }
             );
             
             if (!response.ok) {
